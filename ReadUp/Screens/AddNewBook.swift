@@ -21,7 +21,7 @@ struct AddNewBook: View {
     
     @State var details: String = ""
     
-    @State var status: BookStatus = .abandoned
+    @State var status: BookStatus?
     
     @State var imageData: Data? = nil
     
@@ -33,9 +33,9 @@ struct AddNewBook: View {
     
     
     var isFormValid: Bool{
-        !title.isEmpty && !author.isEmpty && !numberOfPages.isEmpty && !details.isEmpty && imageData != nil
+        !title.isEmpty && !author.isEmpty && !numberOfPages.isEmpty && !details.isEmpty && imageData != nil && status != nil
     }
-        
+            
     var body: some View {
         
         ScrollView{
@@ -52,16 +52,17 @@ struct AddNewBook: View {
                             HStack{
                                 Image(systemName: "camera.fill")
                                     .resizable()
-                                    .frame(width: 60, height: 60)
+                                    .frame(width: 60, height: 50)
                             }
                             .frame(width: 148, height: 211)
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .foregroundStyle(.weekDayBackground)
+                                    .stroke(.emphasis, lineWidth: 1)
+                                    .foregroundStyle(.componentBackground)
                             )
                             
-                            Text("Click here to acesss galery")
-                                .foregroundStyle(.secundaryLabel)
+                            Text("Click here to acess gallery")
+                                .foregroundStyle(.accent)
                         }
                     }
                 }
@@ -83,7 +84,7 @@ struct AddNewBook: View {
             }
             
             
-            VStack{
+          
                 TextField("Title", text: $title, axis: .vertical)
                     .lineLimit(2)
                     .padding(.vertical, 12)
@@ -91,24 +92,29 @@ struct AddNewBook: View {
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .foregroundStyle(.tabBarBackground)
+                            .shadow(radius: 0.8, x:0, y: 3)
                     )
+                    
+                
                 TextField("Author", text: $author, axis: .vertical)
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .padding(.vertical, 12)
                     .padding(.leading, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .foregroundStyle(.tabBarBackground)
+                            .shadow(radius: 0.8, x:0, y: 3)
+
                     )
                 TextField("Number of pages", text: $numberOfPages, axis: .vertical)
                     .keyboardType(.numberPad)
                     .scrollDismissesKeyboard(.automatic)
-                    .lineLimit(2)
                     .padding(.vertical, 12)
                     .padding(.leading, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .foregroundStyle(.tabBarBackground)
+                            .shadow(radius: 0.8, x:0, y: 3)
                     )
                 TextField("Details", text: $details, axis: .vertical)
                     .lineLimit(10...23)
@@ -117,8 +123,10 @@ struct AddNewBook: View {
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .foregroundStyle(.tabBarBackground)
+                            .shadow(radius: 0.8, x:0, y: 3)
+
                     )
-            }
+            
             
             Menu{
                 ForEach(BookStatus.allCases, id: \.self) {enumStatus in
@@ -127,14 +135,37 @@ struct AddNewBook: View {
                     }
                 }
             } label: {
-                Text("Book Status: \(status.rawValue)")
+                HStack{
+                    if status == nil{
+                        Text("Select Status")
+                        Image(systemName: "chevron.up.chevron.down")
+                    } else{
+                        if let statusSelected = status {
+                            Text("\(statusSelected.rawValue)")
+                                .foregroundStyle(.mainText)
+                                .font(.system(.title3, weight: .semibold))
+                        }
+                    }
+                }
+                .frame(width: 297, height: 61)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.emphasis, lineWidth: 2)
+                    )
             }
+            .padding(.top, 24)
+
             
 
             
             Button {
                 
-                let book = Book(title: title, author: author, numberOfPages: Int(numberOfPages) ?? 0, details: details, status: status, imageData: imageData!)
+                guard let status, let imageData, let _ = Int(numberOfPages) else{
+                    print("Invalid forms")
+                    return
+                }
+                
+                let book = Book(title: title, author: author, numberOfPages: Int(numberOfPages) ?? 0, details: details, status: status, imageData: imageData)
                 
                 modelContext.insert(book)
                 
@@ -146,7 +177,7 @@ struct AddNewBook: View {
                 
                 dismiss()
             } label: {
-                Text("Save Session")
+                Text("Save book")
                     .font(.system(.title3, weight: .semibold))
                     .foregroundStyle(.componentBackground)
                     .frame(width: 361, height: 61)
@@ -161,6 +192,9 @@ struct AddNewBook: View {
         }
         .padding()
         .background(.backgroundPrimary)
+        .onAppear{
+            
+        }
     }
 }
 

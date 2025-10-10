@@ -24,7 +24,7 @@ struct TabBar: View {
             }
         case 2:
             NavigationStack{
-                Profile()
+                History()
             }
         default:
             Text("Unknown Tab")
@@ -69,11 +69,11 @@ struct TabBar: View {
             Button(action: {selectedTab = 2}) {
                 
                 VStack(spacing:6) {
-                    Image(systemName: "person.crop.circle")
+                    Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(selectedTab == 2 ? .emphasis : .secundaryLabel)
                     
-                    Text("Profile")
+                    Text("History")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(selectedTab == 2 ? .emphasis : .secundaryLabel)
                 }
@@ -87,7 +87,7 @@ struct TabBar: View {
             RoundedRectangle(cornerRadius: 50)
                 .foregroundStyle(.tabBarBackground)
                 .frame(width: 361)
-                .shadow(radius: 4, x:5, y: 10)
+                .shadow(radius: 4, x:2, y: 10)
         )
         .padding(.bottom)
     }

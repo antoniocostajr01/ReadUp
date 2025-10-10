@@ -48,10 +48,10 @@ struct SessionDetails: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(.emphasis, lineWidth: 1)
                 .foregroundStyle(.componentBackground)
+                .background(RoundedRectangle(cornerRadius: 12)
+                    .foregroundStyle(.componentBackground)
+                           )
         )
-//        .onTapGesture {
-//            
-//        }
         
     }
     

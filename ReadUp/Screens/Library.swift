@@ -13,69 +13,87 @@ struct Library: View {
     @State private var searchText = ""
     @Query var books: [Book]
 
-    var body: some View {
-        NavigationStack{
-            ScrollView{
-    
-                NavigationLink(destination: AddNewBook()){
-                    HStack{
-                        Text("Add new book")
-                            .font(.system(.title3, weight: .semibold))
-                            .foregroundStyle(.componentBackground)
-                        Image(systemName: "plus")
-                            .font(.system(.title3, weight: .semibold))
-                            .foregroundStyle(.componentBackground)
-                    }
-                    .padding()
-                    .frame(width: 361, height: 61)
-                    .background(
-                        RoundedRectangle(cornerRadius: 50)
-                            .foregroundStyle(.emphasis)
-                    )
-                }
-                .padding(.top, 12)
-                
-            
-                let uniqueStatus = Set(books.map { $0.status })
-                
-                ForEach(Array(uniqueStatus), id: \.self) {status in
-                    VStack(alignment: .leading, spacing: 8){
-                        Text(status.rawValue)
-                            .font(.system(.title, weight: .bold))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 16)
-                        
-                        HStack(spacing: 16){
-                            ForEach(books.filter { $0.status == status }) {book in
-                                if let uiImage = UIImage(data: book.imageData){
-                                    VStack{
-                                        Image(uiImage: uiImage)
-                                            .resizable()
-                                            .frame(width: 89, height: 127)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                                        
-                                        
-                                        Text("\(book.title)")
-                                            .font(.callout)
-                                            .lineLimit(1)
-                                            .padding(.top, 4)
-                                            .frame(width: 89)
-                                    }
-                                }
-                            }
 
+    @State var selectedBook: Book?
+    
+    var body: some View {
+            VStack{
+                if books.isEmpty {
+                    LibraryEmptyState(title: "No books yet!", details: "Ready to give your mind a new adventure? Add your first book and start your reading journey!")
+                } else {
+                    ScrollView{
+                    
+                        NavigationLink(destination: AddNewBook()){
+                            HStack{
+                                Text("Add new book")
+                                    .font(.system(.title3, weight: .semibold))
+                                    .foregroundStyle(.componentBackground)
+                                Image(systemName: "plus")
+                                    .font(.system(.title3, weight: .semibold))
+                                    .foregroundStyle(.componentBackground)
+                            }
+                            .padding()
+                            .frame(width: 361, height: 61)
+                            .background(
+                                RoundedRectangle(cornerRadius: 50)
+                                    .foregroundStyle(.emphasis)
+                            )
                         }
-                        .padding(.top, 4)
+                        .padding(.top, 12)
+                        
+                        
+                        let uniqueStatus = Set(books.map { $0.status })
+                        
+                        ForEach(Array(uniqueStatus), id: \.self) {status in
+                            VStack(alignment: .leading, spacing: 8){
+                                Text(status.rawValue)
+                                    .font(.system(.title, weight: .bold))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.top, 16)
+                                
+                                HStack(spacing: 16){
+                                    ForEach(books.filter { $0.status == status }) {book in
+                                        if let uiImage = UIImage(data: book.imageData){
+                                            VStack{
+                                                Image(uiImage: uiImage)
+                                                    .resizable()
+                                                    .frame(width: 89, height: 127)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                                
+                                                
+                                                Text("\(book.title)")
+                                                    .font(.callout)
+                                                    .lineLimit(1)
+                                                    .padding(.top, 4)
+                                                    .frame(width: 89)
+                                            }
+                                            .onTapGesture{
+                                                selectedBook = book
+                                            }
+                                        }
+                                    }
+                                    
+                                }
+                                .padding(.top, 4)
+                            }
+                            
+                        }
                     }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal,16)
+            .sheet(item: $selectedBook ){ book in
+                NavigationStack{
+                    BookDetails(book: book)
+                        .presentationDragIndicator(.visible)
+                        .background(.backgroundPrimary)
 
                 }
             }
-            .padding(.leading,16)
-            .padding(.trailing,16)
             .navigationTitle("Library")
             .background(.backgroundPrimary)
-            .searchable(text: $searchText, prompt: "Search")
-        }
+        
     }
 
 }

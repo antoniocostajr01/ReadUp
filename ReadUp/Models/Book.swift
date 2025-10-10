@@ -10,7 +10,7 @@ import SwiftData
 
 
 @Model
-final class Book {
+final class Book: Identifiable{
     var id = UUID()
     var title: String
     var author: String

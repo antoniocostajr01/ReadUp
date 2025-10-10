@@ -22,9 +22,15 @@ struct Home: View {
     
     @State private var isShowingAlert = false
         
-    @State private var isShowingModalSession = false// CONTROLA O COMPORTAMENTO DAS MODAIS, NÃO MEXER
+    @State private var isShowingModalSession = false // CONTROLA O COMPORTAMENTO DAS MODAIS, NÃO MEXER
     
     @Query var books: [Book]
+    
+    @Query(sort: \LiterarySession.timesTamp, order: .reverse) var sessions: [LiterarySession]
+    
+    var sessionsCount: Int {
+        sessions.count
+    }
     
     private var readingBooks: [Book]{
         books.filter {
@@ -33,8 +39,54 @@ struct Home: View {
     }
     
     var body: some View {
-        NavigationStack{
-            ScrollView{
+            VStack{
+                VStack (alignment: .center, spacing: 8){
+                    Text("Literary Sessions until now:")
+                        .font(.subheadline)
+                    
+                    
+                    HStack{
+                        Image(systemName: "book.fill")
+                            .font(.system(size: 64, weight: .regular))
+                            .foregroundStyle(.emphasis)
+
+                        
+                        Text("\(sessionsCount)")
+                            .font(.system(size: 64, weight: .regular))
+                            
+            
+                    }
+                }
+                .padding()
+                
+                
+                HStack(alignment: .center, spacing: 32 ){
+                    
+                    VStack(alignment: .center, spacing: 16){
+                        Text("“When you want something, all the universe conspires in helping you to achieve it.”")
+                            .multilineTextAlignment(.center)
+                            .font(.body.italic())
+                        
+                        Text("Paulo Coelho, The Alchemist")
+                            .font(.caption.italic())
+                            .foregroundStyle(.secundaryLabel)
+                    }
+                    .padding()
+                    
+                    Image(.winterMascot)
+                        .resizable()
+                        .frame(width:139 , height: 177)
+                }
+                .frame(width: 361, height: 209)
+                .padding(.top, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(.emphasis, lineWidth: 1)
+                        .foregroundStyle(.backgroundPrimary)
+                )
+                
+                Spacer()
+                
                 Button {
                     if readingBooks.isEmpty{
                         isShowingAlert.toggle()
@@ -66,78 +118,9 @@ struct Home: View {
                         }
                     }
                 }
-   
-                
-                //MARK: Sessions History
-                Button{
-                    
-                    isGointToHistory.toggle()
-                    
-                } label: {
-                    HStack(spacing: 4){
-                        Text("How is your progress")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.mainText)
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.mainText)
-                        
-                        Spacer()
-                    }
-                }
-                .padding(.top, 24)
-                .navigationDestination(isPresented: $isGointToHistory) {
-                    SessionsHistory()
-                }
-                
-                HStack{
-                    WeeklyHistory(weekDay: "S", bookRead: false)
-                    WeeklyHistory(weekDay: "M", bookRead: true)
-                    WeeklyHistory(weekDay: "T", bookRead: false)
-                    WeeklyHistory(weekDay: "W", bookRead: true)
-                    WeeklyHistory(weekDay: "T", bookRead: false)
-                    WeeklyHistory(weekDay: "F", bookRead: true)
-                    WeeklyHistory(weekDay: "S", bookRead: true)
-                }
-                
-                Button{
-                    //Go to sessions stories
-                } label: {
-                    HStack(spacing: 4){
-                        Text("Current goal")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.mainText)
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.mainText)
-                        
-                        Spacer()
-                    }
-                }
-                .padding(.top, 24)
+                .padding(.vertical, 32)
                 
                 
-                HStack(spacing:69){
-                    VStack(spacing: 32){
-                        Text("Winter Book")
-                            .font(.title2)
-                        Text("12/25")
-                            .font(.title2)
-                    }
-                    
-                    Image(.winterMascot)
-                        .resizable()
-                        .frame(width:139 , height: 177)
-                }
-                .frame(width: 361, height: 209)
-                .padding(.top, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(.emphasis, lineWidth: 1)
-                        .foregroundStyle(.backgroundPrimary)
-                )
             }
             .padding(.leading,16)
             .padding(.trailing,16)
@@ -146,7 +129,6 @@ struct Home: View {
             .sheet(isPresented: $isShowingModalSession) {
                 ReadingSession(dismissModal: $isShowingModalSession, selectedBook: selectedBook!)
             }
-        }
 
     }
     
