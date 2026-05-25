@@ -10,11 +10,7 @@ struct SearchBookDetails: View {
     let book: SearchBook
     let service: GoogleBooksService
 
-    @State private var selectedStatus: BookStatus = .iWantToRead
-    @State private var isSaving = false
-    @State private var saveMessage: String?
-    @State private var alreadyExists = false
-    @State private var isShowingFullDescription = false
+    @State private var viewModel = SearchBookDetailsViewModel()
 
     var body: some View {
         ScrollView {
@@ -38,13 +34,13 @@ struct SearchBookDetails: View {
                     Text(cleanedDescription)
                         .font(.body)
                         .lineSpacing(2)
-                        .lineLimit(isShowingFullDescription ? nil : 5)
+                        .lineLimit(viewModel.isShowingFullDescription ? nil : 5)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if shouldShowReadMore {
-                        Button(isShowingFullDescription ? "Read less" : "Read more") {
+                        Button(viewModel.isShowingFullDescription ? "Read less" : "Read more") {
                             withAnimation(.easeInOut(duration: 0.2)) {
-                                isShowingFullDescription.toggle()
+                                viewModel.isShowingFullDescription.toggle()
                             }
                         }
                         .font(.subheadline.weight(.semibold))
@@ -57,7 +53,7 @@ struct SearchBookDetails: View {
                     Text("\(book.numberOfPages)")
                 }
 
-                Picker("Status", selection: $selectedStatus) {
+                Picker("Status", selection: $viewModel.selectedStatus) {
                     ForEach(BookStatus.allCases, id: \.self) { status in
                         Text(status.rawValue).tag(status)
                     }
@@ -70,20 +66,20 @@ struct SearchBookDetails: View {
                 )
 
                 Button {
-                    Task { await saveBookToLibrary() }
+                    Task { await viewModel.saveBookToLibrary(book: book, service: service, modelContext: modelContext, onDismiss: { dismiss() }) }
                 } label: {
-                    Text(alreadyExists ? "Already in library" : (isSaving ? "Saving..." : "Add to library"))
+                    Text(viewModel.alreadyExists ? "Already in library" : (viewModel.isSaving ? "Saving..." : "Add to library"))
                         .font(.system(.title3, weight: .semibold))
                         .foregroundStyle(.componentBackground)
                         .frame(width: 361, height: 61)
                         .background(
                             RoundedRectangle(cornerRadius: 50)
-                                .foregroundStyle(alreadyExists ? .secundaryLabel : .emphasis)
+                                .foregroundStyle(viewModel.alreadyExists ? .secundaryLabel : .emphasis)
                         )
                 }
-                .disabled(alreadyExists || isSaving)
+                .disabled(viewModel.alreadyExists || viewModel.isSaving)
 
-                if let saveMessage {
+                if let saveMessage = viewModel.saveMessage {
                     Text(saveMessage)
                         .font(.footnote)
                         .foregroundStyle(.secundaryLabel)
@@ -96,7 +92,7 @@ struct SearchBookDetails: View {
         .navigationTitle("Book details")
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
-            alreadyExists = books.contains { $0.title.caseInsensitiveCompare(book.title) == .orderedSame && $0.author.caseInsensitiveCompare(book.author) == .orderedSame }
+            viewModel.alreadyExists = books.contains { $0.title.caseInsensitiveCompare(book.title) == .orderedSame && $0.author.caseInsensitiveCompare(book.author) == .orderedSame }
         }
     }
 
@@ -121,32 +117,6 @@ struct SearchBookDetails: View {
 
     private var shouldShowReadMore: Bool {
         cleanedDescription.count > 260
-    }
-
-    private func saveBookToLibrary() async {
-        isSaving = true
-        defer { isSaving = false }
-
-        let imageData = await service.loadImageData(from: book.thumbnailURL) ?? Data()
-        let newBook = Book(
-            title: book.title,
-            author: book.author,
-            numberOfPages: book.numberOfPages,
-            details: book.details,
-            status: selectedStatus,
-            imageData: imageData
-        )
-
-        modelContext.insert(newBook)
-
-        do {
-            try modelContext.save()
-            saveMessage = "Book added successfully."
-            alreadyExists = true
-            dismiss()
-        } catch {
-            saveMessage = "Could not save this book."
-        }
     }
 }
 

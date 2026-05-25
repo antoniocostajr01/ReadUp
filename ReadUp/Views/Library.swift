@@ -60,7 +60,7 @@ struct Library: View {
                             selectedBook = book
                         } label: {
                             HStack(spacing: 12) {
-                                coverView(for: book)
+                                LibraryCoverView(book: book)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(book.title)
@@ -115,23 +115,6 @@ struct Library: View {
         }
     }
     
-    private func coverView(for book: Book) -> some View {
-        Group {
-            if let uiImage = UIImage(data: book.imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Color(uiColor: .tertiarySystemFill)
-            }
-        }
-        .frame(width: 44, height: 62)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color(uiColor: .separator), lineWidth: 0.5)
-        )
-    }
 }
 
 #Preview {

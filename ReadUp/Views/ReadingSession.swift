@@ -32,8 +32,8 @@ struct ReadingSession: View {
                 timerCircle
 
                 HStack(spacing: 10) {
-                    smallMetricCard(title: "PAGES READ", value: "\(viewModel.pagesReadInSession(selectedBook: selectedBook))")
-                    smallMetricCard(title: "CURRENT PAGE", value: "\(selectedBook.progress ?? 0)")
+                    SmallMetricCard(title: "PAGES READ", value: "\(viewModel.pagesReadInSession(selectedBook: selectedBook))")
+                    SmallMetricCard(title: "CURRENT PAGE", value: "\(selectedBook.progress ?? 0)")
                 }
 
                 Button {
@@ -136,23 +136,6 @@ struct ReadingSession: View {
         .padding(.top, 8)
     }
 
-    private func smallMetricCard(title: String, value: String) -> some View {
-        VStack(spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secundaryLabel)
-                .tracking(1)
-            Text(value)
-                .font(.system(.title2, weight: .bold))
-                .foregroundStyle(.emphasis)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
-    }
 
 
 }

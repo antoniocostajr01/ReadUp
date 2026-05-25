@@ -14,13 +14,7 @@ struct BookDetailsSheet: View {
 
     let source: Source
 
-    @State private var isShowingStatusDialog = false
-    @State private var isShowingDeleteAlert = false
-    @State private var selectedStatus: BookStatus = .iWantToRead
-    @State private var isSaving = false
-    @State private var saveMessage: String?
-    @State private var alreadyExists = false
-    @State private var isShowingFullDescription = false
+    @State private var viewModel = BookDetailsSheetViewModel()
 
     var body: some View {
         NavigationStack {
@@ -34,13 +28,13 @@ struct BookDetailsSheet: View {
                         Text(cleanedDescription)
                             .font(.body)
                             .lineSpacing(2)
-                            .lineLimit(isShowingFullDescription ? nil : 5)
+                            .lineLimit(viewModel.isShowingFullDescription ? nil : 5)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         if shouldShowReadMore {
-                            Button(isShowingFullDescription ? "Read less" : "Read more") {
+                            Button(viewModel.isShowingFullDescription ? "Read less" : "Read more") {
                                 withAnimation(.easeInOut(duration: 0.2)) {
-                                    isShowingFullDescription.toggle()
+                                    viewModel.isShowingFullDescription.toggle()
                                 }
                             }
                             .font(.subheadline.weight(.semibold))
@@ -67,7 +61,7 @@ struct BookDetailsSheet: View {
                         )
 
                     case .search:
-                        Picker("Status", selection: $selectedStatus) {
+                        Picker("Status", selection: $viewModel.selectedStatus) {
                             ForEach(BookStatus.allCases, id: \.self) { status in
                                 Text(status.rawValue).tag(status)
                             }
@@ -80,20 +74,20 @@ struct BookDetailsSheet: View {
                         )
 
                         Button {
-                            Task { await saveBookToLibrary() }
+                            Task { await viewModel.saveBookToLibrary(source: source, modelContext: modelContext, onDismiss: { dismiss() }) }
                         } label: {
-                            Text(alreadyExists ? "Already in library" : (isSaving ? "Saving..." : "Add to library"))
+                            Text(viewModel.alreadyExists ? "Already in library" : (viewModel.isSaving ? "Saving..." : "Add to library"))
                                 .font(.system(.title3, weight: .semibold))
                                 .foregroundStyle(.componentBackground)
                                 .frame(width: 361, height: 61)
                                 .background(
                                     RoundedRectangle(cornerRadius: 50)
-                                        .foregroundStyle(alreadyExists ? .secundaryLabel : .emphasis)
+                                        .foregroundStyle(viewModel.alreadyExists ? .secundaryLabel : .emphasis)
                                 )
                         }
-                        .disabled(alreadyExists || isSaving)
+                        .disabled(viewModel.alreadyExists || viewModel.isSaving)
 
-                        if let saveMessage {
+                        if let saveMessage = viewModel.saveMessage {
                             Text(saveMessage)
                                 .font(.footnote)
                                 .foregroundStyle(.secundaryLabel)
@@ -111,13 +105,13 @@ struct BookDetailsSheet: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             Button(role: .destructive) {
-                                isShowingDeleteAlert = true
+                                viewModel.isShowingDeleteAlert = true
                             } label: {
                                 Label("Delete Book", systemImage: "trash.fill")
                             }
 
                             Button {
-                                isShowingStatusDialog = true
+                                viewModel.isShowingStatusDialog = true
                             } label: {
                                 Label("Change Status", systemImage: "arrow.trianglehead.2.clockwise")
                             }
@@ -127,7 +121,7 @@ struct BookDetailsSheet: View {
                     }
                 }
             }
-            .confirmationDialog("Select a status to this book", isPresented: $isShowingStatusDialog) {
+            .confirmationDialog("Select a status to this book", isPresented: $viewModel.isShowingStatusDialog) {
                 if case .library(let book) = source {
                     ForEach(BookStatus.allCases, id: \.self) { enumStatus in
                         Button(enumStatus.rawValue) {
@@ -136,9 +130,9 @@ struct BookDetailsSheet: View {
                     }
                 }
             }
-            .alert("Are you sure you want to delete this book?", isPresented: $isShowingDeleteAlert) {
+            .alert("Are you sure you want to delete this book?", isPresented: $viewModel.isShowingDeleteAlert) {
                 Button("Delete", role: .destructive) {
-                    deleteLibraryBookIfNeeded()
+                    viewModel.deleteLibraryBookIfNeeded(source: source, modelContext: modelContext, onDismiss: { dismiss() })
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -146,7 +140,7 @@ struct BookDetailsSheet: View {
             }
             .onAppear {
                 if case .search(let searchBook, _) = source {
-                    alreadyExists = books.contains {
+                    viewModel.alreadyExists = books.contains {
                         $0.title.caseInsensitiveCompare(searchBook.title) == .orderedSame &&
                         $0.author.caseInsensitiveCompare(searchBook.author) == .orderedSame
                     }
@@ -228,56 +222,5 @@ struct BookDetailsSheet: View {
 
     private var shouldShowReadMore: Bool {
         cleanedDescription.count > 260
-    }
-
-    private func deleteLibraryBookIfNeeded() {
-        guard case .library(let book) = source else { return }
-
-        do {
-            let bookIdToDelete = book.id
-            let predicate = #Predicate<LiterarySession> { session in
-                session.book.id == bookIdToDelete
-            }
-            let descriptor = FetchDescriptor<LiterarySession>(predicate: predicate)
-            let sessionsToDelete = try modelContext.fetch(descriptor)
-
-            for session in sessionsToDelete {
-                modelContext.delete(session)
-            }
-
-            modelContext.delete(book)
-            try modelContext.save()
-            dismiss()
-        } catch {
-            print("Falha ao deletar as sessões: \(error.localizedDescription)")
-        }
-    }
-
-    private func saveBookToLibrary() async {
-        guard case .search(let book, let service) = source else { return }
-
-        isSaving = true
-        defer { isSaving = false }
-
-        let imageData = await service.loadImageData(from: book.thumbnailURL) ?? Data()
-        let newBook = Book(
-            title: book.title,
-            author: book.author,
-            numberOfPages: book.numberOfPages,
-            details: book.details,
-            status: selectedStatus,
-            imageData: imageData
-        )
-
-        modelContext.insert(newBook)
-
-        do {
-            try modelContext.save()
-            saveMessage = "Book added successfully."
-            alreadyExists = true
-            dismiss()
-        } catch {
-            saveMessage = "Could not save this book."
-        }
     }
 }
