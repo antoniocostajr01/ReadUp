@@ -11,95 +11,125 @@ import SwiftData
 struct Library: View {
     @EnvironmentObject private var tabState: AppTabState
     @Query var books: [Book]
-
-    @State var selectedBook: Book?
+    
+    @State private var selectedBook: Book?
+    
+    private var booksByStatus: [(status: BookStatus, items: [Book])] {
+        let orderedStatuses = BookStatus.allCases.filter { status in
+            books.contains(where: { $0.status == status })
+        }
+        
+        return orderedStatuses.map { status in
+            let items = books
+                .filter { $0.status == status }
+                .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            return (status, items)
+        }
+    }
     
     var body: some View {
-            VStack{
-                addBookButton
-                    .padding(.top, 12)
-
-                if books.isEmpty {
-                    LibraryEmptyState(title: "No books yet!", details: "Ready to give your mind a new adventure? Add your first book and start your reading journey!")
-                } else {
-                    ScrollView{
-
-                        let uniqueStatus = Set(books.map { $0.status })
-                        
-                        ForEach(Array(uniqueStatus), id: \.self) {status in
-                            VStack(alignment: .leading, spacing: 8){
-                                Text(status.rawValue)
-                                    .font(.system(.title, weight: .bold))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.top, 16)
+        Group {
+            if books.isEmpty {
+                emptyState
+            } else {
+                libraryList
+            }
+        }
+        .navigationTitle("Library")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    tabState.goToSearchTab()
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .navigationDestination(item: $selectedBook) { book in
+            BookDetails(book: book)
+        }
+        .background(.backgroundPrimary)
+    }
+    
+    private var libraryList: some View {
+        List {
+            ForEach(booksByStatus, id: \.status) { section in
+                Section(section.status.rawValue) {
+                    ForEach(section.items) { book in
+                        Button {
+                            selectedBook = book
+                        } label: {
+                            HStack(spacing: 12) {
+                                coverView(for: book)
                                 
-                                HStack(spacing: 16){
-                                    ForEach(books.filter { $0.status == status }) {book in
-                                        if let uiImage = UIImage(data: book.imageData){
-                                            VStack{
-                                                Image(uiImage: uiImage)
-                                                    .resizable()
-                                                    .frame(width: 89, height: 127)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                                
-                                                
-                                                Text("\(book.title)")
-                                                    .font(.callout)
-                                                    .lineLimit(1)
-                                                    .padding(.top, 4)
-                                                    .frame(width: 89)
-                                            }
-                                            .onTapGesture{
-                                                selectedBook = book
-                                            }
-                                        }
-                                    }
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(book.title)
+                                        .font(.headline)
+                                        .foregroundStyle(Color(uiColor: .label))
+                                        .lineLimit(2)
                                     
+                                    Text(book.author)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secundaryLabel)
+                                        .lineLimit(1)
                                 }
-                                .padding(.top, 4)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color(uiColor: .tertiaryLabel))
                             }
-                            
+                            .padding(.vertical, 4)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal,16)
-            .sheet(item: $selectedBook ){ book in
-                NavigationStack{
-                    BookDetails(book: book)
-                        .presentationDragIndicator(.visible)
-                        .background(.backgroundPrimary)
-
-                }
-            }
-            .navigationTitle("Library")
-            .background(.backgroundPrimary)
-        
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(.backgroundPrimary)
     }
-
-    private var addBookButton: some View {
-        Button {
-            tabState.goToSearchTab()
-        } label: {
-            HStack{
-                Text("Add new book")
-                    .font(.system(.title3, weight: .semibold))
-                    .foregroundStyle(.componentBackground)
-                Image(systemName: "plus")
-                    .font(.system(.title3, weight: .semibold))
-                    .foregroundStyle(.componentBackground)
-            }
-            .padding()
-            .frame(width: 361, height: 61)
-            .background(
-                RoundedRectangle(cornerRadius: 50)
+    
+    private var emptyState: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                Spacer(minLength: 88)
+                
+                Image(systemName: "books.vertical")
+                    .font(.system(size: 38, weight: .medium))
                     .foregroundStyle(.emphasis)
-            )
+                
+                Text("No books yet")
+                    .font(.system(.title2, weight: .bold))
+                
+                Text("Use Search to find books and add them to your library.")
+                    .font(.body)
+                    .foregroundStyle(.secundaryLabel)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 24)
         }
     }
-}
-
-#Preview {
-    Library()
+    
+    private func coverView(for book: Book) -> some View {
+        Group {
+            if let uiImage = UIImage(data: book.imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Color(uiColor: .tertiarySystemFill)
+            }
+        }
+        .frame(width: 44, height: 62)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color(uiColor: .separator), lineWidth: 0.5)
+        )
+    }
 }

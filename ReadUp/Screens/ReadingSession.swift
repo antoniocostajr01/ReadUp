@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct ReadingSession: View {
-    @Environment(\.dismiss) private var dismiss
-
     let selectedBook: Book
     @Binding var activeReadingBook: Book?
 
@@ -10,7 +8,6 @@ struct ReadingSession: View {
     @State private var isShowingSummary = false
     @State private var isShowingAlertValue = false
     @State private var lastPageRead = ""
-    @State private var isShowingCancelAlert = false
     @State private var countdown = 3
     @State private var isSessionRunning = false
     @State private var timer: Timer?
@@ -68,17 +65,7 @@ struct ReadingSession: View {
         .background(.backgroundPrimary)
         .navigationTitle("Reading Session")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden()
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    isShowingCancelAlert = true
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 18, weight: .semibold))
-                }
-            }
-        }
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             startCountdown()
         }
@@ -99,15 +86,6 @@ struct ReadingSession: View {
             Button("Cancel", role: .cancel) {
                 lastPageRead = ""
             }
-        }
-        .alert("Are you sure you want to exit the session?", isPresented: $isShowingCancelAlert) {
-            Button("Exit", role: .destructive) {
-                activeReadingBook = nil
-                dismiss()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Your reading progress will not be saved.")
         }
         .navigationDestination(isPresented: $isShowingSummary) {
             SessionSummary(

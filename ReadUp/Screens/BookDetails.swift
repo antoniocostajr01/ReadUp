@@ -22,42 +22,39 @@ struct BookDetails: View {
     let book: Book
     
     var body: some View {
-        NavigationStack{
-            VStack(spacing: 24){
-                if let image = UIImage(data: book.imageData){
-                    Image(uiImage: image)
-                        .resizable()
-                        .frame(width: 148 , height: 211)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                
-                TitleAndAuthorBook(bookAuthor: book.author, bookTitle: book.title)
-                
-                Text("\(book.details)")
-                    .frame(maxWidth: .infinity)
-                
-                HStack(spacing: 8){
-                    Image(systemName: "book.pages.fill")
-                    
-                    Text("\(book.numberOfPages)")
-                    
-                }
-                
-                HStack{
-                    Text("\(book.status.rawValue)")
-                        .foregroundStyle(.mainText)
-                        .font(.system(.title3, weight: .semibold))
-                }
-                .frame(width: 297, height: 61)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(.emphasis, lineWidth: 2)
-                )
-                .padding(.top, 24)
+        VStack(spacing: 24){
+            if let image = UIImage(data: book.imageData){
+                Image(uiImage: image)
+                    .resizable()
+                    .frame(width: 148 , height: 211)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .frame(maxHeight: .infinity)
             
+            TitleAndAuthorBook(bookAuthor: book.author, bookTitle: book.title)
+            
+            Text("\(book.details)")
+                .frame(maxWidth: .infinity)
+            
+            HStack(spacing: 8){
+                Image(systemName: "book.pages.fill")
+                
+                Text("\(book.numberOfPages)")
+                
+            }
+            
+            HStack{
+                Text("\(book.status.rawValue)")
+                    .foregroundStyle(.mainText)
+                    .font(.system(.title3, weight: .semibold))
+            }
+            .frame(width: 297, height: 61)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(.emphasis, lineWidth: 2)
+            )
+            .padding(.top, 24)
         }
+        .frame(maxHeight: .infinity)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -80,6 +77,7 @@ struct BookDetails: View {
             }
         }
         .background(.backgroundPrimary)
+        .toolbar(.hidden, for: .tabBar)
         .ignoresSafeArea()
         .confirmationDialog("Select a status to this book", isPresented: $isShowingActionSheet){
             ForEach(BookStatus.allCases, id: \.self){enumStatus in

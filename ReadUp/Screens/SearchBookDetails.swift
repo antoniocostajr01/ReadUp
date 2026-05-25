@@ -14,6 +14,7 @@ struct SearchBookDetails: View {
     @State private var isSaving = false
     @State private var saveMessage: String?
     @State private var alreadyExists = false
+    @State private var isShowingFullDescription = false
 
     var body: some View {
         ScrollView {
@@ -33,8 +34,23 @@ struct SearchBookDetails: View {
 
                 TitleAndAuthorBook(bookAuthor: book.author, bookTitle: book.title)
 
-                Text(book.details)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(cleanedDescription)
+                        .font(.body)
+                        .lineSpacing(2)
+                        .lineLimit(isShowingFullDescription ? nil : 5)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if shouldShowReadMore {
+                        Button(isShowingFullDescription ? "Read less" : "Read more") {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isShowingFullDescription.toggle()
+                            }
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.emphasis)
+                    }
+                }
 
                 HStack(spacing: 8) {
                     Image(systemName: "book.pages.fill")
@@ -73,13 +89,38 @@ struct SearchBookDetails: View {
                         .foregroundStyle(.secundaryLabel)
                 }
             }
-            .padding()
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
         }
         .background(.backgroundPrimary)
         .navigationTitle("Book details")
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             alreadyExists = books.contains { $0.title.caseInsensitiveCompare(book.title) == .orderedSame && $0.author.caseInsensitiveCompare(book.author) == .orderedSame }
         }
+    }
+
+    private var cleanedDescription: String {
+        let raw = book.details
+        let noHtmlTags = raw.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
+        let decodedEntities = noHtmlTags
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+
+        let compactedWhitespace = decodedEntities
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return compactedWhitespace
+    }
+
+    private var shouldShowReadMore: Bool {
+        cleanedDescription.count > 260
     }
 
     private func saveBookToLibrary() async {

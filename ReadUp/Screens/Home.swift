@@ -27,19 +27,19 @@ struct Home: View {
             $0.status == .reading
         }
     }
-
+    
     private var upNextBooks: [Book] {
         books.filter { $0.status == .iWantToRead || $0.status == .rereading }
     }
-
+    
     private var averageMinutesPerDay: Int {
         guard !sessions.isEmpty else { return 0 }
         let totalMinutes = sessions.reduce(0) { $0 + ($1.timeRead / 60) }
         return totalMinutes / sessions.count
     }
-
+    
     private let mockUserName = "Antonio"
-
+    
     private var greetingText: String {
         let hour = Calendar.current.component(.hour, from: Date())
         if hour < 12 {
@@ -50,7 +50,7 @@ struct Home: View {
             return "Boa noite, \(mockUserName)"
         }
     }
-
+    
     private var currentSessionStreak: Int {
         calculateSessionStreak(from: sessions)
     }
@@ -58,26 +58,27 @@ struct Home: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(greetingText)
-                    .font(.system(.largeTitle, weight: .bold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 24)
+//                Text(greetingText)
+//                    .font(.system(.largeTitle, weight: .bold))
+//                    .frame(maxWidth: .infinity, alignment: .leading)
+//                    .padding(.top, 24)
+//                    .padding(.bottom, 24)
                 
                 currentlyReadingSection
-
+                
                 HStack(spacing: 12) {
                     metricCard(value: "\(currentSessionStreak)", title: "DAY STREAK", icon: "flame.fill", accentColor: .orange)
                     metricCard(value: "\(averageMinutesPerDay)", title: "AVG. MIN / SESSION", icon: "clock.fill", accentColor: .indigo)
                 }
-
-//                Text("Up Next")
-//                    .font(.system(.title2, weight: .bold))
-//
-//                upNextSection
-
+                
+                //                Text("Up Next")
+                //                    .font(.system(.title2, weight: .bold))
+                //
+                //                upNextSection
+                
                 Text("Recent Activity")
                     .font(.system(.title2, weight: .bold))
-
+                
                 if sessions.isEmpty {
                     HistoryEmptyState()
                 } else {
@@ -87,7 +88,7 @@ struct Home: View {
                                 .onTapGesture {
                                     selectedSession = session
                                 }
-
+                            
                             if index < min(sessions.count, 4) - 1 {
                                 Divider()
                                     .padding(.leading, 66)
@@ -104,22 +105,16 @@ struct Home: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+        .navigationTitle(greetingText)
         .background(.backgroundPrimary)
         .navigationDestination(item: $activeReadingBook) { book in
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
         }
-        .sheet(item: $selectedSession ){ session in
-            NavigationStack{
-                SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, sessionToEdit: session )
-                    .presentationDragIndicator(.visible)
-
-            }
+        .navigationDestination(item: $selectedSession) { session in
+            SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, sessionToEdit: session )
         }
-        .sheet(item: $selectedUpNextBook) { book in
-            NavigationStack {
-                BookDetails(book: book)
-                    .presentationDragIndicator(.visible)
-            }
+        .navigationDestination(item: $selectedUpNextBook) { book in
+            BookDetails(book: book)
         }
         .alert("No Books Found" ,isPresented: $isShowingAlert) {
             Button("Ok") {}
@@ -127,45 +122,61 @@ struct Home: View {
             Text("You aren't reading any book. Please add some book with 'Reading' status to your library.")
         }
     }
-
+    
     private var currentlyReadingSection: some View {
         Group {
             if readingBooks.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("No book in progress")
-                        .font(.headline)
-                    Text("Add a book as Reading and start your next session.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secundaryLabel)
-                    Button("Start Reading") {
-                        isShowingAlert = true
+                HStack(alignment: .center){
+                    Spacer()
+                    
+                    VStack(alignment: .center, spacing: 10) {
+                        Text("No book in progress")
+                            .font(.headline)
+                        Text("Add a book as Reading and start your next session.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secundaryLabel)
+                        Button("Start Reading") {
+                            isShowingAlert = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.emphasis)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.emphasis)
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color(uiColor: .secondarySystemBackground))
+                    )
+                    Spacer()
                 }
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color(uiColor: .secondarySystemBackground))
-                )
+                
+            } else if readingBooks.count == 1 {
+                HStack(spacing: 12) {
+                    Spacer()
+                    ForEach(readingBooks) { book in
+                        currentlyReadingCard(for: book)
+                            .frame(width: 320)
+                    }
+                    Spacer()
+                }
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
+                ScrollView(.horizontal) {
+                    HStack{
                         ForEach(readingBooks) { book in
                             currentlyReadingCard(for: book)
                                 .frame(width: 320)
                         }
                     }
                 }
+                .scrollIndicators(.never)
             }
         }
     }
-
+    
     private func currentlyReadingCard(for book: Book) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 14) {
                 coverView(data: book.imageData, width: 86, height: 124)
-
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title.uppercased())
                         .font(.caption)
@@ -178,11 +189,11 @@ struct Home: View {
                         .font(.subheadline)
                         .foregroundStyle(.secundaryLabel)
                         .lineLimit(1)
-
+                    
                     let currentProgress = max(0, book.progress ?? 0)
                     let totalPages = max(1, book.numberOfPages)
                     let percentage = Int((Double(currentProgress) / Double(totalPages) * 100).rounded())
-
+                    
                     HStack {
                         Text("Page \(currentProgress) of \(book.numberOfPages)")
                             .font(.subheadline)
@@ -195,10 +206,10 @@ struct Home: View {
                     .padding(.top, 4)
                 }
             }
-
+            
             ProgressView(value: progressValue(for: book))
                 .tint(.emphasis)
-
+            
             Button {
                 activeReadingBook = book
             } label: {
@@ -219,19 +230,19 @@ struct Home: View {
                 .fill(Color(uiColor: .secondarySystemBackground))
         )
     }
-
+    
     private func metricCard(value: String, title: String, icon: String, accentColor: Color) -> some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .medium))
                 .foregroundStyle(accentColor)
                 .padding(10)
-//                .background(Circle().fill(accentColor.opacity(0.15)))
-
+            //                .background(Circle().fill(accentColor.opacity(0.15)))
+            
             Text(value)
                 .font(.system(size: 38, weight: .bold))
                 .foregroundStyle(accentColor)
-
+            
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secundaryLabel)
@@ -244,7 +255,7 @@ struct Home: View {
                 .fill(Color(uiColor: .secondarySystemBackground))
         )
     }
-
+    
     private var upNextSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
@@ -264,7 +275,7 @@ struct Home: View {
                         selectedUpNextBook = book
                     }
                 }
-
+                
                 NavigationLink(destination: Library()) {
                     VStack(spacing: 10) {
                         Image(systemName: "plus.circle")
@@ -283,11 +294,11 @@ struct Home: View {
             }
         }
     }
-
+    
     private func recentActivityRow(session: LiterarySession) -> some View {
         HStack(spacing: 12) {
             coverView(data: session.book.imageData, width: 40, height: 56)
-
+            
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.book.title)
                     .font(.headline)
@@ -296,9 +307,9 @@ struct Home: View {
                     .font(.subheadline)
                     .foregroundStyle(.secundaryLabel)
             }
-
+            
             Spacer()
-
+            
             Text("+\(session.pagesRead) pages")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.emphasis)
@@ -306,12 +317,12 @@ struct Home: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
     }
-
+    
     private func progressValue(for book: Book) -> Double {
         guard book.numberOfPages > 0 else { return 0 }
         return min(1, max(0, Double(book.progress ?? 0) / Double(book.numberOfPages)))
     }
-
+    
     private func activityDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = .current
@@ -319,37 +330,37 @@ struct Home: View {
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
-
+    
     private func calculateSessionStreak(from sessions: [LiterarySession]) -> Int {
         guard !sessions.isEmpty else { return 0 }
-
+        
         let calendar = Calendar.current
         let uniqueDays = Array(Set(sessions.map { calendar.startOfDay(for: $0.timesTamp) })).sorted(by: >)
-
+        
         guard let mostRecentDay = uniqueDays.first else { return 0 }
         let today = calendar.startOfDay(for: Date())
-
+        
         let daysFromToday = calendar.dateComponents([.day], from: mostRecentDay, to: today).day ?? 0
         if daysFromToday > 1 {
             return 0
         }
-
+        
         var streak = 1
         for index in 1..<uniqueDays.count {
             let previousDay = uniqueDays[index - 1]
             let currentDay = uniqueDays[index]
             let gap = calendar.dateComponents([.day], from: currentDay, to: previousDay).day ?? 0
-
+            
             if gap == 1 {
                 streak += 1
             } else {
                 break
             }
         }
-
+        
         return streak
     }
-
+    
     @ViewBuilder
     private func coverView(data: Data, width: CGFloat, height: CGFloat) -> some View {
         if let image = UIImage(data: data) {

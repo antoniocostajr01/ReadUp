@@ -74,6 +74,7 @@ struct SessionSummary: View {
         .background(.backgroundPrimary)
         .navigationTitle("Session Summary")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: setupForEditting)
     }
 

@@ -14,8 +14,6 @@ struct History: View {
     
     @State private var selectedSession: LiterarySession?
     
-    @State private var isShowModal: Bool = false
-    
     var body: some View {
         VStack{
             if sessions.isEmpty {
@@ -36,12 +34,8 @@ struct History: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.backgroundPrimary)
         .navigationTitle("History")
-        .sheet(item: $selectedSession ){ session in
-            NavigationStack{
-                SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, sessionToEdit: session )
-                    .presentationDragIndicator(.visible)
-                
-            }
+        .navigationDestination(item: $selectedSession) { session in
+            SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, sessionToEdit: session )
         }
         
     }
