@@ -4,14 +4,7 @@ struct ReadingSession: View {
     let selectedBook: Book
     @Binding var activeReadingBook: Book?
 
-    @State private var timeElapsed = 0
-    @State private var isShowingSummary = false
-    @State private var isShowingAlertValue = false
-    @State private var lastPageRead = ""
-    @State private var countdown = 3
-    @State private var isSessionRunning = false
-    @State private var timer: Timer?
-    @State private var countdownTimer: Timer?
+    @State private var viewModel = ReadingSessionViewModel()
 
     var body: some View {
         ScrollView {
@@ -39,12 +32,12 @@ struct ReadingSession: View {
                 timerCircle
 
                 HStack(spacing: 10) {
-                    smallMetricCard(title: "PAGES READ", value: "\(pagesReadInSession)")
+                    smallMetricCard(title: "PAGES READ", value: "\(viewModel.pagesReadInSession(selectedBook: selectedBook))")
                     smallMetricCard(title: "CURRENT PAGE", value: "\(selectedBook.progress ?? 0)")
                 }
 
                 Button {
-                    isShowingAlertValue = true
+                    viewModel.isShowingAlertValue = true
                 } label: {
                     Label("Finish", systemImage: "checkmark.circle")
                         .font(.system(.title3, weight: .semibold))
@@ -56,8 +49,8 @@ struct ReadingSession: View {
                                 .fill(Color.emphasis)
                         )
                 }
-                .disabled(!isSessionRunning)
-                .opacity(isSessionRunning ? 1 : 0.5)
+                .disabled(!viewModel.isSessionRunning)
+                .opacity(viewModel.isSessionRunning ? 1 : 0.5)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 18)
@@ -67,43 +60,37 @@ struct ReadingSession: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
-            startCountdown()
+            viewModel.startCountdown()
         }
         .onDisappear {
-            stopAllTimers()
+            viewModel.stopAllTimers()
         }
-        .alert("Which page did you leave off?", isPresented: $isShowingAlertValue) {
-            TextField("Page", text: $lastPageRead)
+        .alert("Which page did you leave off?", isPresented: $viewModel.isShowingAlertValue) {
+            TextField("Page", text: $viewModel.lastPageRead)
                 .keyboardType(.numberPad)
 
             Button("Confirm") {
-                if let page = Int(lastPageRead) {
+                if let page = Int(viewModel.lastPageRead) {
                     selectedBook.progress = page
-                    isShowingSummary = true
+                    viewModel.isShowingSummary = true
                 }
             }
 
             Button("Cancel", role: .cancel) {
-                lastPageRead = ""
+                viewModel.lastPageRead = ""
             }
         }
-        .navigationDestination(isPresented: $isShowingSummary) {
+        .navigationDestination(isPresented: $viewModel.isShowingSummary) {
             SessionSummary(
-                readingTime: timeElapsed,
+                readingTime: viewModel.timeElapsed,
                 currentBook: selectedBook,
-                pagesRead: Int(lastPageRead) ?? selectedBook.progress ?? 0,
+                pagesRead: Int(viewModel.lastPageRead) ?? selectedBook.progress ?? 0,
                 thoughts: "",
                 onSessionSaved: {
                     activeReadingBook = nil
                 }
             )
         }
-    }
-
-    private var pagesReadInSession: Int {
-        let current = selectedBook.progress ?? 0
-        let entered = Int(lastPageRead) ?? current
-        return max(0, entered - current)
     }
 
     private var coverView: some View {
@@ -127,7 +114,7 @@ struct ReadingSession: View {
                 .stroke(Color(uiColor: .quaternaryLabel), lineWidth: 10)
 
             Circle()
-                .trim(from: 0, to: min(CGFloat(timeElapsed % 3600) / 3600, 1))
+                .trim(from: 0, to: min(CGFloat(viewModel.timeElapsed % 3600) / 3600, 1))
                 .stroke(Color.emphasis, style: StrokeStyle(lineWidth: 10, lineCap: .round))
                 .rotationEffect(.degrees(-90))
 
@@ -135,12 +122,12 @@ struct ReadingSession: View {
                 .fill(Color(uiColor: .secondarySystemBackground))
                 .padding(24)
 
-            if isSessionRunning {
-                Text(timeString(from: timeElapsed))
+            if viewModel.isSessionRunning {
+                Text(viewModel.timeString(from: viewModel.timeElapsed))
                     .font(.system(size: 46, weight: .bold, design: .rounded))
                     .monospacedDigit()
             } else {
-                Text("\(countdown)")
+                Text("\(viewModel.countdown)")
                     .font(.system(size: 64, weight: .bold, design: .rounded))
                     .foregroundStyle(.emphasis)
             }
@@ -167,40 +154,5 @@ struct ReadingSession: View {
         )
     }
 
-    private func startCountdown() {
-        stopAllTimers()
-        countdown = 3
-        isSessionRunning = false
 
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
-            if countdown > 1 {
-                countdown -= 1
-            } else {
-                timer.invalidate()
-                countdownTimer = nil
-                isSessionRunning = true
-                startSessionTimer()
-            }
-        }
-    }
-
-    private func startSessionTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            timeElapsed += 1
-        }
-    }
-
-    private func stopAllTimers() {
-        timer?.invalidate()
-        countdownTimer?.invalidate()
-        timer = nil
-        countdownTimer = nil
-    }
-
-    private func timeString(from seconds: Int) -> String {
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let seconds = seconds % 60
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-    }
 }

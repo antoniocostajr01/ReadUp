@@ -15,10 +15,8 @@ struct BookDetails: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.dismiss) var dismiss
     
-    @State private var isShowingActionSheet = false
-    @State var isShowingAlert = false
+    @State private var viewModel = BookDetailsViewModel()
 
-    
     let book: Book
     
     var body: some View {
@@ -59,13 +57,13 @@ struct BookDetails: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button(role: .destructive) {
-                        isShowingAlert.toggle()
+                        viewModel.isShowingAlert.toggle()
                     } label: {
                         Label("Delete Book", systemImage: "trash.fill")
                     }
                     
                     Button{
-                        isShowingActionSheet = true
+                        viewModel.isShowingActionSheet = true
                         
                     } label: {
                         Label("Change Status", systemImage: "arrow.trianglehead.2.clockwise")
@@ -79,7 +77,7 @@ struct BookDetails: View {
         .background(.backgroundPrimary)
         .toolbar(.hidden, for: .tabBar)
         .ignoresSafeArea()
-        .confirmationDialog("Select a status to this book", isPresented: $isShowingActionSheet){
+        .confirmationDialog("Select a status to this book", isPresented: $viewModel.isShowingActionSheet){
             ForEach(BookStatus.allCases, id: \.self){enumStatus in
                 Button(enumStatus.rawValue){
                     book.status = enumStatus
@@ -87,30 +85,11 @@ struct BookDetails: View {
             }
             
         }
-        .alert("Are you sure you want to delete this book?", isPresented: $isShowingAlert) {
+        .alert("Are you sure you want to delete this book?", isPresented: $viewModel.isShowingAlert) {
             Button("Delete", role: .destructive) {
-                
                 do {
-                   //MARK: Revisar código com algum mentor
-                    let bookIdToDelete = book.id
-                    let predicate = #Predicate<LiterarySession> { session in
-                        session.book.id == bookIdToDelete
-                    }
-                    
-                    let descriptor = FetchDescriptor<LiterarySession>(predicate: predicate)
-                    
-                    let sessionsToDelete = try modelContext.fetch(descriptor)
-                    
-                    for session in sessionsToDelete {
-                        modelContext.delete(session)
-                    }
-                    
-                    modelContext.delete(book)
-                    
-                    try modelContext.save()
-                    
+                    try viewModel.deleteBook(book, context: modelContext)
                     dismiss()
-                    
                 } catch {
                     print("Falha ao deletar as sessões: \(error.localizedDescription)")
                 }
