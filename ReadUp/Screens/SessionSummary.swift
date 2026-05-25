@@ -1,178 +1,163 @@
-//
-//  SessionSummary.swift
-//  ReadUp
-//
-//  Created by Antonio Costa on 09/08/25.
-//
-
 import SwiftUI
 import SwiftData
 import Foundation
 
 struct SessionSummary: View {
-    
-    @Environment(\.modelContext)var modelContextSessions
-    
-    @Environment(\.dismiss)var dismiss
-    
-    @Query var sessions: [LiterarySession]
-    @Query var books: [Book]
-    
+    @Environment(\.modelContext) private var modelContextSessions
+    @Environment(\.dismiss) private var dismiss
+
     @State var readingTime: Int
-    
-    @State var navigateToSessionsHistory: Bool = false
-    
-    @State var wasSavedSession: Bool = false
-    
     @State var currentBook: Book
-    
     @State var pagesRead: Int
-    
     @State var thoughts: String = ""
-    
-    @Binding var dismissModal: Bool //CONTROLA MODAL, NAAAAOOO MEXER
-    
+
+    var onSessionSaved: (() -> Void)? = nil
     @State var sessionToEdit: LiterarySession?
-    
-    private func setupForEditting(){
+
+    private func setupForEditting() {
         if let session = sessionToEdit {
-            self.pagesRead = session.pagesRead
-            self.currentBook = session.book
-            self.thoughts = session.thoughts
-            self.readingTime = session.timeRead
+            pagesRead = session.pagesRead
+            currentBook = session.book
+            thoughts = session.thoughts
+            readingTime = session.timeRead
         }
     }
-    
+
+    private var completionPercentage: Int {
+        guard currentBook.numberOfPages > 0 else { return 0 }
+        let progress = Double(currentBook.progress ?? 0)
+        return Int(((progress / Double(currentBook.numberOfPages)) * 100).rounded())
+    }
+
+    private var sessionMinutes: Int {
+        max(1, readingTime / 60)
+    }
+
     var body: some View {
-        ScrollView{
-            Text("Reading Session Summary")
-                .font(.system(.title2, weight: .semibold))
-            
-            HStack(alignment: .center, spacing: 55){
-                TitleAndAuthorBook(bookAuthor: currentBook.author, bookTitle: currentBook.title)
-                
-                if let bookCover = UIImage(data: currentBook.imageData){
-                    Image(uiImage: bookCover)
-                        .resizable()
-                        .frame(width: 100, height: 143)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                headerCard
+
+                totalProgressCard
+
+                HStack(spacing: 10) {
+                    statCard(icon: "timer", title: "Session Time", value: "\(sessionMinutes) mins")
+                    statCard(icon: "chart.line.uptrend.xyaxis", title: "Total Completion", value: "\(completionPercentage)%")
                 }
-            }
-            .padding(.top, 16)
-            
-            
-            Text("Page progress")
-                .font(.system(.title3, weight: .semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 24)
-            
-            HStack(spacing: 48){
-                VStack{
-                    Text("\(currentBook.progress!)/\(currentBook.numberOfPages)")
-                    Text(timeString(from: readingTime))
-                }
-                
-                VStack(spacing: 16){
-                    Text("You already read")
-                        .font(.system(.title3, weight: .regular))
-                        .foregroundStyle(.secundaryLabel)
-                    VStack{
-                        var percentage: Int {
-                            let pagesRead = Double(currentBook.progress!)
-                            let totalPages = Double(currentBook.numberOfPages)
-                            guard totalPages > 0 else { return 0 }
-                            let progressPercentage = (pagesRead / totalPages) * 100
-                            return Int(progressPercentage.rounded())
-                        }
-                        Text("\(percentage)%")
-                            .font(.system(.largeTitle, weight: .bold))
-                            .padding(.top, 29)
-                            .padding(.bottom, 29)
-                            .padding(.leading, 13)
-                            .padding(.trailing, 13)
-                        
-                    }
-                    .frame(width: 120, height: 120)
+
+                Text("Final Thoughts")
+                    .font(.system(.title3, weight: .bold))
+
+                TextField("Capture any lingering thoughts from this session...", text: $thoughts, axis: .vertical)
+                    .lineLimit(5...10)
+                    .padding(12)
                     .background(
-                        RoundedRectangle(cornerRadius: 60)
-                            .stroke(.emphasis, lineWidth: 13)
-                            .foregroundStyle(.componentBackground)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color(uiColor: .secondarySystemBackground))
                     )
-                    
-                    Text("of the book")
-                        .font(.system(.title3, weight: .regular))
-                        .foregroundStyle(.secundaryLabel)
-                    
+
+                Button(action: saveSession) {
+                    Label("Save Session", systemImage: "square.and.arrow.down")
+                        .font(.system(.title3, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .fill(Color.emphasis)
+                        )
                 }
+                .padding(.top, 8)
             }
-            
-            Text("Write your thoughts (opcional)")
-                .font(.system(.title3, weight: .semibold))
-                .padding(.top, 30)
-            
-            TextField("More details about the task", text: $thoughts, axis: .vertical)
-                .lineLimit(5...10)
-                .padding(.vertical, 12)
-                .padding(.leading, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .foregroundStyle(.componentBackground)
-                )
-            
-        
-            Button(action:{
-        
-                saveSession()
-                navigateToSessionsHistory.toggle()
-                dismissModal = false
-                
-            }) {
-                Text("Save Session")
-                    .font(.system(.title3, weight: .semibold))
-                    .foregroundStyle(.componentBackground)
-                    .frame(width: 361, height: 61)
-                    .background(
-                        RoundedRectangle(cornerRadius: 50)
-                            .foregroundStyle(.emphasis)
-                    )
-            }
-            .padding(.top, 24)
+            .padding(16)
         }
-        .padding()
         .background(.backgroundPrimary)
+        .navigationTitle("Session Summary")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: setupForEditting)
     }
-        
-    private func timeString(from seconds: Int) -> String {
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let seconds = seconds % 60
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+
+    private var headerCard: some View {
+        HStack(spacing: 14) {
+            if let bookCover = UIImage(data: currentBook.imageData) {
+                Image(uiImage: bookCover)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 92, height: 132)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(currentBook.title)
+                    .font(.system(.title2, weight: .bold))
+                    .lineLimit(2)
+
+                Text(currentBook.author)
+                    .font(.title3)
+                    .foregroundStyle(.secundaryLabel)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
     }
-    
+
+    private var totalProgressCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Total Progress", systemImage: "book")
+                .font(.subheadline)
+                .foregroundStyle(.secundaryLabel)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(currentBook.progress ?? 0)")
+                    .font(.system(.largeTitle, weight: .bold))
+                    .foregroundStyle(.emphasis)
+                Text("/ \(currentBook.numberOfPages) pages")
+                    .font(.title3)
+                    .foregroundStyle(.secundaryLabel)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+    }
+
+    private func statCard(icon: String, title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, systemImage: icon)
+                .font(.subheadline)
+                .foregroundStyle(.secundaryLabel)
+
+            Text(value)
+                .font(.system(.title, weight: .bold))
+                .foregroundStyle(.emphasis)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+    }
+
     private func saveSession() {
         let session = LiterarySession(book: currentBook, pagesRead: pagesRead, progress: pagesRead, timeRead: readingTime, thoughts: thoughts)
         modelContextSessions.insert(session)
-        
-        print(session.book.title, session.timeRead, session.id, session.pagesRead)
-        
-        do{
-            try modelContextSessions.save()
-            
-            wasSavedSession = true
-            
-            dismissModal = false //COMPORTAMENTO DA MODAL, NÃO MEXER
-            
 
+        do {
+            try modelContextSessions.save()
+            onSessionSaved?()
+            dismiss()
         } catch {
             print("Failed to save session")
         }
     }
 }
-
-//
-//
-//#Preview {
-//    let bookTest = Book(title: "Book Teste", author: "Eu", numberOfPages: 245, details: "CIWEMMWFWEKFOW", status: .reading)
-//    SessionSummary(readingTime: 659, currentBook: bookTest)
-//}

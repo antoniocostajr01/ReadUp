@@ -11,18 +11,27 @@ struct HistoryEmptyState: View {
     
     
     var body: some View {
-        VStack(alignment: .center, spacing: 32){
-            
-            Image(.sadMascot)
-            VStack(alignment: .center, spacing: 8){
-                Text("No reading sessions yet")
-                    .font(Font.title.bold())
-                
-                Text("Choose a book you’re reading and start your first session to see your growth.")
-                    .multilineTextAlignment(.center)
-                
-            }
+        VStack(spacing: 14) {
+            Image(systemName: "clock.badge.questionmark")
+                .font(.system(size: 34, weight: .medium))
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
+
+            Text("No sessions yet")
+                .font(.system(.title3, weight: .semibold))
+                .foregroundStyle(Color(uiColor: .label))
+
+            Text("Start a reading session to build your history.")
+                .font(.subheadline)
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 28)
+        .padding(.horizontal, 18)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
     }
 }
 

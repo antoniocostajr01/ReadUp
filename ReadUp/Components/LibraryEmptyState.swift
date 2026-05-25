@@ -19,7 +19,6 @@ struct LibraryEmptyState: View {
         
         VStack(alignment: .center, spacing: 32){
                         
-            Image(.sadMascot)
             VStack(alignment: .center, spacing: 8){
                 Text(title)
                     .font(Font.title.bold())

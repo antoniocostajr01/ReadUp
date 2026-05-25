@@ -38,7 +38,7 @@ struct History: View {
         .navigationTitle("History")
         .sheet(item: $selectedSession ){ session in
             NavigationStack{
-                SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, dismissModal: .constant(false), sessionToEdit: session )
+                SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, sessionToEdit: session )
                     .presentationDragIndicator(.visible)
                 
             }
