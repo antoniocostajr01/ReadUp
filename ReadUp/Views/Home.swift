@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct Home: View {
+    @State private var viewModel = HomeViewModel()
     @State private var isShowingAlert = false
     @State private var activeReadingBook: Book?
     @State private var selectedSession: LiterarySession?
@@ -32,29 +33,6 @@ struct Home: View {
         books.filter { $0.status == .iWantToRead || $0.status == .rereading }
     }
     
-    private var averageMinutesPerDay: Int {
-        guard !sessions.isEmpty else { return 0 }
-        let totalMinutes = sessions.reduce(0) { $0 + ($1.timeRead / 60) }
-        return totalMinutes / sessions.count
-    }
-    
-    private let mockUserName = "Antonio"
-    
-    private var greetingText: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        if hour < 12 {
-            return "Bom dia, \(mockUserName)"
-        } else if hour < 18 {
-            return "Boa tarde, \(mockUserName)"
-        } else {
-            return "Boa noite, \(mockUserName)"
-        }
-    }
-    
-    private var currentSessionStreak: Int {
-        calculateSessionStreak(from: sessions)
-    }
-    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -63,8 +41,8 @@ struct Home: View {
                     .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    metricCard(value: "\(currentSessionStreak)", title: "DAY STREAK", icon: "flame.fill", accentColor: .orange)
-                    metricCard(value: "\(averageMinutesPerDay)", title: "AVG. MIN / SESSION", icon: "clock.fill", accentColor: .indigo)
+                    metricCard(value: "\(viewModel.currentSessionStreak(from: sessions))", title: "DAY STREAK", icon: "flame.fill", accentColor: .orange)
+                    metricCard(value: "\(viewModel.averageMinutesPerDay(from: sessions))", title: "AVG. MIN / SESSION", icon: "clock.fill", accentColor: .indigo)
                 }
                 
         
@@ -98,7 +76,7 @@ struct Home: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .navigationTitle(greetingText)
+        .navigationTitle(viewModel.greetingText)
         .background(.backgroundPrimary)
         .navigationDestination(item: $activeReadingBook) { book in
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
@@ -200,7 +178,7 @@ struct Home: View {
                 }
             }
             
-            ProgressView(value: progressValue(for: book))
+            ProgressView(value: viewModel.progressValue(for: book))
                 .tint(.emphasis)
             
             Button {
@@ -296,7 +274,7 @@ struct Home: View {
                 Text(session.book.title)
                     .font(.headline)
                     .lineLimit(1)
-                Text(activityDate(session.timesTamp))
+                Text(viewModel.activityDate(session.timesTamp))
                     .font(.subheadline)
                     .foregroundStyle(.secundaryLabel)
             }
@@ -311,48 +289,7 @@ struct Home: View {
         .padding(.vertical, 10)
     }
     
-    private func progressValue(for book: Book) -> Double {
-        guard book.numberOfPages > 0 else { return 0 }
-        return min(1, max(0, Double(book.progress ?? 0) / Double(book.numberOfPages)))
-    }
-    
-    private func activityDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-    
-    private func calculateSessionStreak(from sessions: [LiterarySession]) -> Int {
-        guard !sessions.isEmpty else { return 0 }
-        
-        let calendar = Calendar.current
-        let uniqueDays = Array(Set(sessions.map { calendar.startOfDay(for: $0.timesTamp) })).sorted(by: >)
-        
-        guard let mostRecentDay = uniqueDays.first else { return 0 }
-        let today = calendar.startOfDay(for: Date())
-        
-        let daysFromToday = calendar.dateComponents([.day], from: mostRecentDay, to: today).day ?? 0
-        if daysFromToday > 1 {
-            return 0
-        }
-        
-        var streak = 1
-        for index in 1..<uniqueDays.count {
-            let previousDay = uniqueDays[index - 1]
-            let currentDay = uniqueDays[index]
-            let gap = calendar.dateComponents([.day], from: currentDay, to: previousDay).day ?? 0
-            
-            if gap == 1 {
-                streak += 1
-            } else {
-                break
-            }
-        }
-        
-        return streak
-    }
+
     
     @ViewBuilder
     private func coverView(data: Data, width: CGFloat, height: CGFloat) -> some View {

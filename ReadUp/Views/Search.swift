@@ -1,36 +1,15 @@
 import SwiftUI
 
 struct Search: View {
-    @State private var searchText = ""
-    @State private var submittedQuery = ""
-    @State private var results: [SearchBook] = []
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    @State private var viewModel = SearchViewModel()
     @State private var selectedBook: SearchBook?
     @FocusState private var isSearchFocused: Bool
-
-    private let service = GoogleBooksService()
-
-    private let genres: [GenreItem] = [
-        .init(title: "Science Fiction", query: "science fiction books", icon: "sparkles"),
-        .init(title: "Philosophy", query: "philosophy books", icon: "brain.head.profile"),
-        .init(title: "History", query: "history books", icon: "building.columns"),
-        .init(title: "Mystery", query: "mystery books", icon: "magnifyingglass"),
-        .init(title: "Poetry", query: "poetry books", icon: "pencil.and.scribble"),
-        .init(title: "Design", query: "design books", icon: "pencil.and.ruler"),
-    ]
-
-    private let discoverQueries: [String] = [
-        "best seller books",
-        "classic novels",
-        "award winning books"
-    ]
 
     var body: some View {
         VStack(spacing: 12) {
             searchField
 
-            if submittedQuery.isEmpty {
+            if viewModel.submittedQuery.isEmpty {
                 discoveryView
             } else {
                 resultsView
@@ -41,10 +20,10 @@ struct Search: View {
         .background(.backgroundPrimary)
         .navigationTitle("Search")
         .sheet(item: $selectedBook) { book in
-            BookDetailsSheet(source: .search(book, service))
+            BookDetailsSheet(source: .search(book, viewModel.service))
         }
         .task {
-            await loadDiscoverBooksIfNeeded()
+            await viewModel.loadDiscoverBooksIfNeeded()
         }
     }
 
@@ -53,20 +32,18 @@ struct Search: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
 
-            TextField("Search books, authors, or ISBN", text: $searchText)
+            TextField("Search books, authors, or ISBN", text: $viewModel.searchText)
                 .foregroundStyle(Color(uiColor: .label))
                 .focused($isSearchFocused)
                 .submitLabel(.search)
                 .onSubmit {
-                    Task { await runSearch() }
+                    isSearchFocused = false
+                    Task { await viewModel.runSearch() }
                 }
 
-            if !searchText.isEmpty {
+            if !viewModel.searchText.isEmpty {
                 Button {
-                    searchText = ""
-                    submittedQuery = ""
-                    results = []
-                    errorMessage = nil
+                    viewModel.clearSearch()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(Color(uiColor: .tertiaryLabel))
@@ -74,13 +51,14 @@ struct Search: View {
             }
 
             Button {
-                Task { await runSearch() }
+                isSearchFocused = false
+                Task { await viewModel.runSearch() }
             } label: {
                 Image(systemName: "arrow.right.circle.fill")
                     .font(.system(size: 20))
                     .foregroundStyle(.emphasis)
             }
-            .disabled(searchText.trimmingCharacters(in: .whitespacesAndNewlines).count < 2)
+            .disabled(viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines).count < 2)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -101,10 +79,11 @@ struct Search: View {
                     .font(.system(.title2, weight: .bold))
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(genres) { genre in
+                    ForEach(viewModel.genres) { genre in
                         Button {
-                            searchText = genre.query
-                            Task { await runSearch(with: genre.query) }
+                            isSearchFocused = false
+                            viewModel.searchText = genre.query
+                            Task { await viewModel.runSearch(with: genre.query) }
                         } label: {
                             ZStack(alignment: .bottomLeading) {
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -134,20 +113,21 @@ struct Search: View {
                     Spacer()
 
                     Button("See All") {
-                        searchText = "best books"
-                        Task { await runSearch(with: "best books") }
+                        isSearchFocused = false
+                        viewModel.searchText = "best books"
+                        Task { await viewModel.runSearch(with: "best books") }
                     }
                     .foregroundStyle(.emphasis)
                 }
 
-                if discoverBooks.isEmpty {
+                if viewModel.discoverBooks.isEmpty {
                     ProgressView("Loading discovery...")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            ForEach(discoverBooks) { book in
+                            ForEach(viewModel.discoverBooks) { book in
                                 Button {
                                     selectedBook = book
                                 } label: {
@@ -188,19 +168,17 @@ struct Search: View {
         .scrollDismissesKeyboard(.immediately)
     }
 
-    @State private var discoverBooks: [SearchBook] = []
-
     private var resultsView: some View {
         Group {
-            if isLoading {
+            if viewModel.isLoading {
                 ProgressView("Searching books...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let errorMessage {
+            } else if let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView("Search failed", systemImage: "exclamationmark.triangle", description: Text(errorMessage))
-            } else if results.isEmpty {
+            } else if viewModel.results.isEmpty {
                 ContentUnavailableView("No books found", systemImage: "book.closed", description: Text("Try another title."))
             } else {
-                List(results) { book in
+                List(viewModel.results) { book in
                     Button {
                         selectedBook = book
                     } label: {
@@ -241,61 +219,9 @@ struct Search: View {
             }
         }
     }
-
-    private func runSearch(with forcedQuery: String? = nil) async {
-        let query = (forcedQuery ?? searchText).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard query.count >= 2 else { return }
-
-        isSearchFocused = false
-        submittedQuery = query
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            results = try await service.searchBooks(query: query)
-        } catch {
-            if let localizedError = error as? LocalizedError, let description = localizedError.errorDescription {
-                errorMessage = description
-            } else {
-                errorMessage = "Please check your connection and try again."
-            }
-        }
-
-        isLoading = false
-    }
-
-    private func loadDiscoverBooksIfNeeded() async {
-        guard discoverBooks.isEmpty else { return }
-
-        var merged: [SearchBook] = []
-        var ids = Set<String>()
-
-        for query in discoverQueries {
-            do {
-                let found = try await service.searchBooks(query: query)
-                for book in found where !ids.contains(book.id) {
-                    ids.insert(book.id)
-                    merged.append(book)
-                    if merged.count >= 12 {
-                        discoverBooks = merged
-                        return
-                    }
-                }
-            } catch {
-                continue
-            }
-        }
-
-        discoverBooks = merged
-    }
 }
 
-private struct GenreItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let query: String
-    let icon: String
-}
+
 
 #Preview {
     Search()
