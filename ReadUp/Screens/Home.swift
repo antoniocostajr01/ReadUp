@@ -58,23 +58,16 @@ struct Home: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-//                Text(greetingText)
-//                    .font(.system(.largeTitle, weight: .bold))
-//                    .frame(maxWidth: .infinity, alignment: .leading)
-//                    .padding(.top, 24)
-//                    .padding(.bottom, 24)
                 
                 currentlyReadingSection
+                    .padding(.top, 8)
                 
                 HStack(spacing: 12) {
                     metricCard(value: "\(currentSessionStreak)", title: "DAY STREAK", icon: "flame.fill", accentColor: .orange)
                     metricCard(value: "\(averageMinutesPerDay)", title: "AVG. MIN / SESSION", icon: "clock.fill", accentColor: .indigo)
                 }
                 
-                //                Text("Up Next")
-                //                    .font(.system(.title2, weight: .bold))
-                //
-                //                upNextSection
+        
                 
                 Text("Recent Activity")
                     .font(.system(.title2, weight: .bold))

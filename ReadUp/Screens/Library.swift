@@ -45,8 +45,8 @@ struct Library: View {
                 }
             }
         }
-        .navigationDestination(item: $selectedBook) { book in
-            BookDetails(book: book)
+        .sheet(item: $selectedBook) { book in
+            BookDetailsSheet(source: .library(book))
         }
         .background(.backgroundPrimary)
     }
@@ -132,4 +132,36 @@ struct Library: View {
                 .stroke(Color(uiColor: .separator), lineWidth: 0.5)
         )
     }
+}
+
+#Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Book.self, LiterarySession.self, configurations: config)
+
+    let sample1 = Book(
+        title: "The Hobbit",
+        author: "J.R.R. Tolkien",
+        numberOfPages: 310,
+        details: "A fantasy classic.",
+        status: .reading,
+        imageData: Data()
+    )
+
+    let sample2 = Book(
+        title: "Thinking, Fast and Slow",
+        author: "Daniel Kahneman",
+        numberOfPages: 499,
+        details: "Psychology and decision making.",
+        status: .iWantToRead,
+        imageData: Data()
+    )
+
+    container.mainContext.insert(sample1)
+    container.mainContext.insert(sample2)
+
+    return NavigationStack {
+        Library()
+            .environmentObject(AppTabState())
+    }
+    .modelContainer(container)
 }

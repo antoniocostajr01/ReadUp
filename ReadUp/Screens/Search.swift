@@ -6,6 +6,7 @@ struct Search: View {
     @State private var results: [SearchBook] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var selectedBook: SearchBook?
     @FocusState private var isSearchFocused: Bool
 
     private let service = GoogleBooksService()
@@ -39,6 +40,9 @@ struct Search: View {
         .padding(.top, 8)
         .background(.backgroundPrimary)
         .navigationTitle("Search")
+        .sheet(item: $selectedBook) { book in
+            BookDetailsSheet(source: .search(book, service))
+        }
         .task {
             await loadDiscoverBooksIfNeeded()
         }
@@ -144,7 +148,9 @@ struct Search: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(discoverBooks) { book in
-                                NavigationLink(destination: SearchBookDetails(book: book, service: service)) {
+                                Button {
+                                    selectedBook = book
+                                } label: {
                                     VStack(alignment: .leading, spacing: 8) {
                                         AsyncImage(url: book.thumbnailURL) { phase in
                                             switch phase {
@@ -171,6 +177,7 @@ struct Search: View {
                                     }
                                     .frame(width: 146, alignment: .leading)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -194,7 +201,9 @@ struct Search: View {
                 ContentUnavailableView("No books found", systemImage: "book.closed", description: Text("Try another title."))
             } else {
                 List(results) { book in
-                    NavigationLink(destination: SearchBookDetails(book: book, service: service)) {
+                    Button {
+                        selectedBook = book
+                    } label: {
                         HStack(spacing: 12) {
                             AsyncImage(url: book.thumbnailURL) { phase in
                                 switch phase {
@@ -222,6 +231,7 @@ struct Search: View {
                         }
                         .padding(.vertical, 4)
                     }
+                    .buttonStyle(.plain)
                     .listRowBackground(Color(uiColor: .secondarySystemBackground))
                 }
                 .listStyle(.plain)
