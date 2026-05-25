@@ -39,7 +39,7 @@ playground.xcworkspace
 .build/
 Carthage/Build/
 Dependencies/
-#Secrets
+Secrets
 .accio/
 fastlane/report.xml
 fastlane/Preview.html
