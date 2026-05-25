@@ -53,3 +53,5 @@ iOSInjectionProject/
 !*.xcworkspace/contents.xcworkspacedata
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
+ReadUp/Secrets.xcconfig
+*.xcuserstate

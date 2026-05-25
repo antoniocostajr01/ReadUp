@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct TabBar: View {
-    @State private var selectedTab = 0
+    @StateObject private var tabState = AppTabState()
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $tabState.selectedTab) {
             NavigationStack{
                 Home()
             }
@@ -52,6 +52,7 @@ struct TabBar: View {
             }
             .tag(4)
         }
+        .environmentObject(tabState)
     }
 }
 

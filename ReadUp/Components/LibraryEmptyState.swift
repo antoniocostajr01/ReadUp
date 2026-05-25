@@ -8,9 +8,6 @@
 import SwiftUI
 
 struct LibraryEmptyState: View {
-    
-    @State var showSheetNewBok: Bool = false
-    
     var title: String
     var details: String
     
@@ -27,24 +24,6 @@ struct LibraryEmptyState: View {
                     .multilineTextAlignment(.center)
                 
             }
-            
-            NavigationLink(destination: AddNewBook()){
-                HStack{
-                    Text("Add new book")
-                        .font(.system(.title3, weight: .semibold))
-                        .foregroundStyle(.componentBackground)
-                    Image(systemName: "plus")
-                        .font(.system(.title3, weight: .semibold))
-                        .foregroundStyle(.componentBackground)
-                }
-                .padding()
-                .frame(width: 361, height: 61)
-                .background(
-                    RoundedRectangle(cornerRadius: 50)
-                        .foregroundStyle(.emphasis)
-                )
-            }
-            
         }
     }
 }

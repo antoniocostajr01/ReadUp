@@ -9,39 +9,21 @@ import SwiftUI
 import SwiftData
 
 struct Library: View {
-    
-    @State private var searchText = ""
+    @EnvironmentObject private var tabState: AppTabState
     @Query var books: [Book]
-
 
     @State var selectedBook: Book?
     
     var body: some View {
             VStack{
+                addBookButton
+                    .padding(.top, 12)
+
                 if books.isEmpty {
                     LibraryEmptyState(title: "No books yet!", details: "Ready to give your mind a new adventure? Add your first book and start your reading journey!")
                 } else {
                     ScrollView{
-                    
-                        NavigationLink(destination: AddNewBook()){
-                            HStack{
-                                Text("Add new book")
-                                    .font(.system(.title3, weight: .semibold))
-                                    .foregroundStyle(.componentBackground)
-                                Image(systemName: "plus")
-                                    .font(.system(.title3, weight: .semibold))
-                                    .foregroundStyle(.componentBackground)
-                            }
-                            .padding()
-                            .frame(width: 361, height: 61)
-                            .background(
-                                RoundedRectangle(cornerRadius: 50)
-                                    .foregroundStyle(.emphasis)
-                            )
-                        }
-                        .padding(.top, 12)
-                        
-                        
+
                         let uniqueStatus = Set(books.map { $0.status })
                         
                         ForEach(Array(uniqueStatus), id: \.self) {status in
@@ -96,6 +78,26 @@ struct Library: View {
         
     }
 
+    private var addBookButton: some View {
+        Button {
+            tabState.goToSearchTab()
+        } label: {
+            HStack{
+                Text("Add new book")
+                    .font(.system(.title3, weight: .semibold))
+                    .foregroundStyle(.componentBackground)
+                Image(systemName: "plus")
+                    .font(.system(.title3, weight: .semibold))
+                    .foregroundStyle(.componentBackground)
+            }
+            .padding()
+            .frame(width: 361, height: 61)
+            .background(
+                RoundedRectangle(cornerRadius: 50)
+                    .foregroundStyle(.emphasis)
+            )
+        }
+    }
 }
 
 #Preview {
