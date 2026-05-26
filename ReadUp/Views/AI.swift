@@ -90,12 +90,8 @@ struct AIChatView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(viewModel.messages) { message in
-                            AIMessageBubble(message: message)
+                            AIMessageBubble(message: message, service: service)
                                 .id(message.id)
-                        }
-
-                        if viewModel.isThinking {
-                            typingIndicator
                         }
 
                         if viewModel.isSearchingRecommendations {
@@ -103,8 +99,8 @@ struct AIChatView: View {
                             recommendationsSkeletonSection
                         }
 
-                        if !viewModel.recommendedBooks.isEmpty {
-                            recommendationsSection
+                        if viewModel.isThinking {
+                            typingIndicator
                         }
                     }
                     .padding(.horizontal, 16)
@@ -187,52 +183,6 @@ struct AIChatView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
-    }
-
-    private var recommendationsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(isPortuguese ? "Recomendados para você" : "Recommended for you")
-                .font(.system(.title3, weight: .bold))
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(viewModel.recommendedBooks) { book in
-                        NavigationLink(destination: SearchBookDetails(book: book, service: service)) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                AsyncImage(url: book.thumbnailURL) { phase in
-                                    switch phase {
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    default:
-                                        Color(uiColor: .tertiarySystemFill)
-                                    }
-                                }
-                                .frame(width: 118, height: 170)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                                Text(book.title)
-                                    .font(.headline)
-                                    .foregroundStyle(Color(uiColor: .label))
-                                    .lineLimit(1)
-
-                                Text(book.author)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secundaryLabel)
-                                    .lineLimit(1)
-                            }
-                            .frame(width: 130, alignment: .leading)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemBackground))
         )
     }

@@ -103,7 +103,4 @@ struct BookDetails: View {
     }
     
 }
-//
-//#Preview {
-//    BookDetails(book: <#Book#>)
-//}
+

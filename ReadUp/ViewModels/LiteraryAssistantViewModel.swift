@@ -10,7 +10,6 @@ final class LiteraryAssistantViewModel: ObservableObject {
                       ? "Oi! Posso te ajudar com livros, leitura e recomendações personalizadas."
                       : "Hi! I can help with books, reading habits, and personalized recommendations.")
     ]
-    @Published var recommendedBooks: [SearchBook] = []
     @Published var isThinking = false
     @Published var isSearchingRecommendations = false
 
@@ -22,12 +21,14 @@ final class LiteraryAssistantViewModel: ObservableObject {
 
     private let model = SystemLanguageModel.default
     private lazy var session = LanguageModelSession(instructions: """
-    You are a literary assistant for a reading app. You act as a highly knowledgeable literary guide.
-    Your main goal is to guide the user through literary questions, help them find books, explain literary themes, and discuss authors or genres.
-    You must ONLY talk about books, literature, authors, genres, reading habits, and recommendations.
-    If the user asks about any non-literary topic, politely refuse and redirect to books.
-    Format your responses naturally in plain text without excessive or weird markdown. You may use simple bolding for book titles.
-    Keep responses concise, warm, and useful. When recommending books, ask about their taste if needed.
+    You are a friendly, conversational, and highly knowledgeable literary assistant for a reading app. 
+    Act like a passionate bookworm chatting with a friend.
+    Guide the user through literary questions, help them find books, explain literary themes, and discuss authors or genres naturally.
+    Keep your responses human-like, warm, engaging, and concise. Avoid robotic or overly formal language.
+    Only discuss books, literature, authors, genres, reading habits, and recommendations. 
+    If asked about non-literary topics, politely and naturally steer the conversation back to books.
+    Use plain text without excessive or weird markdown. You may use simple bolding for book titles.
+    When recommending books, mention why you think they'd like them based on the context.
     CRITICAL: ALWAYS respond in the EXACT same language that the user used in their most recent message. For example, if they speak Portuguese, reply in Portuguese. If they speak English, reply in English.
     """)
     
@@ -46,43 +47,32 @@ final class LiteraryAssistantViewModel: ObservableObject {
         // Pequeno atraso para garantir que a animação de "pensando" apareça sempre, mesmo em operações rápidas
         try? await Task.sleep(nanoseconds: 600_000_000)
 
-        guard isLiteraryTopic(text) else {
-            let refusal = appLanguageCode == "pt"
-            ? "Eu só posso conversar sobre livros e literatura. Me diga quais gêneros, autores ou temas você gosta."
-            : "I can only talk about books and literature. Tell me what genres, authors, or themes you enjoy."
-            messages.append(AIChatMessage(role: .assistant, text: refusal))
-            isThinking = false
-            return
-        }
-
         let shouldFetchRecommendations = isRecommendationIntent(text)
         if shouldFetchRecommendations {
-            recommendedBooks = []
             isSearchingRecommendations = true
         }
 
         let assistantReply = await generateAssistantReply(for: text)
-        messages.append(AIChatMessage(role: .assistant, text: assistantReply))
-        isThinking = false
+        var newAssistantMessage = AIChatMessage(role: .assistant, text: assistantReply)
 
-        guard shouldFetchRecommendations else { return }
-
-        let queries = await recommendationQueries(from: text)
-        let books = await fetchRecommendations(queries: queries, booksService: booksService)
-        recommendedBooks = books
-        isSearchingRecommendations = false
-
-        if books.isEmpty {
-            let emptyText = appLanguageCode == "pt"
-            ? "Ainda não encontrei boas opções agora. Tente me dizer gênero favorito, ritmo e estilo que você gosta."
-            : "I couldn't find strong matches right now. Try giving me a favorite genre, pace, and mood."
-            messages.append(AIChatMessage(role: .assistant, text: emptyText))
-        } else {
-            let foundText = appLanguageCode == "pt"
-            ? "Encontrei algumas opções para seu gosto. Abra qualquer livro para ver detalhes e adicionar à biblioteca."
-            : "I found some options for your taste. Open any book to see details and add it to your library."
-            messages.append(AIChatMessage(role: .assistant, text: foundText))
+        if shouldFetchRecommendations {
+            let queries = await recommendationQueries(from: text)
+            let books = await fetchRecommendations(queries: queries, booksService: booksService)
+            
+            if books.isEmpty {
+                let emptyText = appLanguageCode == "pt"
+                ? " Ainda não encontrei boas opções no momento. Tente me dizer gênero favorito, ritmo e estilo que você gosta."
+                : " I couldn't find strong matches right now. Try giving me a favorite genre, pace, and mood."
+                newAssistantMessage = AIChatMessage(role: .assistant, text: assistantReply + emptyText)
+            } else {
+                newAssistantMessage.recommendedBooks = books
+            }
+            
+            isSearchingRecommendations = false
         }
+        
+        messages.append(newAssistantMessage)
+        isThinking = false
     }
 
     private func isLiteraryTopic(_ text: String) -> Bool {
@@ -129,8 +119,7 @@ final class LiteraryAssistantViewModel: ObservableObject {
                 continue
             }
         }
-        
-        // Se as queries falharam ou não retornaram nada, faça uma busca fallback robusta
+
         if merged.isEmpty {
             let fallbackQuery = appLanguageCode == "pt" ? "livros mais lidos best sellers" : "best selling popular books"
             do {
@@ -227,5 +216,6 @@ struct AIChatMessage: Identifiable {
 
     let id = UUID()
     let role: Role
-    let text: String
+    var text: String
+    var recommendedBooks: [SearchBook]?
 }

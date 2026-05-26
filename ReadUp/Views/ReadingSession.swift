@@ -31,9 +31,23 @@ struct ReadingSession: View {
 
                 timerCircle
 
-                HStack(spacing: 10) {
-                    SmallMetricCard(title: "PAGES READ", value: "\(viewModel.pagesReadInSession(selectedBook: selectedBook))")
+                VStack(spacing: 12) {
                     SmallMetricCard(title: "CURRENT PAGE", value: "\(selectedBook.progress ?? 0)")
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("THOUGHTS")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secundaryLabel)
+                            .tracking(1)
+                        
+                        TextField("Write your thoughts here...", text: $viewModel.thoughts, axis: .vertical)
+                            .lineLimit(3...6)
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(Color(uiColor: .secondarySystemBackground))
+                            )
+                    }
                 }
 
                 Button {
@@ -85,7 +99,7 @@ struct ReadingSession: View {
                 readingTime: viewModel.timeElapsed,
                 currentBook: selectedBook,
                 pagesRead: Int(viewModel.lastPageRead) ?? selectedBook.progress ?? 0,
-                thoughts: "",
+                thoughts: viewModel.thoughts,
                 onSessionSaved: {
                     activeReadingBook = nil
                 }

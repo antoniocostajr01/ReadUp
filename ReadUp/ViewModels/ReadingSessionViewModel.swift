@@ -10,16 +10,11 @@ final class ReadingSessionViewModel {
     var lastPageRead = ""
     var countdown = 3
     var isSessionRunning = false
+    var thoughts = ""
     
     private var timer: Timer?
     private var countdownTimer: Timer?
     
-    func pagesReadInSession(selectedBook: Book) -> Int {
-        let current = selectedBook.progress ?? 0
-        let entered = Int(lastPageRead) ?? current
-        return max(0, entered - current)
-    }
-
     func startCountdown() {
         stopAllTimers()
         countdown = 3
