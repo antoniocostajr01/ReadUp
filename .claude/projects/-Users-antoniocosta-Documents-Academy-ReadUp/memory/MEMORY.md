@@ -1,0 +1,2 @@
+- [User profile](user_profile.md) — iOS dev student, wants tutoring not code edits
+- [Collaboration mode](feedback_tutor_mode.md) — Tutor/mentor only; no code changes unless explicitly requested

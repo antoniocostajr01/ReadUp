@@ -2,16 +2,16 @@ import Foundation
 import FoundationModels
 import SwiftUI
 
-@MainActor
-final class LiteraryAssistantViewModel: ObservableObject {
-    @Published var inputText = ""
-    @Published var messages: [AIChatMessage] = [
+@Observable
+final class LiteraryAssistantViewModel {
+    var inputText = ""
+    var messages: [AIChatMessage] = [
         AIChatMessage(role: .assistant, text: Locale.current.language.languageCode?.identifier == "pt"
                       ? "Oi! Posso te ajudar com livros, leitura e recomendações personalizadas."
                       : "Hi! I can help with books, reading habits, and personalized recommendations.")
     ]
-    @Published var isThinking = false
-    @Published var isSearchingRecommendations = false
+    var isThinking = false
+    var isSearchingRecommendations = false
 
     private var appLanguageCode: String {
         guard let preferred = Locale.preferredLanguages.first else { return "en" }
@@ -20,7 +20,7 @@ final class LiteraryAssistantViewModel: ObservableObject {
     }
 
     private let model = SystemLanguageModel.default
-    private lazy var session = LanguageModelSession(instructions: """
+    private var session = LanguageModelSession(instructions: """
     You are a friendly, conversational, and highly knowledgeable literary assistant for a reading app. 
     Act like a passionate bookworm chatting with a friend.
     Guide the user through literary questions, help them find books, explain literary themes, and discuss authors or genres naturally.

@@ -2,59 +2,83 @@ import SwiftUI
 import FoundationModels
 
 struct AI: View {
-    private var isPortuguese: Bool {
-        Locale.current.language.languageCode?.identifier == "pt"
-    }
+    
+    @State private var suggestedPrompts: [String] = []
+    @State private var isLoading: Bool = true
+    @State private var isPulsating: Bool = false
+    @State private var navigateToChat: Bool = false
+    @State private var selectedPrompt: String? = nil
+    
+    @State private var session: LanguageModelSession = {
+        let deviceLanguage = Locale.preferredLanguages.first ?? "en"
 
-    private var starterPrompts: [String] {
-        isPortuguese
-        ? [
-            "Me recomende livros de fantasia",
-            "Quero livros parecidos com 1984",
-            "Sou iniciante em ficção científica"
-        ]
-        : [
-            "Recommend fantasy books",
-            "Suggest books similar to 1984",
-            "I'm new to science fiction"
-        ]
-    }
+        return LanguageModelSession(instructions: """
+            You MUST generate the prompts in the language corresponding to this locale code: \(deviceLanguage).
+
+            ROLE: You are a librarian assistant inside a reading-tracker app. Your sole purpose is to generate exactly 3 short starter prompts that a reader would ask a real librarian.
+
+            WHAT MAKES A GOOD PROMPT:
+            - Direct, practical requests a person would say at a library counter.
+            - Asking for book recommendations by genre, mood, length, or audience.
+            - Asking for books similar to a well-known title or author.
+            - Asking for help choosing what to read next based on concrete criteria.
+
+            WHAT TO AVOID:
+            - Conversational or personal questions ("What do you think about...", "Do you like...").
+            - Anything that requires subjective opinion, feelings, or debate.
+            - Reading tips, habits, or productivity advice ("How to read faster", "How to build a reading habit").
+            - Greetings, introductions, or filler text of any kind.
+
+            OUTPUT FORMAT:
+            - Exactly 3 prompts, each on its own line.
+            - No numbering, no bullet points, no quotes, no extra text.
+            - Each prompt must be under 8 words.
+            - Vary the category across the 3 prompts (e.g. one by genre, one by similarity, one by criteria).
+        """)
+    }()
+  
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
 
-                Text(isPortuguese ? "Converse sobre livros, descubra recomendações e encontre seu próximo título." : "Talk about books, get recommendations, and find your next read.")
+                Text("Pergunte como faria a um bibliotecário: peça indicações, descubra livros parecidos ou encontre sua próxima leitura.")
                     .foregroundStyle(.secundaryLabel)
 
-                CapabilityCard(icon: "book.closed.fill", title: isPortuguese ? "Recomendações" : "Recommendations", description: isPortuguese ? "A IA entende seu gosto e sugere livros para você." : "The assistant understands your taste and suggests books.")
-                CapabilityCard(icon: "person.text.rectangle.fill", title: isPortuguese ? "Conversa Literária" : "Literary Chat", description: isPortuguese ? "Fale sobre autores, gêneros, ritmo de leitura e temas." : "Talk about authors, genres, reading pace, and themes.")
-                CapabilityCard(icon: "plus.circle.fill", title: isPortuguese ? "Adicionar à Biblioteca" : "Add to Library", description: isPortuguese ? "Veja capas, abra detalhes e adicione livros com status." : "View covers, open details, and add books with status.")
-
-                Text(isPortuguese ? "Perguntas prontas" : "Quick prompts")
+                Text("Sugestões rápidas")
                     .font(.headline)
-
+                    .padding(.top, 24)
+                
                 VStack(spacing: 8) {
-                    ForEach(starterPrompts, id: \.self) { prompt in
-                        NavigationLink(destination: AIChatView(initialPrompt: prompt)) {
-                            HStack {
-                                Text(prompt)
-                                    .multilineTextAlignment(.leading)
-                                Spacer()
-                                Image(systemName: "arrow.right.circle.fill")
-                            }
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(Color(uiColor: .secondarySystemBackground))
-                            )
+                    if isLoading {
+                        VStack(spacing: 16) {
+                            Image(systemName: "apple.intelligence")
+                                .font(.system(size: 32, weight: .regular))
+                                .foregroundStyle(.emphasis)
+                                .symbolEffect(.pulse, options: .repeating, value: isPulsating)
+                                .onAppear { isPulsating.toggle() }
+                            
+                            Text("Pensando em boas perguntas...")
+                                .font(.subheadline)
+                                .foregroundStyle(.secundaryLabel)
                         }
-                        .foregroundStyle(Color(uiColor: .label))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 32)
+                        .transition(.opacity)
+                    } else {
+                        ForEach(suggestedPrompts, id: \.self) { prompt in
+                            AIQuickPromptCard(promptText: prompt) {
+                                selectedPrompt = prompt
+                                navigateToChat = true
+                            }
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
                     }
                 }
+                .animation(.easeOut(duration: 0.6), value: isLoading)
 
-                NavigationLink(destination: AIChatView(initialPrompt: nil)) {
-                    Text(isPortuguese ? "Iniciar chat" : "Start chat")
+                NavigationLink(destination: AIChatView()) {
+                    Text("Começar conversa")
                         .font(.system(.headline, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -64,189 +88,98 @@ struct AI: View {
                                 .fill(Color.emphasis)
                         )
                 }
+                .padding(.top, 16)
             }
             .padding(16)
         }
         .background(.backgroundPrimary)
         .navigationTitle("IA")
+        .navigationDestination(isPresented: $navigateToChat) {
+            AIChatView(initialPrompt: selectedPrompt)
+        }
+        .task {
+            await fetchStarterPrompts()
+        }
     }
+    
+    func fetchStarterPrompts() async {
+        guard suggestedPrompts.isEmpty else { return }
+        
+        isLoading = true
+        
+        // Verifica se o modelo do Apple Intelligence está disponível antes de executar
+        guard SystemLanguageModel.default.isAvailable else {
+            // Se não estiver (ex: Simulator, dispositivo não suportado ou baixando o modelo),
+            // usa o fallback instantaneamente, sem gerar erro no console.
+            await MainActor.run {
+                self.suggestedPrompts = ["Me indique livros de aventura", "Livros parecidos com 1984", "Um clássico curto para iniciantes"]
+                self.isLoading = false
+            }
+            return
+        }
+        
+        do {
+            let response = try await session.respond(to: "Generate 3 starter prompts.").content
+            
+            let unwantedCharacters = CharacterSet(charactersIn: "*\"-•–—")
+                .union(.decimalDigits)
+                .union(CharacterSet(charactersIn: ".):"))
 
+            let prompts = response.components(separatedBy: .newlines)
+                .map { line in
+                    var cleaned = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                    while let first = cleaned.unicodeScalars.first,
+                          unwantedCharacters.contains(first) || first == "-" {
+                        cleaned = String(cleaned.dropFirst())
+                            .trimmingCharacters(in: .whitespaces)
+                    }
+                    return cleaned.trimmingCharacters(in: unwantedCharacters)
+                }
+                .filter { !$0.isEmpty }
+                .prefix(3)
+            
+            await MainActor.run {
+                self.suggestedPrompts = Array(prompts)
+                self.isLoading = false
+            }
+        } catch {
+            print("Erro ao gerar sugestões: \(error)")
+            await MainActor.run {
+                self.suggestedPrompts = ["Me indique livros de aventura", "Livros parecidos com 1984", "Um clássico curto para iniciantes"]
+                self.isLoading = false
+            }
+        }
+    }
 }
 
-struct AIChatView: View {
-    @StateObject private var viewModel = LiteraryAssistantViewModel()
-    @FocusState private var isInputFocused: Bool
-
-    private let service = GoogleBooksService()
-    let initialPrompt: String?
-
-    private var isPortuguese: Bool {
-        Locale.current.language.languageCode?.identifier == "pt"
-    }
-
+struct AIQuickPromptCard: View {
+    let promptText: String
+    let action: () -> Void
+    
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        ForEach(viewModel.messages) { message in
-                            AIMessageBubble(message: message, service: service)
-                                .id(message.id)
-                        }
-
-                        if viewModel.isSearchingRecommendations {
-                            searchingRecommendationsCard
-                            recommendationsSkeletonSection
-                        }
-
-                        if viewModel.isThinking {
-                            typingIndicator
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
-                    .padding(.bottom, 20)
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .simultaneousGesture(
-                    DragGesture().onChanged { _ in
-                        isInputFocused = false
-                    }
-                )
-                .onTapGesture {
-                    isInputFocused = false
-                }
-                .onChange(of: viewModel.messages.count) { _, _ in
-                    if let last = viewModel.messages.last {
-                        withAnimation {
-                            proxy.scrollTo(last.id, anchor: .bottom)
-                        }
-                    }
-                }
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "apple.intelligence")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.emphasis)
+                
+                Text(promptText)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .multilineTextAlignment(.leading)
+                    .foregroundColor(Color(uiColor: .label))
+                
+                Spacer(minLength: 0)
             }
-
-            composer
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
-                .padding(.bottom, 8)
-                .background(.thinMaterial)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(uiColor: .secondarySystemBackground))
+            )
         }
-        .background(.backgroundPrimary)
-        .navigationTitle(isPortuguese ? "Chat Literário" : "Literary Chat")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
-        .onAppear {
-            if let initialPrompt, viewModel.messages.count == 1 {
-                Task {
-                    await viewModel.sendUserMessage(initialPrompt, booksService: service)
-                }
-            }
-        }
-    }
-
-    private var composer: some View {
-        HStack(spacing: 8) {
-            TextField(isPortuguese ? "Pergunte sobre livros..." : "Ask about books...", text: $viewModel.inputText, axis: .vertical)
-                .lineLimit(1...4)
-                .focused($isInputFocused)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(uiColor: .secondarySystemBackground))
-                )
-
-            Button {
-                Task { await viewModel.sendMessage(booksService: service) }
-            } label: {
-                Image(systemName: "paperplane.fill")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 42, height: 42)
-                    .background(Circle().fill(Color.emphasis))
-            }
-            .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isThinking)
-            .opacity((viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isThinking) ? 0.5 : 1)
-        }
-    }
-
-
-    private var typingIndicator: some View {
-        HStack(spacing: 8) {
-            ProgressView()
-                .tint(.emphasis)
-            Text(isPortuguese ? "Pensando..." : "Thinking...")
-                .font(.subheadline)
-                .foregroundStyle(.secundaryLabel)
-            Spacer()
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
-    }
-
-    private var searchingRecommendationsCard: some View {
-        HStack(spacing: 10) {
-            ProgressView()
-                .tint(.emphasis)
-            Text(isPortuguese ? "Buscando recomendações para você..." : "Searching recommendations for you...")
-                .font(.subheadline)
-                .foregroundStyle(.secundaryLabel)
-            Spacer()
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
-    }
-
-    private var recommendationsSkeletonSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(isPortuguese ? "Preparando sugestões..." : "Preparing suggestions...")
-                .font(.system(.title3, weight: .bold))
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(0..<4, id: \.self) { _ in
-                        VStack(alignment: .leading, spacing: 8) {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color(uiColor: .tertiarySystemFill))
-                                .frame(width: 118, height: 170)
-
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .fill(Color(uiColor: .tertiarySystemFill))
-                                .frame(width: 110, height: 12)
-
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .fill(Color(uiColor: .tertiarySystemFill))
-                                .frame(width: 80, height: 10)
-                        }
-                        .frame(width: 130, alignment: .leading)
-                        .redacted(reason: .placeholder)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
-    }
-
-    private func sendMessage() async {
-        let message = viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !message.isEmpty else { return }
-
-        viewModel.inputText = ""
-        await viewModel.sendUserMessage(message, booksService: service)
+        .buttonStyle(.plain)
     }
 }
-
-
 
 #Preview {
     NavigationStack {
