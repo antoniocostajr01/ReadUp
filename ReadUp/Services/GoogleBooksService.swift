@@ -45,7 +45,7 @@ struct GoogleBooksService {
 
         var components = URLComponents(string: "https://www.googleapis.com/books/v1/volumes")
         components?.queryItems = [
-            URLQueryItem(name: "q", value: "intitle:\(cleanedQuery)"),
+            URLQueryItem(name: "q", value: cleanedQuery),
             URLQueryItem(name: "maxResults", value: "20"),
             URLQueryItem(name: "orderBy", value: "relevance"),
             URLQueryItem(name: "key", value: apiKey)

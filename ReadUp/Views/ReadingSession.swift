@@ -5,69 +5,67 @@ struct ReadingSession: View {
     @Binding var activeReadingBook: Book?
 
     @State private var viewModel = ReadingSessionViewModel()
+    @State private var showValidationError = false
+    @State private var validationMessage = ""
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                coverView
+        VStack(spacing: 24) {
+            Spacer()
 
-                VStack(spacing: 4) {
-                    Text("READING SESSION")
-                        .font(.caption)
-                        .foregroundStyle(.emphasis)
-                        .tracking(1.2)
+            coverView
 
-                    Text(selectedBook.title)
-                        .font(.system(.largeTitle, weight: .bold))
-                        .multilineTextAlignment(.center)
+            VStack(spacing: 4) {
+                Text("READING SESSION")
+                    .font(.caption)
+                    .foregroundStyle(.emphasis)
+                    .tracking(1.2)
 
-                    Text(selectedBook.author)
-                        .font(.title3)
-                        .italic()
-                        .foregroundStyle(.secundaryLabel)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 16)
+                Text(selectedBook.title)
+                    .font(.system(.title, weight: .bold))
+                    .multilineTextAlignment(.center)
 
-                timerCircle
-
-                VStack(spacing: 12) {
-                    SmallMetricCard(title: "CURRENT PAGE", value: "\(selectedBook.progress ?? 0)")
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("THOUGHTS")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secundaryLabel)
-                            .tracking(1)
-                        
-                        TextField("Write your thoughts here...", text: $viewModel.thoughts, axis: .vertical)
-                            .lineLimit(3...6)
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(Color(uiColor: .secondarySystemBackground))
-                            )
-                    }
-                }
-
-                Button {
-                    viewModel.isShowingAlertValue = true
-                } label: {
-                    Label("Finish", systemImage: "checkmark.circle")
-                        .font(.system(.title3, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color.emphasis)
-                        )
-                }
-                .disabled(!viewModel.isSessionRunning)
-                .opacity(viewModel.isSessionRunning ? 1 : 0.5)
+                Text(selectedBook.author)
+                    .font(.title3)
+                    .italic()
+                    .foregroundStyle(.secundaryLabel)
+                    .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 18)
+
+            // Timer simples sem círculo de progresso
+            VStack(spacing: 4) {
+                if viewModel.isSessionRunning {
+                    Text(viewModel.timeString(from: viewModel.timeElapsed))
+                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                } else {
+                    Text("\(viewModel.countdown)")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundStyle(.emphasis)
+                }
+
+                SmallMetricCard(title: "CURRENT PAGE", value: "\(selectedBook.progress ?? 0)")
+            }
+
+            Spacer()
+
+            Button {
+                viewModel.isShowingAlertValue = true
+            } label: {
+                Label("Finish", systemImage: "checkmark.circle")
+                    .font(.system(.title3, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.emphasis)
+                    )
+            }
+            .disabled(!viewModel.isSessionRunning)
+            .opacity(viewModel.isSessionRunning ? 1 : 0.5)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
         .background(.backgroundPrimary)
         .navigationTitle("Reading Session")
@@ -85,6 +83,22 @@ struct ReadingSession: View {
 
             Button("Confirm") {
                 if let page = Int(viewModel.lastPageRead) {
+                    let currentProgress = selectedBook.progress ?? 0
+
+                    if page < currentProgress {
+                        validationMessage = "You can't go back! Your current progress is page \(currentProgress)."
+                        showValidationError = true
+                        return
+                    }
+
+                    if page > selectedBook.numberOfPages {
+                        validationMessage = "This book only has \(selectedBook.numberOfPages) pages."
+                        showValidationError = true
+                        return
+                    }
+
+                    // Salva progresso anterior antes de atualizar
+                    viewModel.previousProgress = currentProgress
                     selectedBook.progress = page
                     viewModel.isShowingSummary = true
                 }
@@ -94,12 +108,20 @@ struct ReadingSession: View {
                 viewModel.lastPageRead = ""
             }
         }
+        .alert("Invalid Page", isPresented: $showValidationError) {
+            Button("OK", role: .cancel) {
+                viewModel.lastPageRead = ""
+                viewModel.isShowingAlertValue = true
+            }
+        } message: {
+            Text(validationMessage)
+        }
         .navigationDestination(isPresented: $viewModel.isShowingSummary) {
             SessionSummary(
                 readingTime: viewModel.timeElapsed,
                 currentBook: selectedBook,
                 pagesRead: Int(viewModel.lastPageRead) ?? selectedBook.progress ?? 0,
-                thoughts: viewModel.thoughts,
+                previousProgress: viewModel.previousProgress,
                 onSessionSaved: {
                     activeReadingBook = nil
                 }
@@ -117,39 +139,8 @@ struct ReadingSession: View {
                 Color(uiColor: .tertiarySystemFill)
             }
         }
-        .frame(width: 130, height: 184)
+        .frame(width: 120, height: 170)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 3)
     }
-
-    private var timerCircle: some View {
-        ZStack {
-            Circle()
-                .stroke(Color(uiColor: .quaternaryLabel), lineWidth: 10)
-
-            Circle()
-                .trim(from: 0, to: min(CGFloat(viewModel.timeElapsed % 3600) / 3600, 1))
-                .stroke(Color.emphasis, style: StrokeStyle(lineWidth: 10, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-
-            Circle()
-                .fill(Color(uiColor: .secondarySystemBackground))
-                .padding(24)
-
-            if viewModel.isSessionRunning {
-                Text(viewModel.timeString(from: viewModel.timeElapsed))
-                    .font(.system(size: 46, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-            } else {
-                Text("\(viewModel.countdown)")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundStyle(.emphasis)
-            }
-        }
-        .frame(width: 300, height: 300)
-        .padding(.top, 8)
-    }
-
-
-
 }

@@ -21,6 +21,7 @@ struct Search: View {
         .navigationTitle("Search")
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .search(book, viewModel.service))
+                .presentationDragIndicator(.visible)
         }
         .task {
             await viewModel.loadDiscoverBooksIfNeeded()

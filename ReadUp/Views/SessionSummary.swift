@@ -9,10 +9,9 @@ struct SessionSummary: View {
     @State private var viewModel: SessionSummaryViewModel
     var onSessionSaved: (() -> Void)? = nil
 
-    init(readingTime: Int, currentBook: Book, pagesRead: Int, thoughts: String = "", onSessionSaved: (() -> Void)? = nil, sessionToEdit: LiterarySession? = nil) {
+    init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, onSessionSaved: (() -> Void)? = nil, sessionToEdit: LiterarySession? = nil) {
         self.onSessionSaved = onSessionSaved
-        self._viewModel = State(initialValue: SessionSummaryViewModel(readingTime: readingTime, currentBook: currentBook, pagesRead: pagesRead, sessionToEdit: sessionToEdit))
-        self.viewModel.thoughts = thoughts
+        self._viewModel = State(initialValue: SessionSummaryViewModel(readingTime: readingTime, currentBook: currentBook, pagesRead: pagesRead, previousProgress: previousProgress, sessionToEdit: sessionToEdit))
     }
 
     var body: some View {
@@ -23,7 +22,11 @@ struct SessionSummary: View {
                 totalProgressCard
 
                 HStack(spacing: 10) {
+                    StatCard(icon: "book.pages", title: "Pages Read", value: "\(viewModel.sessionPagesRead)")
                     StatCard(icon: "timer", title: "Session Time", value: "\(viewModel.sessionMinutes) mins")
+                }
+
+                HStack(spacing: 10) {
                     StatCard(icon: "chart.line.uptrend.xyaxis", title: "Total Completion", value: "\(viewModel.completionPercentage)%")
                 }
 
@@ -114,7 +117,4 @@ struct SessionSummary: View {
                 .fill(Color(uiColor: .secondarySystemBackground))
         )
     }
-
-
-
 }

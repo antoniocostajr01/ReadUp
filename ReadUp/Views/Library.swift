@@ -47,6 +47,7 @@ struct Library: View {
         }
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .library(book))
+                .presentationDragIndicator(.visible)
         }
         .background(.backgroundPrimary)
     }

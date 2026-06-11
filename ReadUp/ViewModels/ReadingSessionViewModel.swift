@@ -10,7 +10,7 @@ final class ReadingSessionViewModel {
     var lastPageRead = ""
     var countdown = 3
     var isSessionRunning = false
-    var thoughts = ""
+    var previousProgress = 0
     
     private var timer: Timer?
     private var countdownTimer: Timer?

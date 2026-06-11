@@ -82,7 +82,7 @@ struct Home: View {
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
         }
         .navigationDestination(item: $selectedSession) { session in
-            SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, sessionToEdit: session )
+            SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, previousProgress: 0, sessionToEdit: session)
         }
         .navigationDestination(item: $selectedUpNextBook) { book in
             BookDetails(book: book)
