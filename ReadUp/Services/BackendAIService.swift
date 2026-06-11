@@ -27,16 +27,26 @@ struct BackendAIService {
     // Em produção, troque pela URL do servidor deployado.
     private let baseURL = "http://localhost:3000"
 
-    /// Envia uma mensagem para o endpoint de IA do backend e retorna a resposta.
-    func chat(message: String) async throws -> String {
+    /// Envia o histórico completo da conversa para o backend e retorna a resposta.
+    func chat(messages: [AIChatMessage]) async throws -> String {
         guard let url = URL(string: "\(baseURL)/ai/chat") else {
             throw BackendAIServiceError.invalidURL
         }
 
+        // Converte AIChatMessage para o formato do backend
+        let payload = messages.map { msg in
+            [
+                "role": msg.role == .user ? "user" : "assistant",
+                "content": msg.text
+            ]
+        }
+
+        let body = try JSONSerialization.data(withJSONObject: ["messages": payload])
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(["message": message])
+        request.httpBody = body
 
         let (data, response): (Data, URLResponse)
 

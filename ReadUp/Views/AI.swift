@@ -149,12 +149,14 @@ struct AI: View {
 
         // 2. Fallback: tenta gerar via backend (Groq/Llama)
         do {
-            let response = try await backendService.chat(
-                message: "Generate exactly 3 short book recommendation prompts a reader would ask a librarian. One per line, no numbering, no quotes, under 8 words each. Respond in \(Locale.preferredLanguages.first ?? "en")."
+            let promptMessage = AIChatMessage(
+                role: .user,
+                text: "Generate exactly 3 short book recommendation prompts a reader would ask a librarian. One per line, no numbering, no quotes, under 8 words each. Respond in \(Locale.preferredLanguages.first ?? "en")."
             )
+            let response = try await backendService.chat(messages: [promptMessage])
 
-            let prompts = response.components(separatedBy: .newlines)
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            let prompts = response.components(separatedBy: CharacterSet.newlines)
+                .map { $0.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
                 .prefix(3)
 

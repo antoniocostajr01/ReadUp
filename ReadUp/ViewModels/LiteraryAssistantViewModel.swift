@@ -20,18 +20,25 @@ final class LiteraryAssistantViewModel {
     }
 
     private let model = SystemLanguageModel.default
+    private let backendService = BackendAIService()
     private var session = LanguageModelSession(instructions: """
-    You are a friendly, conversational, and highly knowledgeable literary assistant for a reading app. 
+    You are a friendly, conversational, and highly knowledgeable literary assistant for a reading app.
     Act like a passionate bookworm chatting with a friend.
     Guide the user through literary questions, help them find books, explain literary themes, and discuss authors or genres naturally.
     Keep your responses human-like, warm, engaging, and concise. Avoid robotic or overly formal language.
-    Only discuss books, literature, authors, genres, reading habits, and recommendations. 
-    If asked about non-literary topics, politely and naturally steer the conversation back to books.
-    Use plain text without excessive or weird markdown. You may use simple bolding for book titles.
-    When recommending books, mention why you think they'd like them based on the context.
-    CRITICAL: ALWAYS respond in the EXACT same language that the user used in their most recent message. For example, if they speak Portuguese, reply in Portuguese. If they speak English, reply in English.
+    Only discuss books, literature, authors, genres, reading habits, and recommendations.
+    If asked about non-literary topics, politely decline and offer to help with books instead.
+
+    When recommending books, you MUST format each book as a bullet point like this:
+    • Book Title - Author Name: A brief one-sentence reason why they'd enjoy it.
+
+    Do NOT use markdown bold (**), headers (##), underscores (__), or other formatting. Use only plain text and bullet points (•).
+
+    STRICT BOUNDARY: If the user asks about anything NOT related to books or literature, you MUST politely decline. Never provide the answer, not even partially.
+
+    CRITICAL: ALWAYS respond in the EXACT same language that the user used in their most recent message.
     """)
-    
+
     func sendMessage(booksService: GoogleBooksService) async {
         let message = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !message.isEmpty else { return }
@@ -44,167 +51,160 @@ final class LiteraryAssistantViewModel {
         messages.append(AIChatMessage(role: .user, text: text))
 
         isThinking = true
-        // Pequeno atraso para garantir que a animação de "pensando" apareça sempre, mesmo em operações rápidas
         try? await Task.sleep(nanoseconds: 600_000_000)
-
-        let shouldFetchRecommendations = isRecommendationIntent(text)
-        if shouldFetchRecommendations {
-            isSearchingRecommendations = true
-        }
 
         let assistantReply = await generateAssistantReply(for: text)
         var newAssistantMessage = AIChatMessage(role: .assistant, text: assistantReply)
 
-        if shouldFetchRecommendations {
-            let queries = await recommendationQueries(from: text)
-            let books = await fetchRecommendations(queries: queries, booksService: booksService)
-            
-            if books.isEmpty {
-                let emptyText = appLanguageCode == "pt"
-                ? " Ainda não encontrei boas opções no momento. Tente me dizer gênero favorito, ritmo e estilo que você gosta."
-                : " I couldn't find strong matches right now. Try giving me a favorite genre, pace, and mood."
-                newAssistantMessage = AIChatMessage(role: .assistant, text: assistantReply + emptyText)
-            } else {
+        // Sempre tenta extrair títulos de livros da resposta (independente do intent)
+        let titles = extractBookTitles(from: assistantReply)
+
+        if !titles.isEmpty {
+            isSearchingRecommendations = true
+            let books = await fetchBooksByTitle(titles: titles, booksService: booksService)
+            if !books.isEmpty {
                 newAssistantMessage.recommendedBooks = books
             }
-            
             isSearchingRecommendations = false
         }
-        
+
         messages.append(newAssistantMessage)
         isThinking = false
     }
 
-    private func isLiteraryTopic(_ text: String) -> Bool {
-        let lowered = text.lowercased()
-        let keywords = [
-            "book", "books", "author", "authors", "novel", "novels", "read", "reading", "chapter", "chapters", "genre", "genres", "literature", "poetry", "fiction", "nonfiction", "story", "stories", "recommend",
-            "livro", "livros", "autor", "autora", "romance", "leitura", "ler", "capítulo", "capitulos", "gênero", "genero", "literatura", "poesia", "ficção", "ficcao", "recomenda", "indica"
-        ]
-
-        return keywords.contains(where: { lowered.contains($0) })
-    }
+    // MARK: - Intent Detection
 
     private func isRecommendationIntent(_ text: String) -> Bool {
         let lowered = text.lowercased()
         let triggers = [
-            "recommend", "recomenda", "suggest", "sugira", "indica", "indique", "similar", "parecido", "quero livros", "me dê livros", "book suggestions", "book recommendation", "livros de", "books about"
+            "recommend", "recomenda", "suggest", "sugira", "indica", "indique",
+            "similar", "parecido", "quero livros", "me dê livros",
+            "book suggestions", "book recommendation", "livros de", "books about"
         ]
 
         if triggers.contains(where: { lowered.contains($0) }) {
             return true
         }
 
-        let genreHints = ["fantasy", "fantasia", "sci-fi", "ficção", "romance", "mystery", "suspense", "horror", "história", "history", "thriller", "poetry", "poesia"]
-        return genreHints.contains(where: { lowered.contains($0) }) && (lowered.contains("livro") || lowered.contains("book"))
+        let genreHints = [
+            "fantasy", "fantasia", "sci-fi", "ficção", "romance", "mystery",
+            "suspense", "horror", "história", "history", "thriller", "poetry", "poesia"
+        ]
+        return genreHints.contains(where: { lowered.contains($0) })
+            && (lowered.contains("livro") || lowered.contains("book"))
     }
 
-    private func fetchRecommendations(queries: [String], booksService: GoogleBooksService) async -> [SearchBook] {
-        var merged: [SearchBook] = []
+    // MARK: - Extract Book Titles from AI Response
+
+    /// Extrai títulos dos bullet points da resposta da IA.
+    /// Espera formato: "• Book Title - Author: reason"
+    private func extractBookTitles(from response: String) -> [String] {
+        let lines = response.components(separatedBy: .newlines)
+
+        return lines.compactMap { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            // Identifica linhas que são bullet points (•, -, *)
+            guard trimmed.hasPrefix("•") || trimmed.hasPrefix("-") || trimmed.hasPrefix("*") else {
+                return nil
+            }
+
+            // Remove o bullet character
+            var content = trimmed
+            content.removeFirst()
+            content = content.trimmingCharacters(in: .whitespaces)
+
+            // Normaliza todos os tipos de dash para hífen simples
+            let normalized = content
+                .replacingOccurrences(of: " – ", with: " - ")  // en-dash
+                .replacingOccurrences(of: " — ", with: " - ")  // em-dash
+
+            // Pega só o título (antes do " - " que separa do autor)
+            if let dashRange = normalized.range(of: " - ") {
+                let title = String(normalized[normalized.startIndex..<dashRange.lowerBound])
+                let cleaned = title.trimmingCharacters(in: .whitespaces)
+                return cleaned.isEmpty ? nil : cleaned
+            }
+
+            // Se não tem dash, pega antes de ":" (título: razão)
+            if let colonRange = normalized.range(of: ":") {
+                let title = String(normalized[normalized.startIndex..<colonRange.lowerBound])
+                let cleaned = title.trimmingCharacters(in: .whitespaces)
+                return cleaned.isEmpty ? nil : cleaned
+            }
+
+            // Se nenhum separador, usa a linha inteira como query
+            return content.isEmpty ? nil : content
+        }
+    }
+
+    // MARK: - Fetch Books by Title
+
+    /// Busca cada título individualmente na Google Books API.
+    private func fetchBooksByTitle(titles: [String], booksService: GoogleBooksService) async -> [SearchBook] {
+        var results: [SearchBook] = []
         var usedIds = Set<String>()
 
-        for query in queries.prefix(4) {
+        for title in titles.prefix(6) {
             do {
-                let results = try await booksService.searchBooks(query: query)
-                for book in results {
-                    if !usedIds.contains(book.id) {
-                        usedIds.insert(book.id)
-                        merged.append(book)
-                    }
-                    if merged.count >= 10 {
-                        return merged
-                    }
+                let books = try await booksService.searchBooks(query: title)
+                if let firstMatch = books.first, !usedIds.contains(firstMatch.id) {
+                    usedIds.insert(firstMatch.id)
+                    results.append(firstMatch)
                 }
             } catch {
                 continue
             }
         }
 
-        if merged.isEmpty {
-            let fallbackQuery = appLanguageCode == "pt" ? "livros mais lidos best sellers" : "best selling popular books"
+        return results
+    }
+
+    // MARK: - Generate Reply
+
+    private func generateAssistantReply(for userMessage: String) async -> String {
+        // 1. Tenta Foundation Models (on-device) — session mantém contexto automaticamente
+        if model.isAvailable {
             do {
-                let results = try await booksService.searchBooks(query: fallbackQuery)
-                merged.append(contentsOf: results.prefix(10))
+                let response = try await session.respond(to: userMessage)
+                return cleanResponse(response.content)
             } catch {
-                // Em último caso, tenta algo muito básico
-                if let basicResults = try? await booksService.searchBooks(query: "fiction"), !basicResults.isEmpty {
-                    merged.append(contentsOf: basicResults.prefix(10))
-                }
+                print("Foundation Models falhou, tentando backend: \(error)")
             }
         }
 
-        return merged
-    }
-
-    private func recommendationQueries(from userMessage: String) async -> [String] {
-        guard model.isAvailable else {
-            return fallbackRecommendationQueries(from: userMessage)
-        }
-
+        // 2. Fallback: Backend (Groq/Llama) — envia histórico completo
         do {
-            let prompt = """
-            Create exactly 4 short Google Books search queries based on this request:
-            \(userMessage)
-
-            Rules:
-            - Output only 4 lines.
-            - Each line starts with "- ".
-            - Keep each query under 8 words.
-            - Focus on books/genres/authors.
-            """
-
-            let response = try await session.respond(to: prompt)
-            let lines = response.content
-                .split(separator: "\n")
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { $0.hasPrefix("-") }
-                .map { $0.replacingOccurrences(of: "-", with: "").trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-
-            return lines.isEmpty ? fallbackRecommendationQueries(from: userMessage) : Array(lines.prefix(4))
+            let response = try await backendService.chat(messages: messages)
+            return cleanResponse(response)
         } catch {
-            return fallbackRecommendationQueries(from: userMessage)
-        }
-    }
-
-    private func fallbackRecommendationQueries(from userMessage: String) -> [String] {
-        let lowered = userMessage.lowercased()
-        let map: [(String, [String])] = [
-            ("fantasy", ["fantasy books", "high fantasy novels", "epic fantasy books", "best fantasy authors"]),
-            ("fantasia", ["livros fantasia", "fantasia épica", "romance fantasia", "autores de fantasia"]),
-            ("sci-fi", ["science fiction books", "sci fi classics", "space opera books", "cyberpunk books"]),
-            ("ficção científica", ["livros ficção científica", "distopia ficção", "sci fi livros", "space opera livros"]),
-            ("romance", ["romance novels", "contemporary romance books", "romantic fiction", "romance best sellers"]),
-            ("mystery", ["mystery thriller books", "detective novels", "crime fiction books", "suspense books"]),
-            ("suspense", ["livros suspense", "romance policial", "thriller livros", "mistério livros"]),
-            ("horror", ["horror novels", "psychological horror books", "gothic horror", "terror books"])
-        ]
-
-        for (keyword, queries) in map where lowered.contains(keyword) {
-            return queries
+            print("Backend AI também falhou: \(error)")
         }
 
-        if appLanguageCode == "pt" {
-            return ["livros mais recomendados", "best sellers livros", userMessage, "livros populares"]
-        }
-        return ["recommended books", "best seller books", userMessage, "popular books"]
-    }
-
-    private func generateAssistantReply(for userMessage: String) async -> String {
-        guard model.isAvailable else {
-            return appLanguageCode == "pt"
-            ? "O Apple Intelligence ainda não está disponível neste dispositivo. Posso ajudar com orientações literárias básicas enquanto isso."
-            : "Apple Intelligence isn't available on this device yet. I can still help with basic literary guidance while it becomes available."
-        }
-
-        do {
-            let response = try await session.respond(to: userMessage)
-            return response.content
-        } catch {
-            return appLanguageCode == "pt"
+        // 3. Último recurso: mensagem estática
+        return appLanguageCode == "pt"
             ? "Tive um problema para gerar a resposta agora. Tente novamente sobre livros, gêneros ou recomendações."
             : "I had trouble generating a response right now. Ask again about books, genres, or recommendations."
-        }
+    }
+
+    // MARK: - Text Cleanup
+
+    private func cleanResponse(_ text: String) -> String {
+        var cleaned = text
+        // Remove markdown bold/headers
+        cleaned = cleaned.replacingOccurrences(of: "##", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "**", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "__", with: "")
+        // Remove linhas com apenas caracteres decorativos
+        let lines = cleaned.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { line in
+                let stripped = line.replacingOccurrences(of: "-", with: "")
+                    .replacingOccurrences(of: "*", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+                return !line.isEmpty && !stripped.isEmpty
+            }
+        return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
