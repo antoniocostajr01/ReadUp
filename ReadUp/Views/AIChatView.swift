@@ -25,23 +25,25 @@ struct ChatMessage: Identifiable, Equatable {
 
 struct AIChatView: View {
     var initialPrompt: String?
-    
+
     init(initialPrompt: String? = nil) {
         self.initialPrompt = initialPrompt
     }
-    
+
     @State private var messages: [ChatMessage] = []
     @State private var prompt = ""
     @State private var isGenerating = false
     @FocusState private var isInputFocused: Bool
-    
-    
+
+    private let backendService = BackendAIService()
+    private let useFoundationModels = SystemLanguageModel.default.isAvailable
+
     @State private var session: LanguageModelSession = {
         let deviceLanguage = Locale.preferredLanguages.first ?? "en"
-        
+
         return LanguageModelSession(instructions: """
                 You MUST generate the prompts in the language corresponding to this locale code: \(deviceLanguage).
-            
+
                 You are a friendly, conversational, and highly knowledgeable literary assistant for a reading app.
                 Act like a passionate bookworm chatting with a friend.
                 Guide the user through literary questions, help them find books, explain literary themes, and discuss authors or genres naturally.
@@ -56,7 +58,7 @@ struct AIChatView: View {
                 Do NOT answer the off-topic question under any circumstance, even if the user insists.
             """)
     }()
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Área do Chat
@@ -66,7 +68,7 @@ struct AIChatView: View {
                         ForEach($messages) { $message in
                             MessageBubble(message: $message, proxy: proxy)
                         }
-                        
+
                         if isGenerating {
                             HStack {
                                 MachineThinkingIndicator()
@@ -81,10 +83,10 @@ struct AIChatView: View {
                     }
                     .padding()
                 }
-                .onChange(of: messages.count) { _ in
+                .onChange(of: messages.count) {
                     scrollToBottom(proxy: proxy)
                 }
-                .onChange(of: isGenerating) { _ in
+                .onChange(of: isGenerating) {
                     scrollToBottom(proxy: proxy)
                 }
             }
@@ -92,7 +94,7 @@ struct AIChatView: View {
             .onTapGesture {
                 isInputFocused = false
             }
-            
+
             // Área de Input
             HStack(alignment: .bottom, spacing: 12) {
                 TextField("Message Assistant...", text: $prompt, axis: .vertical)
@@ -102,7 +104,7 @@ struct AIChatView: View {
                     .background(Color(uiColor: .systemGray6))
                     .cornerRadius(20)
                     .disabled(isGenerating)
-                
+
                 Button(action: sendMessage) {
                     Image(systemName: "arrow.up.circle.fill")
                         .resizable()
@@ -127,31 +129,41 @@ struct AIChatView: View {
             }
         }
     }
-    
+
     // MARK: - Actions
     private func sendMessage() {
         let userText = prompt.trimmingCharacters(in: .whitespaces)
         guard !userText.isEmpty else { return }
-        
+
         // 1. Adiciona a mensagem do usuário na tela
         let userMessage = ChatMessage(text: userText, role: .user)
         messages.append(userMessage)
-        
+
         // 2. Limpa o input e bloqueia envio de novas mensagens
         prompt = ""
         isGenerating = true
-        
-        // 3. Faz a requisição assíncrona
+
+        // 3. Tenta Foundation Models primeiro; se falhar, cai pro backend
         Task {
             do {
-                let response = try await session.respond(to: userText).content
-                await MainActor.run {
-                    messages.append(ChatMessage(text: response, role: .assistant, isAnimating: true))
-                    isGenerating = false
+                var response: String?
+
+                // Tenta on-device primeiro
+                if useFoundationModels {
+                    do {
+                        response = try await session.respond(to: userText).content
+                    } catch {
+                        print("Foundation Models falhou, usando backend: \(error)")
+                    }
                 }
-            } catch let error as LanguageModelSession.GenerationError {
+
+                // Fallback: backend (Groq/Llama)
+                if response == nil {
+                    response = try await backendService.chat(message: userText)
+                }
+
                 await MainActor.run {
-                    handleGenerationError(error)
+                    messages.append(ChatMessage(text: response ?? "No response.", role: .assistant, isAnimating: true))
                     isGenerating = false
                 }
             } catch {
@@ -162,7 +174,7 @@ struct AIChatView: View {
             }
         }
     }
-    
+
     private func handleGenerationError(_ error: LanguageModelSession.GenerationError) {
         let errorMessage: String
         switch error {
@@ -175,11 +187,11 @@ struct AIChatView: View {
         default:
             errorMessage = "Generation Error: \(error.localizedDescription)"
         }
-        
+
         messages.append(ChatMessage(text: errorMessage, role: .assistant))
         print(errorMessage)
     }
-    
+
     private func scrollToBottom(proxy: ScrollViewProxy) {
         if isGenerating {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -198,13 +210,13 @@ struct MessageBubble: View {
     @Binding var message: ChatMessage
     var proxy: ScrollViewProxy? = nil
     @State private var displayedText: String = ""
-    
+
     var body: some View {
         HStack {
             if message.role == .user {
                 Spacer(minLength: 40)
             }
-            
+
             Text(message.isAnimating ? displayedText : message.text)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -216,13 +228,13 @@ struct MessageBubble: View {
                         await typeWriter()
                     }
                 }
-            
+
             if message.role == .assistant {
                 Spacer(minLength: 40)
             }
         }
     }
-    
+
     private func typeWriter() async {
         let characters = Array(message.text)
         var currentText = ""
@@ -230,11 +242,11 @@ struct MessageBubble: View {
             if Task.isCancelled { break }
             currentText.append(char)
             displayedText = currentText
-            
+
             await MainActor.run {
                 proxy?.scrollTo(message.id, anchor: .bottom)
             }
-            
+
             try? await Task.sleep(nanoseconds: 15_000_000)
         }
         await MainActor.run {
@@ -272,4 +284,3 @@ struct MachineThinkingIndicator: View {
         AIChatView()
     }
 }
-

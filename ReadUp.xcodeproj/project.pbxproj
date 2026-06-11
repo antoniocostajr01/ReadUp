@@ -15,6 +15,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Secrets.xcconfig,
 			);
 			target = B95F95732E43EE15004461E5 /* ReadUp */;
 		};
@@ -91,7 +92,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					B95F95732E43EE15004461E5 = {
 						CreatedOnToolsVersion = 16.4;

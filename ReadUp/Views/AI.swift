@@ -2,13 +2,15 @@ import SwiftUI
 import FoundationModels
 
 struct AI: View {
-    
+
     @State private var suggestedPrompts: [String] = []
     @State private var isLoading: Bool = true
     @State private var isPulsating: Bool = false
     @State private var navigateToChat: Bool = false
     @State private var selectedPrompt: String? = nil
-    
+
+    private let backendService = BackendAIService()
+
     @State private var session: LanguageModelSession = {
         let deviceLanguage = Locale.preferredLanguages.first ?? "en"
 
@@ -104,50 +106,73 @@ struct AI: View {
     
     func fetchStarterPrompts() async {
         guard suggestedPrompts.isEmpty else { return }
-        
+
         isLoading = true
-        
-        // Verifica se o modelo do Apple Intelligence está disponível antes de executar
-        guard SystemLanguageModel.default.isAvailable else {
-            // Se não estiver (ex: Simulator, dispositivo não suportado ou baixando o modelo),
-            // usa o fallback instantaneamente, sem gerar erro no console.
-            await MainActor.run {
-                self.suggestedPrompts = ["Me indique livros de aventura", "Livros parecidos com 1984", "Um clássico curto para iniciantes"]
-                self.isLoading = false
+
+        let staticFallback = [
+            "Me indique livros de aventura",
+            "Livros parecidos com 1984",
+            "Um clássico curto para iniciantes"
+        ]
+
+        // 1. Tenta usar Foundation Models (on-device)
+        if SystemLanguageModel.default.isAvailable {
+            do {
+                let response = try await session.respond(to: "Generate 3 starter prompts.").content
+
+                let unwantedCharacters = CharacterSet(charactersIn: "*\"-•–—")
+                    .union(.decimalDigits)
+                    .union(CharacterSet(charactersIn: ".):"))
+
+                let prompts = response.components(separatedBy: .newlines)
+                    .map { line in
+                        var cleaned = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                        while let first = cleaned.unicodeScalars.first,
+                              unwantedCharacters.contains(first) || first == "-" {
+                            cleaned = String(cleaned.dropFirst())
+                                .trimmingCharacters(in: .whitespaces)
+                        }
+                        return cleaned.trimmingCharacters(in: unwantedCharacters)
+                    }
+                    .filter { !$0.isEmpty }
+                    .prefix(3)
+
+                await MainActor.run {
+                    self.suggestedPrompts = Array(prompts)
+                    self.isLoading = false
+                }
+                return
+            } catch {
+                print("Foundation Models falhou, tentando backend: \(error)")
             }
-            return
         }
-        
+
+        // 2. Fallback: tenta gerar via backend (Groq/Llama)
         do {
-            let response = try await session.respond(to: "Generate 3 starter prompts.").content
-            
-            let unwantedCharacters = CharacterSet(charactersIn: "*\"-•–—")
-                .union(.decimalDigits)
-                .union(CharacterSet(charactersIn: ".):"))
+            let response = try await backendService.chat(
+                message: "Generate exactly 3 short book recommendation prompts a reader would ask a librarian. One per line, no numbering, no quotes, under 8 words each. Respond in \(Locale.preferredLanguages.first ?? "en")."
+            )
 
             let prompts = response.components(separatedBy: .newlines)
-                .map { line in
-                    var cleaned = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                    while let first = cleaned.unicodeScalars.first,
-                          unwantedCharacters.contains(first) || first == "-" {
-                        cleaned = String(cleaned.dropFirst())
-                            .trimmingCharacters(in: .whitespaces)
-                    }
-                    return cleaned.trimmingCharacters(in: unwantedCharacters)
-                }
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
                 .prefix(3)
-            
-            await MainActor.run {
-                self.suggestedPrompts = Array(prompts)
-                self.isLoading = false
+
+            if !prompts.isEmpty {
+                await MainActor.run {
+                    self.suggestedPrompts = Array(prompts)
+                    self.isLoading = false
+                }
+                return
             }
         } catch {
-            print("Erro ao gerar sugestões: \(error)")
-            await MainActor.run {
-                self.suggestedPrompts = ["Me indique livros de aventura", "Livros parecidos com 1984", "Um clássico curto para iniciantes"]
-                self.isLoading = false
-            }
+            print("Backend AI também falhou: \(error)")
+        }
+
+        // 3. Último recurso: prompts estáticos
+        await MainActor.run {
+            self.suggestedPrompts = staticFallback
+            self.isLoading = false
         }
     }
 }
