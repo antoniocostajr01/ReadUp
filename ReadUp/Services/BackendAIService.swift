@@ -22,10 +22,8 @@ enum BackendAIServiceError: LocalizedError {
 
 struct BackendAIService {
 
-    // Em dev local, use o IP do Mac na rede (ex: "http://192.168.0.10:3000")
-    // No Simulator, "http://localhost:3000" funciona.
-    // Em produção, troque pela URL do servidor deployado.
-    private let baseURL = "http://localhost:3000"
+    // URL base vem do Secrets.xcconfig via Info.plist (AppConfig).
+    private let baseURL = AppConfig.baseURL
 
     /// Envia o histórico completo da conversa para o backend e retorna a resposta.
     func chat(messages: [AIChatMessage]) async throws -> String {

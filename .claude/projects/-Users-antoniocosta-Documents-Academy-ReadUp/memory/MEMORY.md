@@ -1,2 +1,6 @@
 - [User profile](user_profile.md) — iOS dev student, wants tutoring not code edits
 - [Collaboration mode](feedback_tutor_mode.md) — Tutor/mentor only; no code changes unless explicitly requested
+- [Git preferences](git_preferences.md) — Short commit titles only, no Co-Authored-By
+- [Infra & deploy](infra-deploy.md) — Render API + Supabase DB + Resend email + Cron-Job keep-alive
+- [Auth architecture](auth-architecture.md) — JWT/Keychain/AuthManager gate, Apple Sign In, password reset
+- [Onboarding & preferences](onboarding-preferences.md) — intro carousel, green loading, SpriteKit falling-genre picker, per-user genres

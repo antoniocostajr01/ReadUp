@@ -10,10 +10,15 @@ import SwiftData
 
 @main
 struct ReadUpApp: App {
-    
+
+    @State private var authManager = AuthManager()
+    @State private var searchViewModel = SearchViewModel()
+
     var body: some Scene {
         WindowGroup {
-            TabBar()
+            RootView() 
+                .environment(authManager)
+                .environment(searchViewModel)
                 .background(.backgroundPrimary)
         }
         .modelContainer(for: [Book.self,LiterarySession.self] )

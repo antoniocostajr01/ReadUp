@@ -1,16 +1,21 @@
 import SwiftUI
 
 struct Search: View {
-    @State private var viewModel = SearchViewModel()
+    @Environment(AuthManager.self) private var authManager
+    @Environment(SearchViewModel.self) private var viewModel
     @State private var selectedBook: SearchBook?
     @FocusState private var isSearchFocused: Bool
+
+    private var chosenGenres: [Genre] {
+        GenreCatalog.genres(for: authManager.genres)
+    }
 
     var body: some View {
         VStack(spacing: 12) {
             searchField
 
             if viewModel.submittedQuery.isEmpty {
-                discoveryView
+                recommendationsView
             } else {
                 resultsView
             }
@@ -24,16 +29,26 @@ struct Search: View {
                 .presentationDragIndicator(.visible)
         }
         .task {
-            await viewModel.loadDiscoverBooksIfNeeded()
+            await reloadRecommendations()
+        }
+        .onChange(of: authManager.genres) {
+            Task { await reloadRecommendations() }
         }
     }
 
+    private func reloadRecommendations() async {
+        async let discover: () = viewModel.loadDiscoverBooksIfNeeded()
+        async let sections: () = viewModel.loadSections(for: chosenGenres)
+        _ = await (discover, sections)
+    }
+
     private var searchField: some View {
-        HStack(spacing: 10) {
+        @Bindable var bindableViewModel = viewModel
+        return HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
 
-            TextField("Search books, authors, or ISBN", text: $viewModel.searchText)
+            TextField("Search books, authors, or ISBN", text: $bindableViewModel.searchText)
                 .foregroundStyle(Color(uiColor: .label))
                 .focused($isSearchFocused)
                 .submitLabel(.search)
@@ -73,92 +88,104 @@ struct Search: View {
         )
     }
 
-    private var discoveryView: some View {
+    // MARK: - Recomendações (uma seção por gênero escolhido)
+
+    private var recommendationsView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                Text("Browse by Genre")
-                    .font(.system(.title2, weight: .bold))
+            VStack(alignment: .leading, spacing: 24) {
+                
+                if !chosenGenres.isEmpty {
+                    LazyVStack(alignment: .leading, spacing: 24) {
+                        ForEach(viewModel.genreSections) { section in
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text(section.genre.title)
+                                        .font(.system(.title2, weight: .bold))
+                                        
+                                    Spacer()
+                                    
+                                    Button("See All") {
+                                        isSearchFocused = false
+                                        viewModel.searchText = section.genre.title
+                                        Task { await viewModel.runSearch(with: section.genre.query) }
+                                    }
+                                    .foregroundStyle(.emphasis)
+                                }
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(viewModel.genres) { genre in
-                        Button {
-                            isSearchFocused = false
-                            viewModel.searchText = genre.query
-                            Task { await viewModel.runSearch(with: genre.query) }
-                        } label: {
-                            ZStack(alignment: .bottomLeading) {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(Color.emphasis.opacity(0.12))
-
-                                Image(systemName: genre.icon)
-                                    .font(.system(size: 42, weight: .regular))
-                                    .foregroundStyle(Color.emphasis.opacity(0.18))
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                                    .padding(.top, 14)
-                                    .padding(.trailing, 12)
-
-                                Text(genre.title)
-                                    .font(.system(.title3, weight: .semibold))
-                                    .foregroundStyle(Color(uiColor: .label))
-                                    .padding(14)
+                                if section.books.isEmpty {
+                                    ProgressView()
+                                        .frame(maxWidth: .infinity, minHeight: 120)
+                                } else {
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 12) {
+                                            ForEach(section.books) { book in
+                                                bookCard(book)
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            .frame(height: 126)
                         }
                     }
                 }
 
-                HStack {
-                    Text("Discover")
-                        .font(.system(.title2, weight: .bold))
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Discover")
+                            .font(.system(.title2, weight: .bold))
 
-                    Spacer()
+                        Spacer()
 
-                    Button("See All") {
-                        isSearchFocused = false
-                        viewModel.searchText = "best books"
-                        Task { await viewModel.runSearch(with: "best books") }
+                        Button("See All") {
+                            isSearchFocused = false
+                            viewModel.searchText = "best books"
+                            Task { await viewModel.runSearch(with: "best books") }
+                        }
+                        .foregroundStyle(.emphasis)
                     }
-                    .foregroundStyle(.emphasis)
+
+                    if viewModel.discoverBooks.isEmpty {
+                        ProgressView("Loading discovery...")
+                            .frame(maxWidth: .infinity, minHeight: 120)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(viewModel.discoverBooks) { book in
+                                    bookCard(book)
+                                }
+                            }
+                        }
+                    }
                 }
 
-                if viewModel.discoverBooks.isEmpty {
-                    ProgressView("Loading discovery...")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                } else {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(viewModel.discoverBooks) { book in
-                                Button {
-                                    selectedBook = book
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        AsyncImage(url: book.thumbnailURL) { phase in
-                                            switch phase {
-                                            case .success(let image):
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                            default:
-                                                Color(uiColor: .tertiarySystemFill)
-                                            }
-                                        }
-                                        .frame(width: 146, height: 200)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Browse by Genre")
+                        .font(.system(.title2, weight: .bold))
 
-                                        Text(book.title)
-                                            .font(.headline)
-                                            .lineLimit(1)
-                                            .foregroundStyle(Color(uiColor: .label))
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ForEach(GenreCatalog.all) { genre in
+                            Button {
+                                isSearchFocused = false
+                                viewModel.searchText = genre.query
+                                Task { await viewModel.runSearch(with: genre.query) }
+                            } label: {
+                                ZStack(alignment: .bottomLeading) {
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(Color.emphasis.opacity(0.12))
 
-                                        Text(book.author)
-                                            .font(.subheadline)
-                                            .lineLimit(1)
-                                            .foregroundStyle(.secundaryLabel)
-                                    }
-                                    .frame(width: 146, alignment: .leading)
+                                    Image(systemName: genre.icon)
+                                        .font(.system(size: 42, weight: .regular))
+                                        .foregroundStyle(Color.emphasis.opacity(0.18))
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                                        .padding(.top, 14)
+                                        .padding(.trailing, 12)
+
+                                    Text(genre.title)
+                                        .font(.system(.title3, weight: .semibold))
+                                        .foregroundStyle(Color(uiColor: .label))
+                                        .padding(14)
                                 }
-                                .buttonStyle(.plain)
+                                .frame(height: 126)
                             }
                         }
                     }
@@ -168,6 +195,41 @@ struct Search: View {
         }
         .scrollDismissesKeyboard(.immediately)
     }
+
+    private func bookCard(_ book: SearchBook) -> some View {
+        Button {
+            selectedBook = book
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                AsyncImage(url: book.thumbnailURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        Color(uiColor: .tertiarySystemFill)
+                    }
+                }
+                .frame(width: 146, height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                Text(book.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .foregroundStyle(Color(uiColor: .label))
+
+                Text(book.author)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .foregroundStyle(.secundaryLabel)
+            }
+            .frame(width: 146, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Resultados da busca manual
 
     private var resultsView: some View {
         Group {
@@ -179,39 +241,63 @@ struct Search: View {
             } else if viewModel.results.isEmpty {
                 ContentUnavailableView("No books found", systemImage: "book.closed", description: Text("Try another title."))
             } else {
-                List(viewModel.results) { book in
-                    Button {
-                        selectedBook = book
-                    } label: {
-                        HStack(spacing: 12) {
-                            AsyncImage(url: book.thumbnailURL) { phase in
-                                switch phase {
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                default:
-                                    Color(uiColor: .tertiarySystemFill)
+                List {
+                    ForEach(viewModel.results) { book in
+                        Button {
+                            selectedBook = book
+                        } label: {
+                            HStack(spacing: 12) {
+                                AsyncImage(url: book.thumbnailURL) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    default:
+                                        Color(uiColor: .tertiarySystemFill)
+                                    }
+                                }
+                                .frame(width: 50, height: 74)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(book.title)
+                                        .font(.system(.headline, weight: .semibold))
+                                        .lineLimit(2)
+
+                                    Text(book.author)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secundaryLabel)
+                                        .lineLimit(1)
                                 }
                             }
-                            .frame(width: 50, height: 74)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(book.title)
-                                    .font(.system(.headline, weight: .semibold))
-                                    .lineLimit(2)
-
-                                Text(book.author)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secundaryLabel)
-                                    .lineLimit(1)
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                    }
+                    
+                    if viewModel.hasMoreResults {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                        .listRowBackground(Color.clear)
+                        .padding(.vertical, 8)
+                        .onAppear {
+                            Task {
+                                await viewModel.loadMore()
                             }
                         }
-                        .padding(.vertical, 4)
+                    } else if !viewModel.results.isEmpty {
+                        Text("No more books for this search.")
+                            .font(.footnote)
+                            .foregroundStyle(.secundaryLabel)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 16)
+                            .listRowBackground(Color.clear)
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Color(uiColor: .secondarySystemBackground))
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
@@ -222,8 +308,10 @@ struct Search: View {
     }
 }
 
-
-
 #Preview {
-    Search()
+    NavigationStack {
+        Search()
+            .environment(AuthManager())
+            .environment(SearchViewModel())
+    }
 }

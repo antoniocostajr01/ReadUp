@@ -8,7 +8,7 @@ final class ReadingSessionViewModel {
     var isShowingSummary = false
     var isShowingAlertValue = false
     var lastPageRead = ""
-    var countdown = 3
+    var countdown = 5
     var isSessionRunning = false
     var previousProgress = 0
     
@@ -17,7 +17,7 @@ final class ReadingSessionViewModel {
     
     func startCountdown() {
         stopAllTimers()
-        countdown = 3
+        countdown = 5
         isSessionRunning = false
 
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in

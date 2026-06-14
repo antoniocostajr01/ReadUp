@@ -42,7 +42,7 @@ struct Home: View {
                 
                 HStack(spacing: 12) {
                     MetricCard(value: "\(viewModel.currentSessionStreak(from: sessions))", title: "DAY STREAK", icon: "flame.fill", accentColor: .orange)
-                    MetricCard(value: "\(viewModel.averageMinutesPerDay(from: sessions))", title: "AVG. MIN / SESSION", icon: "clock.fill", accentColor: .indigo)
+                    MetricCard(value: "\(viewModel.averageMinutesPerDay(from: sessions))", title: "AVERAGE TIME", icon: "clock.fill", accentColor: .indigo)
                 }
                 
         
@@ -97,28 +97,22 @@ struct Home: View {
     private var currentlyReadingSection: some View {
         Group {
             if readingBooks.isEmpty {
-                HStack(alignment: .center){
-                    Spacer()
+                VStack(spacing: 14) {
+                    Image(systemName: "book.closed")
+                        .font(.system(size: 38, weight: .medium))
+                        .foregroundStyle(.emphasis)
                     
-                    VStack(alignment: .center, spacing: 10) {
-                        Text("No book in progress")
-                            .font(.headline)
-                        Text("Add a book as Reading and start your next session.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secundaryLabel)
-                        Button("Start Reading") {
-                            isShowingAlert = true
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.emphasis)
-                    }
-                    .padding(14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color(uiColor: .secondarySystemBackground))
-                    )
-                    Spacer()
+                    Text("No book in progress")
+                        .font(.system(.title2, weight: .bold))
+                    
+                    Text("Add a book as Reading and start your next session.")
+                        .font(.body)
+                        .foregroundStyle(.secundaryLabel)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
                 
             } else if readingBooks.count == 1 {
                 HStack(spacing: 12) {
@@ -193,4 +187,5 @@ struct Home: View {
 
 #Preview {
     TabBar()
+        .environment(AuthManager())
 }

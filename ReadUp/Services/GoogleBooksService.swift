@@ -38,7 +38,7 @@ struct GoogleBooksService {
 
     private let supportedLanguages = ["pt", "en"]
 
-    func searchBooks(query: String) async throws -> [SearchBook] {
+    func searchBooks(query: String, maxResults: Int = 20, startIndex: Int = 0) async throws -> [SearchBook] {
         let cleanedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard cleanedQuery.count >= 2 else { return [] }
         let preferredLanguageCode = appLanguageCode()
@@ -46,7 +46,8 @@ struct GoogleBooksService {
         var components = URLComponents(string: "https://www.googleapis.com/books/v1/volumes")
         components?.queryItems = [
             URLQueryItem(name: "q", value: cleanedQuery),
-            URLQueryItem(name: "maxResults", value: "20"),
+            URLQueryItem(name: "maxResults", value: "\(maxResults)"),
+            URLQueryItem(name: "startIndex", value: "\(startIndex)"),
             URLQueryItem(name: "orderBy", value: "relevance"),
             URLQueryItem(name: "key", value: apiKey)
         ]

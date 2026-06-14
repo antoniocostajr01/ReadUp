@@ -58,4 +58,6 @@ struct TabBar: View {
 
 #Preview {
     TabBar()
+        .environment(AuthManager())
+        .environment(SearchViewModel())
 }
