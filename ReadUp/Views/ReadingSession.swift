@@ -20,10 +20,6 @@ struct ReadingSession: View {
             coverView
 
             VStack(spacing: 4) {
-                Text("READING SESSION")
-                    .font(.caption)
-                    .foregroundStyle(.emphasis)
-                    .tracking(1.2)
 
                 Text(selectedBook.title)
                     .font(.system(.title, weight: .bold))

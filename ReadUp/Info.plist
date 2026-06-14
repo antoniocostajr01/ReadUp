@@ -6,5 +6,7 @@
 	<string>$(GOOGLE_BOOKS_API_KEY)</string>
 	<key>BASEURL</key>
 	<string>$(BASEURL)</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Permita o acesso para salvar o resumo da sessão na sua galeria.</string>
 </dict>
 </plist>

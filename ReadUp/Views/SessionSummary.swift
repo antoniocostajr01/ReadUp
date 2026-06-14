@@ -7,6 +7,8 @@ struct SessionSummary: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: SessionSummaryViewModel
+    @State private var shareURL: URL?
+    @State private var showShareSheet = false
     var onSessionSaved: (() -> Void)? = nil
 
     init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, onSessionSaved: (() -> Void)? = nil, sessionToEdit: LiterarySession? = nil) {
@@ -62,7 +64,53 @@ struct SessionSummary: View {
         .navigationTitle("Session Summary")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if shareURL != nil {
+                    Button {
+                        showShareSheet = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                } else {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundStyle(.secondary) // Disabled state while generating
+                }
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if let shareURL {
+                ShareSheet(items: [shareURL])
+                    .presentationDetents([.medium, .large])
+            }
+        }
         .onAppear(perform: viewModel.setupForEditting)
+        .task {
+            renderShareImage()
+        }
+    }
+
+    @MainActor
+    private func renderShareImage() {
+        let viewToRender = SessionSummaryShareCard(
+            currentBook: viewModel.currentBook,
+            sessionPagesRead: viewModel.sessionPagesRead,
+            sessionMinutes: viewModel.sessionMinutes,
+            completionPercentage: viewModel.completionPercentage
+        )
+        let renderer = ImageRenderer(content: viewToRender)
+        renderer.scale = UIScreen.main.scale
+        renderer.isOpaque = false // Transparent background
+
+        if let uiImage = renderer.uiImage, let pngData = uiImage.pngData() {
+            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ReadUp_Session.png")
+            do {
+                try pngData.write(to: tempURL)
+                shareURL = tempURL
+            } catch {
+                print("Error saving transparent PNG: \(error)")
+            }
+        }
     }
 
     private var headerCard: some View {
@@ -117,4 +165,14 @@ struct SessionSummary: View {
                 .fill(Color(uiColor: .secondarySystemBackground))
         )
     }
+}
+
+fileprivate struct ShareSheet: UIViewControllerRepresentable {
+    var items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
