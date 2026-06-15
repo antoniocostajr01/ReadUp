@@ -77,6 +77,7 @@ struct Home: View {
             .padding(.bottom, 24)
         }
         .navigationTitle(viewModel.greetingText(name: authManager.currentUser?.name))
+        .navigationBarTitleDisplayMode(.inline)
         .background(.backgroundPrimary)
         .navigationDestination(item: $activeReadingBook) { book in
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
