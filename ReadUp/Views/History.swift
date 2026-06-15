@@ -6,12 +6,13 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct History: View {
-    
-    @Query(sort: \LiterarySession.timesTamp, order: .reverse) var sessions: [LiterarySession]
-    
+
+    @Environment(LibraryStore.self) private var store
+
+    private var sessions: [LiterarySession] { store.sessions }
+
     @State private var selectedSession: LiterarySession?
     
     var body: some View {
@@ -43,4 +44,5 @@ struct History: View {
 
 #Preview {
     History()
+        .environment(LibraryStore())
 }

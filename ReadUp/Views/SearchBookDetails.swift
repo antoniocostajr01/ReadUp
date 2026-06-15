@@ -1,11 +1,8 @@
-import SwiftData
 import SwiftUI
 
 struct SearchBookDetails: View {
-    @Environment(\.modelContext) private var modelContext
+    @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-
-    @Query private var books: [Book]
 
     let book: SearchBook
     let service: GoogleBooksService
@@ -66,7 +63,7 @@ struct SearchBookDetails: View {
                 )
 
                 Button {
-                    Task { await viewModel.saveBookToLibrary(book: book, service: service, modelContext: modelContext, onDismiss: { dismiss() }) }
+                    Task { await viewModel.saveBookToLibrary(book: book, store: store, onDismiss: { dismiss() }) }
                 } label: {
                     Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
                         .font(.system(.title3, weight: .semibold))
@@ -92,7 +89,7 @@ struct SearchBookDetails: View {
         .navigationTitle(Localization.BookDetails.title.string)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
-            viewModel.alreadyExists = books.contains { $0.title.caseInsensitiveCompare(book.title) == .orderedSame && $0.author.caseInsensitiveCompare(book.author) == .orderedSame }
+            viewModel.alreadyExists = store.contains(book)
         }
     }
 
@@ -133,4 +130,5 @@ struct SearchBookDetails: View {
         ),
         service: GoogleBooksService()
     )
+    .environment(LibraryStore())
 }

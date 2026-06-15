@@ -1,6 +1,4 @@
 import Foundation
-import SwiftData
-import SwiftUI
 
 @MainActor
 @Observable
@@ -11,6 +9,7 @@ final class SessionSummaryViewModel {
     var previousProgress: Int
     var thoughts: String = ""
     var sessionToEdit: LiterarySession?
+    var isSaving = false
 
     init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, sessionToEdit: LiterarySession? = nil) {
         self.readingTime = readingTime
@@ -45,21 +44,22 @@ final class SessionSummaryViewModel {
         }
     }
 
-    func saveSession(modelContext: ModelContext, onSessionSaved: (() -> Void)?, onDismiss: @escaping () -> Void) {
-        let session = LiterarySession(book: currentBook, pagesRead: sessionPagesRead, progress: pagesRead, timeRead: readingTime, thoughts: thoughts)
-        modelContext.insert(session)
+    /// Registra a sessão no backend (via store) e atualiza o progresso do livro.
+    func saveSession(store: LibraryStore, onSessionSaved: (() -> Void)?, onDismiss: @escaping () -> Void) async {
+        isSaving = true
+        defer { isSaving = false }
 
-        // Auto-complete: se o progresso atingiu 100%, marca como lido
-        if pagesRead >= currentBook.numberOfPages {
-            currentBook.status = .read
-        }
+        let success = await store.logSession(
+            book: currentBook,
+            sessionPagesRead: sessionPagesRead,
+            totalProgress: pagesRead,
+            timeRead: readingTime,
+            thoughts: thoughts
+        )
 
-        do {
-            try modelContext.save()
+        if success {
             onSessionSaved?()
             onDismiss()
-        } catch {
-            print("Failed to save session")
         }
     }
 }

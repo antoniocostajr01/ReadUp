@@ -2,11 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>GOOGLE_BOOKS_API_KEY</key>
-	<string>$(GOOGLE_BOOKS_API_KEY)</string>
 	<key>BASEURL</key>
 	<string>$(BASEURL)</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Permita o acesso para salvar o resumo da sessão na sua galeria.</string>
+	<key>GOOGLE_BOOKS_API_KEY</key>
+	<string>$(GOOGLE_BOOKS_API_KEY)</string>
 </dict>
 </plist>

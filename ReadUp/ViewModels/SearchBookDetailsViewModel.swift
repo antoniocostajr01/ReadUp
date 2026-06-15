@@ -1,6 +1,4 @@
 import Foundation
-import SwiftData
-import SwiftUI
 
 @MainActor
 @Observable
@@ -10,30 +8,19 @@ final class SearchBookDetailsViewModel {
     var saveMessage: String?
     var alreadyExists = false
     var isShowingFullDescription = false
-    
-    func saveBookToLibrary(book: SearchBook, service: GoogleBooksService, modelContext: ModelContext, onDismiss: @escaping () -> Void) async {
+
+    /// Salva um livro vindo da busca na biblioteca do usuário (via backend).
+    func saveBookToLibrary(book: SearchBook, store: LibraryStore, onDismiss: @escaping () -> Void) async {
         isSaving = true
         defer { isSaving = false }
 
-        let imageData = await service.loadImageData(from: book.thumbnailURL) ?? Data()
-        let newBook = Book(
-            title: book.title,
-            author: book.author,
-            numberOfPages: book.numberOfPages,
-            details: book.details,
-            status: selectedStatus,
-            imageData: imageData
-        )
-
-        modelContext.insert(newBook)
-
-        do {
-            try modelContext.save()
+        let success = await store.addBook(from: book, status: selectedStatus)
+        if success {
             saveMessage = "Book added successfully."
             alreadyExists = true
             onDismiss()
-        } catch {
-            saveMessage = "Could not save this book."
+        } else {
+            saveMessage = store.errorMessage ?? "Could not save this book."
         }
     }
 }

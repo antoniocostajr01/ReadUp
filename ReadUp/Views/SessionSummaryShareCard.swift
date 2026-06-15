@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SessionSummaryShareCard: View {
     let currentBook: Book
+    let coverImage: UIImage?
     let sessionPagesRead: Int
     let sessionMinutes: Int
     let completionPercentage: Int
@@ -33,8 +34,8 @@ struct SessionSummaryShareCard: View {
     
     private var headerCard: some View {
         HStack(spacing: 14) {
-            if let bookCover = UIImage(data: currentBook.imageData) {
-                Image(uiImage: bookCover)
+            if let coverImage {
+                Image(uiImage: coverImage)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 92, height: 132)

@@ -6,23 +6,21 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct ReadUpApp: App {
 
     @State private var authManager = AuthManager()
     @State private var searchViewModel = SearchViewModel()
+    @State private var libraryStore = LibraryStore()
 
     var body: some Scene {
         WindowGroup {
-            RootView() 
+            RootView()
                 .environment(authManager)
                 .environment(searchViewModel)
+                .environment(libraryStore)
                 .background(.backgroundPrimary)
         }
-        .modelContainer(for: [Book.self,LiterarySession.self] )
     }
 }
-
-

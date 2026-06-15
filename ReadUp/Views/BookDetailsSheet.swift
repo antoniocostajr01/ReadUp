@@ -1,4 +1,3 @@
-import SwiftData
 import SwiftUI
 
 struct BookDetailsSheet: View {
@@ -7,10 +6,8 @@ struct BookDetailsSheet: View {
         case search(SearchBook, GoogleBooksService)
     }
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-
-    @Query private var books: [Book]
 
     let source: Source
 
@@ -74,7 +71,7 @@ struct BookDetailsSheet: View {
                         )
 
                         Button {
-                            Task { await viewModel.saveBookToLibrary(source: source, modelContext: modelContext, onDismiss: { dismiss() }) }
+                            Task { await viewModel.saveBookToLibrary(source: source, store: store, onDismiss: { dismiss() }) }
                         } label: {
                             Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
                                 .font(.system(.title3, weight: .semibold))
@@ -125,14 +122,22 @@ struct BookDetailsSheet: View {
                 if case .library(let book) = source {
                     ForEach(BookStatus.allCases, id: \.self) { enumStatus in
                         Button(enumStatus.displayName) {
-                            book.status = enumStatus
+                            Task {
+                                await store.updateStatus(book, to: enumStatus)
+                                dismiss()
+                            }
                         }
                     }
                 }
             }
             .alert(Localization.BookDetails.deleteConfirmTitle.string, isPresented: $viewModel.isShowingDeleteAlert) {
                 Button(Localization.Generic.delete.string, role: .destructive) {
-                    viewModel.deleteLibraryBookIfNeeded(source: source, modelContext: modelContext, onDismiss: { dismiss() })
+                    if case .library(let book) = source {
+                        Task {
+                            await store.deleteBook(book)
+                            dismiss()
+                        }
+                    }
                 }
                 Button(Localization.Generic.cancel.string, role: .cancel) {}
             } message: {
@@ -140,10 +145,7 @@ struct BookDetailsSheet: View {
             }
             .onAppear {
                 if case .search(let searchBook, _) = source {
-                    viewModel.alreadyExists = books.contains {
-                        $0.title.caseInsensitiveCompare(searchBook.title) == .orderedSame &&
-                        $0.author.caseInsensitiveCompare(searchBook.author) == .orderedSame
-                    }
+                    viewModel.alreadyExists = store.contains(searchBook)
                 }
             }
         }
@@ -181,13 +183,7 @@ struct BookDetailsSheet: View {
     private var coverView: some View {
         switch source {
         case .library(let book):
-            if let image = UIImage(data: book.imageData) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 148, height: 211)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+            BookCoverView(coverUrl: book.coverUrl, width: 148, height: 211, cornerRadius: 12)
         case .search(let book, _):
             AsyncImage(url: book.thumbnailURL) { phase in
                 switch phase {

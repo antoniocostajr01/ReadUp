@@ -2,9 +2,9 @@ import Foundation
 
 @Observable
 final class HomeViewModel {
-    let mockUserName = "Antonio"
-    
-    var greetingText: String {
+
+    /// Saudação personalizada com o nome do usuário logado (ou só a saudação se não houver nome).
+    func greetingText(name: String?) -> String {
         let hour = Calendar.current.component(.hour, from: Date())
         let greeting: String
         if hour < 12 {
@@ -14,7 +14,8 @@ final class HomeViewModel {
         } else {
             greeting = Localization.Home.greetingEvening.string
         }
-        return "\(greeting), \(mockUserName)"
+        guard let name, !name.isEmpty else { return greeting }
+        return "\(greeting), \(name)"
     }
     
     func averageMinutesPerDay(from sessions: [LiterarySession]) -> Int {

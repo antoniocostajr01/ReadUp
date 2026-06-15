@@ -1,14 +1,14 @@
 import SwiftUI
-import SwiftData
 import Foundation
 
 struct SessionSummary: View {
-    @Environment(\.modelContext) private var modelContextSessions
+    @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: SessionSummaryViewModel
     @State private var shareURL: URL?
     @State private var showShareSheet = false
+    @State private var coverImage: UIImage?
     var onSessionSaved: (() -> Void)? = nil
 
     init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, onSessionSaved: (() -> Void)? = nil, sessionToEdit: LiterarySession? = nil) {
@@ -44,7 +44,7 @@ struct SessionSummary: View {
                     )
 
                 Button(action: {
-                    viewModel.saveSession(modelContext: modelContextSessions, onSessionSaved: onSessionSaved, onDismiss: { dismiss() })
+                    Task { await viewModel.saveSession(store: store, onSessionSaved: onSessionSaved, onDismiss: { dismiss() }) }
                 }) {
                     Label(Localization.SessionSummary.saveSession.string, systemImage: "square.and.arrow.down")
                         .font(.system(.title3, weight: .semibold))
@@ -86,6 +86,10 @@ struct SessionSummary: View {
         }
         .onAppear(perform: viewModel.setupForEditting)
         .task {
+            // Carrega a capa (por URL) antes de renderizar o card de compartilhamento,
+            // pois o ImageRenderer é síncrono e não aguarda um AsyncImage.
+            coverImage = await GoogleBooksService().loadImageData(from: viewModel.currentBook.coverUrl.flatMap(URL.init(string:)))
+                .flatMap(UIImage.init(data:))
             renderShareImage()
         }
     }
@@ -94,6 +98,7 @@ struct SessionSummary: View {
     private func renderShareImage() {
         let viewToRender = SessionSummaryShareCard(
             currentBook: viewModel.currentBook,
+            coverImage: coverImage,
             sessionPagesRead: viewModel.sessionPagesRead,
             sessionMinutes: viewModel.sessionMinutes,
             completionPercentage: viewModel.completionPercentage
@@ -115,13 +120,7 @@ struct SessionSummary: View {
 
     private var headerCard: some View {
         HStack(spacing: 14) {
-            if let bookCover = UIImage(data: viewModel.currentBook.imageData) {
-                Image(uiImage: bookCover)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 92, height: 132)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            }
+            BookCoverView(coverUrl: viewModel.currentBook.coverUrl, width: 92, height: 132)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(viewModel.currentBook.title)

@@ -4,7 +4,6 @@
 //
 //  Created by Antonio Costa on 08/08/25.
 //
-import SwiftData
 import SwiftUI
 
 struct StopWatchView: View {

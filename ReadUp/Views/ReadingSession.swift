@@ -95,9 +95,9 @@ struct ReadingSession: View {
                         return
                     }
 
-                    // Salva progresso anterior antes de atualizar
+                    // Salva o progresso anterior; o novo progresso é persistido ao salvar a sessão.
                     viewModel.previousProgress = currentProgress
-                    selectedBook.progress = page
+                    viewModel.lastPageRead = "\(page)"
                     viewModel.isShowingSummary = true
                 }
             }
@@ -194,17 +194,7 @@ struct ReadingSession: View {
     }
 
     private var coverView: some View {
-        Group {
-            if let bookCover = UIImage(data: selectedBook.imageData) {
-                Image(uiImage: bookCover)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Color(uiColor: .tertiarySystemFill)
-            }
-        }
-        .frame(width: 120, height: 170)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 3)
+        BookCoverView(coverUrl: selectedBook.coverUrl, width: 120, height: 170, cornerRadius: 12)
+            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 3)
     }
 }

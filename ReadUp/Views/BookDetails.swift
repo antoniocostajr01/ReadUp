@@ -4,44 +4,40 @@
 //
 //  Created by Antonio Costa on 08/08/25.
 //
-import SwiftData
 import SwiftUI
 
 struct BookDetails: View {
-    
-    @Query var books: [Book]
-    @Query var sessions: [LiterarySession]
-    
-    @Environment(\.modelContext) var modelContext
+
+    @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) var dismiss
-    
+
     @State private var viewModel = BookDetailsViewModel()
 
     let book: Book
-    
+
+    /// Reflete o estado mais recente do livro no store (ex.: após mudar status).
+    private var currentBook: Book {
+        store.books.first { $0.id == book.id } ?? book
+    }
+
     var body: some View {
         VStack(spacing: 24){
-            if let image = UIImage(data: book.imageData){
-                Image(uiImage: image)
-                    .resizable()
-                    .frame(width: 148 , height: 211)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            
-            TitleAndAuthorBook(bookAuthor: book.author, bookTitle: book.title)
-            
-            Text("\(book.details)")
+            BookCoverView(coverUrl: currentBook.coverUrl, width: 148, height: 211, cornerRadius: 12)
+
+            TitleAndAuthorBook(bookAuthor: currentBook.author, bookTitle: currentBook.title)
+
+            Text("\(currentBook.details)")
                 .frame(maxWidth: .infinity)
-            
+
             HStack(spacing: 8){
                 Image(systemName: "book.pages.fill")
-                
-                Text("\(book.numberOfPages)")
-                
+
+                Text("\(currentBook.numberOfPages)")
+
             }
-            
+
             HStack{
-                Text("\(book.status.rawValue)")
+                Text(currentBook.status.displayName)
                     .foregroundStyle(.mainText)
                     .font(.system(.title3, weight: .semibold))
             }
@@ -80,20 +76,17 @@ struct BookDetails: View {
         .confirmationDialog(Localization.BookDetails.selectStatus.string, isPresented: $viewModel.isShowingStatusDialog){
             ForEach(BookStatus.allCases, id: \.self){ enumStatus in
                 Button(enumStatus.displayName){
-                    book.status = enumStatus
+                    Task { await store.updateStatus(currentBook, to: enumStatus) }
                 }
             }
-            
+
         }
         .alert(Localization.BookDetails.deleteConfirmTitle.string, isPresented: $viewModel.isShowingDeleteAlert) {
             Button(Localization.Generic.delete.string, role: .destructive) {
-                do {
-                    try viewModel.deleteBook(book, context: modelContext)
+                Task {
+                    await store.deleteBook(currentBook)
                     dismiss()
-                } catch {
-                    print("Falha ao deletar as sessões: \(error.localizedDescription)")
                 }
-
             }
             Button(Localization.Generic.cancel.string, role: .cancel) {}
         } message: {

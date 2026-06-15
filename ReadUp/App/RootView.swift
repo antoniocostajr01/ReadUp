@@ -5,6 +5,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(SearchViewModel.self) private var searchViewModel
+    @Environment(LibraryStore.self) private var libraryStore
     @State private var isPreloading = true
 
     var body: some View {
@@ -14,10 +15,11 @@ struct RootView: View {
                     .task(id: authManager.phase) {
                         if authManager.phase == .ready {
                             let chosenGenres = GenreCatalog.genres(for: authManager.genres)
+                            async let library: () = libraryStore.load()
                             async let discover: () = searchViewModel.loadDiscoverBooksIfNeeded()
                             async let sections: () = searchViewModel.loadSections(for: chosenGenres)
-                            _ = await (discover, sections)
-                            
+                            _ = await (library, discover, sections)
+
                             withAnimation {
                                 isPreloading = false
                             }
@@ -42,6 +44,10 @@ struct RootView: View {
         .onChange(of: authManager.phase) { _, newPhase in
             if newPhase == .unauthenticated || newPhase == .loading {
                 isPreloading = true
+            }
+            // Logout (ou troca de usuário): zera os dados em memória do usuário anterior.
+            if newPhase == .unauthenticated {
+                libraryStore.reset()
             }
         }
     }

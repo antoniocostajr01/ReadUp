@@ -8,7 +8,7 @@ struct CurrentlyReadingCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 14) {
-                BookCoverView(data: book.imageData, width: 86, height: 124)
+                BookCoverView(coverUrl: book.coverUrl, width: 86, height: 124)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title.uppercased())

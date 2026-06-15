@@ -13,12 +13,7 @@ struct SessionDetails: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             
-            if let uiImage = UIImage(data: session.book.imageData){
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .frame(width: 62, height: 88)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+            BookCoverView(coverUrl: session.book.coverUrl, width: 62, height: 88, cornerRadius: 12)
             
             VStack{
                 Text(session.book.title)

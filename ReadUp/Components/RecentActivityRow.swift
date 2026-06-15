@@ -6,7 +6,7 @@ struct RecentActivityRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            BookCoverView(data: session.book.imageData, width: 40, height: 56)
+            BookCoverView(coverUrl: session.book.coverUrl, width: 40, height: 56)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.book.title)

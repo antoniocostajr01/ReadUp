@@ -8,11 +8,12 @@
 import Foundation
 
 enum BookStatus: String, Codable, CaseIterable {
-    case read = "Read"
-    case reading = "Reading"
-    case iWantToRead = "I want to read"
-    case abandoned = "Abandoned"
-    case rereading = "Rereading"
+    // Raw values alinhados ao enum BookStatus do backend (Prisma).
+    case read = "read"
+    case reading = "reading"
+    case iWantToRead = "i_want_to_read"
+    case abandoned = "abandoned"
+    case rereading = "rereading"
 
     var displayName: String {
         switch self {

@@ -4,12 +4,13 @@ struct LibraryCoverView: View {
     let book: Book
 
     var body: some View {
-        Group {
-            if let uiImage = UIImage(data: book.imageData) {
-                Image(uiImage: uiImage)
+        AsyncImage(url: book.coverUrl.flatMap(URL.init(string:))) { phase in
+            switch phase {
+            case .success(let image):
+                image
                     .resizable()
                     .scaledToFill()
-            } else {
+            default:
                 Color(uiColor: .tertiarySystemFill)
             }
         }

@@ -6,12 +6,13 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct Library: View {
     @EnvironmentObject private var tabState: AppTabState
-    @Query var books: [Book]
-    
+    @Environment(LibraryStore.self) private var store
+
+    private var books: [Book] { store.books }
+
     @State private var selectedBook: Book?
     
     private var booksByStatus: [(status: BookStatus, items: [Book])] {
@@ -119,33 +120,9 @@ struct Library: View {
 }
 
 #Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Book.self, LiterarySession.self, configurations: config)
-
-    let sample1 = Book(
-        title: "The Hobbit",
-        author: "J.R.R. Tolkien",
-        numberOfPages: 310,
-        details: "A fantasy classic.",
-        status: .reading,
-        imageData: Data()
-    )
-
-    let sample2 = Book(
-        title: "Thinking, Fast and Slow",
-        author: "Daniel Kahneman",
-        numberOfPages: 499,
-        details: "Psychology and decision making.",
-        status: .iWantToRead,
-        imageData: Data()
-    )
-
-    container.mainContext.insert(sample1)
-    container.mainContext.insert(sample2)
-
-    return NavigationStack {
+    NavigationStack {
         Library()
             .environmentObject(AppTabState())
+            .environment(LibraryStore())
     }
-    .modelContainer(container)
 }

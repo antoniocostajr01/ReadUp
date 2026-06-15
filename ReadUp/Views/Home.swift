@@ -6,19 +6,19 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct Home: View {
+    @Environment(AuthManager.self) private var authManager
+    @Environment(LibraryStore.self) private var store
     @State private var viewModel = HomeViewModel()
     @State private var isShowingAlert = false
     @State private var activeReadingBook: Book?
     @State private var selectedSession: LiterarySession?
     @State private var selectedUpNextBook: Book?
-    
-    @Query var books: [Book]
-    
-    @Query(sort: \LiterarySession.timesTamp, order: .reverse) var sessions: [LiterarySession]
-    
+
+    private var books: [Book] { store.books }
+    private var sessions: [LiterarySession] { store.sessions }
+
     private var sessionsCount: Int {
         sessions.count
     }
@@ -76,7 +76,7 @@ struct Home: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .navigationTitle(viewModel.greetingText)
+        .navigationTitle(viewModel.greetingText(name: authManager.currentUser?.name))
         .background(.backgroundPrimary)
         .navigationDestination(item: $activeReadingBook) { book in
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
@@ -148,7 +148,7 @@ struct Home: View {
             HStack(spacing: 12) {
                 ForEach(upNextBooks.prefix(8)) { book in
                     VStack(alignment: .leading, spacing: 8) {
-                        BookCoverView(data: book.imageData, width: 120, height: 172)
+                        BookCoverView(coverUrl: book.coverUrl, width: 120, height: 172)
                         Text(book.title)
                             .font(.headline)
                             .lineLimit(1)
@@ -188,4 +188,5 @@ struct Home: View {
 #Preview {
     TabBar()
         .environment(AuthManager())
+        .environment(LibraryStore())
 }
