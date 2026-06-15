@@ -16,11 +16,11 @@ struct HistoryEmptyState: View {
                 .font(.system(size: 34, weight: .medium))
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
 
-            Text("No sessions yet")
+            Text(Localization.History.emptyTitle.string)
                 .font(.system(.title3, weight: .semibold))
                 .foregroundStyle(Color(uiColor: .label))
 
-            Text("Start a reading session to build your history.")
+            Text(Localization.History.emptySubtitle.string)
                 .font(.subheadline)
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
                 .multilineTextAlignment(.center)

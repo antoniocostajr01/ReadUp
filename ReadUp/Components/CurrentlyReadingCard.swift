@@ -28,7 +28,7 @@ struct CurrentlyReadingCard: View {
                     let percentage = Int((Double(currentProgress) / Double(totalPages) * 100).rounded())
                     
                     HStack {
-                        Text("Page \(currentProgress) of \(book.numberOfPages)")
+                        Text(String(format: Localization.Components.pageOf.string, currentProgress, book.numberOfPages))
                             .font(.subheadline)
                             .foregroundStyle(.secundaryLabel)
                         Spacer()
@@ -44,7 +44,7 @@ struct CurrentlyReadingCard: View {
                 .tint(.emphasis)
             
             Button(action: onStartReading) {
-                Text((book.progress ?? 0) == 0 ? "Start Reading" : "Continue Reading")
+                Text((book.progress ?? 0) == 0 ? Localization.Components.startReading.string : Localization.Components.continueReading.string)
                     .font(.system(.headline, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)

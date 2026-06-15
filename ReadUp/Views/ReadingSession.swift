@@ -40,7 +40,7 @@ struct ReadingSession: View {
             Button {
                 viewModel.isShowingAlertValue = true
             } label: {
-                Label("Finish", systemImage: "checkmark.circle")
+                Label(Localization.ReadingSession.finish.string, systemImage: "checkmark.circle")
                     .font(.system(.title3, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
@@ -56,7 +56,7 @@ struct ReadingSession: View {
             .padding(.bottom, 16)
         }
         .background(.backgroundPrimary)
-        .navigationTitle("Reading Session")
+        .navigationTitle(Localization.ReadingSession.title.string)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -64,7 +64,7 @@ struct ReadingSession: View {
                 Button {
                     showExitConfirmation = true
                 } label: {
-                    Text("Leave")
+                    Text(Localization.ReadingSession.leave.string)
                 }
             }
         }
@@ -75,22 +75,22 @@ struct ReadingSession: View {
         .onDisappear {
             viewModel.stopAllTimers()
         }
-        .alert("Which page did you leave off?", isPresented: $viewModel.isShowingAlertValue) {
-            TextField("Page", text: $viewModel.lastPageRead)
+        .alert(Localization.ReadingSession.pagePrompt.string, isPresented: $viewModel.isShowingAlertValue) {
+            TextField(Localization.ReadingSession.pagePlaceholder.string, text: $viewModel.lastPageRead)
                 .keyboardType(.numberPad)
 
-            Button("Confirm") {
+            Button(Localization.Generic.confirm.string) {
                 if let page = Int(viewModel.lastPageRead) {
                     let currentProgress = selectedBook.progress ?? 0
 
                     if page < currentProgress {
-                        validationMessage = "You can't go back! Your current progress is page \(currentProgress)."
+                        validationMessage = String(format: Localization.ReadingSession.cantGoBack.string, currentProgress)
                         showValidationError = true
                         return
                     }
 
                     if page > selectedBook.numberOfPages {
-                        validationMessage = "This book only has \(selectedBook.numberOfPages) pages."
+                        validationMessage = String(format: Localization.ReadingSession.exceedsPages.string, selectedBook.numberOfPages)
                         showValidationError = true
                         return
                     }
@@ -102,26 +102,26 @@ struct ReadingSession: View {
                 }
             }
 
-            Button("Cancel", role: .cancel) {
+            Button(Localization.Generic.cancel.string, role: .cancel) {
                 viewModel.lastPageRead = ""
             }
         }
-        .alert("Invalid Page", isPresented: $showValidationError) {
-            Button("OK", role: .cancel) {
+        .alert(Localization.ReadingSession.invalidPage.string, isPresented: $showValidationError) {
+            Button(Localization.Generic.ok.string, role: .cancel) {
                 viewModel.lastPageRead = ""
                 viewModel.isShowingAlertValue = true
             }
         } message: {
             Text(validationMessage)
         }
-        .alert("Leave session?", isPresented: $showExitConfirmation) {
-            Button("Leave", role: .destructive) {
+        .alert(Localization.ReadingSession.leaveTitle.string, isPresented: $showExitConfirmation) {
+            Button(Localization.ReadingSession.leave.string, role: .destructive) {
                 viewModel.stopAllTimers()
                 dismiss()
             }
-            Button("Stay", role: .cancel) {}
+            Button(Localization.ReadingSession.stay.string, role: .cancel) {}
         } message: {
-            Text("Your reading progress won't be saved if you leave now.")
+            Text(Localization.ReadingSession.leaveMessage.string)
         }
         .navigationDestination(isPresented: $viewModel.isShowingSummary) {
             SessionSummary(
@@ -144,7 +144,7 @@ struct ReadingSession: View {
                     .font(.system(size: 52, weight: .bold, design: .rounded))
                     .monospacedDigit()
 
-                SmallMetricCard(title: "CURRENT PAGE", value: "\(selectedBook.progress ?? 0)")
+                SmallMetricCard(title: Localization.ReadingSession.currentPage.string, value: "\(selectedBook.progress ?? 0)")
             }
             .opacity(viewModel.isSessionRunning ? 1 : 0)
 
@@ -160,11 +160,11 @@ struct ReadingSession: View {
                     .contentTransition(.symbolEffect(.replace))
                     .symbolEffect(.bounce, options: .nonRepeating, value: lockAnimationTrigger)
 
-                Text("You can lock your screen!")
+                Text(Localization.ReadingSession.lockTip.string)
                     .font(.system(.title3, weight: .semibold))
                     .foregroundStyle(.primary)
 
-                Text("Your session will keep running.")
+                Text(Localization.ReadingSession.lockSubtip.string)
                     .font(.body)
                     .foregroundStyle(.secundaryLabel)
             }

@@ -22,22 +22,22 @@ struct ResetPasswordView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
-                Text("Reset password")
+                Text(Localization.Auth.resetPasswordTitle.string)
                     .font(.system(size: 30, weight: .bold))
                     .padding(.top, 24)
 
-                Text("We sent a code to \(email). Enter it below with your new password.")
+                Text(String(format: Localization.Auth.resetPasswordDescription.string, email))
                     .font(.subheadline)
                     .foregroundStyle(.secundaryLabel)
                     .multilineTextAlignment(.center)
 
-                Label("Don't see it? Check your spam folder.", systemImage: "exclamationmark.bubble")
+                Label(Localization.Auth.spamHint.string, systemImage: "exclamationmark.bubble")
                     .font(.footnote)
                     .foregroundStyle(.secundaryLabel)
                     .multilineTextAlignment(.center)
 
                 AuthTextField(
-                    placeholder: "6-digit code",
+                    placeholder: Localization.Auth.codePlaceholder.string,
                     text: $code,
                     systemImage: "number",
                     keyboardType: .numberPad
@@ -48,14 +48,14 @@ struct ResetPasswordView: View {
                     code = String(code.filter(\.isNumber).prefix(6))
                 }
 
-                AuthSecureField(placeholder: "New password", text: $newPassword,
+                AuthSecureField(placeholder: Localization.Auth.newPassword.string, text: $newPassword,
                                 textContentType: .newPassword)
 
-                AuthSecureField(placeholder: "Confirm new password", text: $confirmPassword,
+                AuthSecureField(placeholder: Localization.Auth.confirmNewPassword.string, text: $confirmPassword,
                                 textContentType: .newPassword)
 
                 if !confirmPassword.isEmpty && !passwordsMatch {
-                    Text("Passwords don't match.")
+                    Text(Localization.Auth.passwordsMismatch.string)
                         .font(.footnote)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -69,7 +69,7 @@ struct ResetPasswordView: View {
                 }
 
                 AuthPrimaryButton(
-                    title: "Reset password",
+                    title: Localization.Auth.resetPasswordButton.string,
                     isLoading: authManager.isLoading,
                     isEnabled: isFormValid
                 ) {
@@ -86,13 +86,13 @@ struct ResetPasswordView: View {
             .padding(.horizontal, 24)
         }
         .background(.backgroundPrimary)
-        .navigationTitle("Reset password")
+        .navigationTitle(Localization.Auth.resetPasswordTitle.string)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }
-        .alert("Password updated", isPresented: $didReset) {
-            Button("Back to login") { dismiss() }
+        .alert(Localization.Auth.passwordUpdated.string, isPresented: $didReset) {
+            Button(Localization.Auth.backToLogin.string) { dismiss() }
         } message: {
-            Text("Your password has been reset. Sign in with your new password.")
+            Text(Localization.Auth.passwordResetSuccess.string)
         }
     }
 }

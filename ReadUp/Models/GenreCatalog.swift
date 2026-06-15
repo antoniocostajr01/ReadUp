@@ -8,6 +8,27 @@ struct Genre: Identifiable, Hashable {
     let title: String
     let query: String
     let icon: String
+
+    var localizedTitle: String {
+        switch title {
+        case "Fantasy": return Localization.Genre.fantasy.string
+        case "Science Fiction": return Localization.Genre.scienceFiction.string
+        case "Romance": return Localization.Genre.romance.string
+        case "Mystery": return Localization.Genre.mystery.string
+        case "Thriller": return Localization.Genre.thriller.string
+        case "Horror": return Localization.Genre.horror.string
+        case "History": return Localization.Genre.history.string
+        case "Philosophy": return Localization.Genre.philosophy.string
+        case "Poetry": return Localization.Genre.poetry.string
+        case "Biography": return Localization.Genre.biography.string
+        case "Self-Help": return Localization.Genre.selfHelp.string
+        case "Science": return Localization.Genre.science.string
+        case "Business": return Localization.Genre.business.string
+        case "Comics": return Localization.Genre.comics.string
+        case "Design": return Localization.Genre.design.string
+        default: return title
+        }
+    }
 }
 
 /// Catálogo único de gêneros, reutilizado pelo onboarding, Search e Profile.

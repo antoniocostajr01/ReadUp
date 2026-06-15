@@ -26,7 +26,7 @@ struct LoadingView: View {
                             .font(.subheadline)
                             .foregroundStyle(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
-                        Button("Try again") {
+                        Button(Localization.Generic.tryAgain.string) {
                             Task { await authManager.bootstrap() }
                         }
                         .font(.headline)

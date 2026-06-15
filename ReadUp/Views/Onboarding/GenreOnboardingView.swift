@@ -23,11 +23,11 @@ struct GenreOnboardingView: View {
 
             VStack(spacing: 0) {
                 VStack(spacing: 8) {
-                    Text("Pick your favorite genres")
+                    Text(Localization.Onboarding.genresTitle.string)
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
 
-                    Text("Tap the ones you love — we'll tailor your library and recommendations.")
+                    Text(Localization.Onboarding.genresSubtitle.string)
                         .font(.subheadline)
                         .foregroundStyle(.secundaryLabel)
                         .multilineTextAlignment(.center)
@@ -54,7 +54,7 @@ struct GenreOnboardingView: View {
                 }
                 
                 VStack(spacing: 10) {
-                    Text(selected.isEmpty ? "Select at least one" : "\(selected.count) selected")
+                    Text(selected.isEmpty ? Localization.Onboarding.selectAtLeast.string : String(format: Localization.Onboarding.selected.string, selected.count))
                         .font(.footnote)
                         .foregroundStyle(.secundaryLabel)
 
@@ -65,7 +65,7 @@ struct GenreOnboardingView: View {
                     }
             
                     AuthPrimaryButton(
-                        title: "Continue",
+                        title: Localization.Generic.continue.string,
                         isLoading: authManager.isLoading,
                         isEnabled: !selected.isEmpty
                     ) {
@@ -123,7 +123,7 @@ struct GenreOnboardingView: View {
             Image(systemName: genre.icon)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(selected ? .white : color)
-            Text(genre.title)
+            Text(genre.localizedTitle)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(selected ? .white : Color(uiColor: .label))
         }

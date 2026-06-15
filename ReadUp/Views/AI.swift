@@ -44,10 +44,10 @@ struct AI: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
 
-                Text("Pergunte como faria a um bibliotecário: peça indicações, descubra livros parecidos ou encontre sua próxima leitura.")
+                Text(Localization.AI.description.string)
                     .foregroundStyle(.secundaryLabel)
 
-                Text("Sugestões rápidas")
+                Text(Localization.AI.quickSuggestions.string)
                     .font(.headline)
                     .padding(.top, 24)
                 
@@ -60,7 +60,7 @@ struct AI: View {
                                 .symbolEffect(.pulse, options: .repeating, value: isPulsating)
                                 .onAppear { isPulsating.toggle() }
                             
-                            Text("Pensando em boas perguntas...")
+                            Text(Localization.AI.thinking.string)
                                 .font(.subheadline)
                                 .foregroundStyle(.secundaryLabel)
                         }
@@ -80,7 +80,7 @@ struct AI: View {
                 .animation(.easeOut(duration: 0.6), value: isLoading)
 
                 NavigationLink(destination: AIChatView()) {
-                    Text("Começar conversa")
+                    Text(Localization.AI.startConversation.string)
                         .font(.system(.headline, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -95,7 +95,7 @@ struct AI: View {
             .padding(16)
         }
         .background(.backgroundPrimary)
-        .navigationTitle("IA")
+        .navigationTitle(Localization.AI.title.string)
         .navigationDestination(isPresented: $navigateToChat) {
             AIChatView(initialPrompt: selectedPrompt)
         }
@@ -110,9 +110,9 @@ struct AI: View {
         isLoading = true
 
         let staticFallback = [
-            "Me indique livros de aventura",
-            "Livros parecidos com 1984",
-            "Um clássico curto para iniciantes"
+            Localization.AI.fallback1.string,
+            Localization.AI.fallback2.string,
+            Localization.AI.fallback3.string
         ]
 
         // 1. Tenta usar Foundation Models (on-device)

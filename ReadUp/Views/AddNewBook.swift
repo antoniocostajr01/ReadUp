@@ -61,7 +61,7 @@ struct AddNewBook: View {
                                     .foregroundStyle(.componentBackground)
                             )
                             
-                            Text("Click here to acess gallery")
+                            Text(Localization.AddBook.accessGallery.string)
                                 .foregroundStyle(.accent)
                         }
                     }
@@ -85,7 +85,7 @@ struct AddNewBook: View {
             
             
           
-                TextField("Title", text: $title, axis: .vertical)
+                TextField(Localization.AddBook.titlePlaceholder.string, text: $title, axis: .vertical)
                     .lineLimit(2)
                     .padding(.vertical, 12)
                     .padding(.leading, 16)
@@ -96,7 +96,7 @@ struct AddNewBook: View {
                     )
                     
                 
-                TextField("Author", text: $author, axis: .vertical)
+                TextField(Localization.AddBook.authorPlaceholder.string, text: $author, axis: .vertical)
                     .lineLimit(1)
                     .padding(.vertical, 12)
                     .padding(.leading, 16)
@@ -106,7 +106,7 @@ struct AddNewBook: View {
                             .shadow(radius: 0.8, x:0, y: 3)
 
                     )
-                TextField("Number of pages", text: $numberOfPages, axis: .vertical)
+                TextField(Localization.AddBook.pagesPlaceholder.string, text: $numberOfPages, axis: .vertical)
                     .keyboardType(.numberPad)
                     .scrollDismissesKeyboard(.automatic)
                     .padding(.vertical, 12)
@@ -116,7 +116,7 @@ struct AddNewBook: View {
                             .foregroundStyle(.tabBarBackground)
                             .shadow(radius: 0.8, x:0, y: 3)
                     )
-                TextField("Details", text: $details, axis: .vertical)
+                TextField(Localization.AddBook.detailsPlaceholder.string, text: $details, axis: .vertical)
                     .lineLimit(10...23)
                     .padding(.vertical, 12)
                     .padding(.leading, 16)
@@ -130,18 +130,18 @@ struct AddNewBook: View {
             
             Menu{
                 ForEach(BookStatus.allCases, id: \.self) {enumStatus in
-                    Button(enumStatus.rawValue) {
+                    Button(enumStatus.displayName) {
                         status = enumStatus
                     }
                 }
             } label: {
                 HStack{
                     if status == nil{
-                        Text("Select Status")
+                        Text("\(Localization.AddBook.selectStatus.string)")
                         Image(systemName: "chevron.up.chevron.down")
                     } else{
                         if let statusSelected = status {
-                            Text("\(statusSelected.rawValue)")
+                            Text(statusSelected.displayName)
                                 .foregroundStyle(.mainText)
                                 .font(.system(.title3, weight: .semibold))
                         }
@@ -177,7 +177,7 @@ struct AddNewBook: View {
                 
                 dismiss()
             } label: {
-                Text("Save book")
+                Text(Localization.AddBook.saveBook.string)
                     .font(.system(.title3, weight: .semibold))
                     .foregroundStyle(.componentBackground)
                     .frame(width: 361, height: 61)

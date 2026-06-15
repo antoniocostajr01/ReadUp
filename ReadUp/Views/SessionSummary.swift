@@ -24,18 +24,18 @@ struct SessionSummary: View {
                 totalProgressCard
 
                 HStack(spacing: 10) {
-                    StatCard(icon: "book.pages", title: "Pages Read", value: "\(viewModel.sessionPagesRead)")
-                    StatCard(icon: "timer", title: "Session Time", value: "\(viewModel.sessionMinutes) mins")
+                    StatCard(icon: "book.pages", title: Localization.SessionSummary.pagesRead.string, value: "\(viewModel.sessionPagesRead)")
+                    StatCard(icon: "timer", title: Localization.SessionSummary.sessionTime.string, value: "\(viewModel.sessionMinutes) \(Localization.SessionSummary.mins.string)")
                 }
 
                 HStack(spacing: 10) {
-                    StatCard(icon: "chart.line.uptrend.xyaxis", title: "Total Completion", value: "\(viewModel.completionPercentage)%")
+                    StatCard(icon: "chart.line.uptrend.xyaxis", title: Localization.SessionSummary.totalCompletion.string, value: "\(viewModel.completionPercentage)%")
                 }
 
-                Text("Final Thoughts")
+                Text(Localization.SessionSummary.finalThoughts.string)
                     .font(.system(.title3, weight: .bold))
 
-                TextField("Capture any lingering thoughts from this session...", text: $viewModel.thoughts, axis: .vertical)
+                TextField(Localization.SessionSummary.thoughtsPlaceholder.string, text: $viewModel.thoughts, axis: .vertical)
                     .lineLimit(5...10)
                     .padding(12)
                     .background(
@@ -46,7 +46,7 @@ struct SessionSummary: View {
                 Button(action: {
                     viewModel.saveSession(modelContext: modelContextSessions, onSessionSaved: onSessionSaved, onDismiss: { dismiss() })
                 }) {
-                    Label("Save Session", systemImage: "square.and.arrow.down")
+                    Label(Localization.SessionSummary.saveSession.string, systemImage: "square.and.arrow.down")
                         .font(.system(.title3, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -61,7 +61,7 @@ struct SessionSummary: View {
             .padding(16)
         }
         .background(.backgroundPrimary)
-        .navigationTitle("Session Summary")
+        .navigationTitle(Localization.SessionSummary.title.string)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
@@ -145,7 +145,7 @@ struct SessionSummary: View {
 
     private var totalProgressCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Total Progress", systemImage: "book")
+            Label(Localization.SessionSummary.totalProgress.string, systemImage: "book")
                 .font(.subheadline)
                 .foregroundStyle(.secundaryLabel)
 
@@ -153,7 +153,7 @@ struct SessionSummary: View {
                 Text("\(viewModel.currentBook.progress ?? 0)")
                     .font(.system(.largeTitle, weight: .bold))
                     .foregroundStyle(.emphasis)
-                Text("/ \(viewModel.currentBook.numberOfPages) pages")
+                Text("/ \(viewModel.currentBook.numberOfPages) \(Localization.SessionSummary.ofPages.string)")
                     .font(.title3)
                     .foregroundStyle(.secundaryLabel)
             }

@@ -19,13 +19,13 @@ struct LoginView: View {
 
             VStack {
                 VStack(spacing: 20) {
-                    Text("Login")
+                    Text(Localization.Auth.loginTitle.string)
                         .font(.system(size: 34, weight: .bold))
                         .padding(.top, 40)
                         .padding(.bottom, 12)
 
                     AuthTextField(
-                        placeholder: "Email",
+                        placeholder: Localization.Auth.email.string,
                         text: $email,
                         systemImage: "envelope.fill",
                         keyboardType: .emailAddress,
@@ -33,14 +33,14 @@ struct LoginView: View {
                     )
 
                     AuthSecureField(
-                        placeholder: "Password",
+                        placeholder: Localization.Auth.password.string,
                         text: $password,
                         textContentType: .password
                     )
                     
                     HStack {
                         Spacer()
-                        NavigationLink("Forgot password?") {
+                        NavigationLink(Localization.Auth.forgotPassword.string) {
                             ForgotPasswordView()
                         }
                         .font(.subheadline.weight(.semibold))
@@ -55,7 +55,7 @@ struct LoginView: View {
                     }
 
                     AuthPrimaryButton(
-                        title: "Sign in",
+                        title: Localization.Auth.signIn.string,
                         isLoading: authManager.isLoading,
                         isEnabled: isFormValid
                     ) {
@@ -76,7 +76,7 @@ struct LoginView: View {
                     
                     HStack {
                         Rectangle().fill(.secundaryLabel.opacity(0.3)).frame(height: 1)
-                        Text("or").font(.subheadline).foregroundStyle(.secundaryLabel)
+                        Text(Localization.Generic.or.string).font(.subheadline).foregroundStyle(.secundaryLabel)
                         Rectangle().fill(.secundaryLabel.opacity(0.3)).frame(height: 1)
                     }
                     .padding(.vertical, 4)
@@ -84,7 +84,7 @@ struct LoginView: View {
                     NavigationLink {
                         CreateAccountView()
                     } label: {
-                        Text("Create Account")
+                        Text(Localization.Auth.createAccount.string)
                             .font(.system(.headline, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)

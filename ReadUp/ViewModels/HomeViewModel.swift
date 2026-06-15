@@ -6,13 +6,15 @@ final class HomeViewModel {
     
     var greetingText: String {
         let hour = Calendar.current.component(.hour, from: Date())
+        let greeting: String
         if hour < 12 {
-            return "Bom dia, \(mockUserName)"
+            greeting = Localization.Home.greetingMorning.string
         } else if hour < 18 {
-            return "Boa tarde, \(mockUserName)"
+            greeting = Localization.Home.greetingAfternoon.string
         } else {
-            return "Boa noite, \(mockUserName)"
+            greeting = Localization.Home.greetingEvening.string
         }
+        return "\(greeting), \(mockUserName)"
     }
     
     func averageMinutesPerDay(from sessions: [LiterarySession]) -> Int {

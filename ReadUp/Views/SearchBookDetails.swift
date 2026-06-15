@@ -38,7 +38,7 @@ struct SearchBookDetails: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if shouldShowReadMore {
-                        Button(viewModel.isShowingFullDescription ? "Read less" : "Read more") {
+                        Button(viewModel.isShowingFullDescription ? Localization.BookDetails.readLess.string : Localization.BookDetails.readMore.string) {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 viewModel.isShowingFullDescription.toggle()
                             }
@@ -55,7 +55,7 @@ struct SearchBookDetails: View {
 
                 Picker("Status", selection: $viewModel.selectedStatus) {
                     ForEach(BookStatus.allCases, id: \.self) { status in
-                        Text(status.rawValue).tag(status)
+                        Text(status.displayName).tag(status)
                     }
                 }
                 .pickerStyle(.menu)
@@ -68,7 +68,7 @@ struct SearchBookDetails: View {
                 Button {
                     Task { await viewModel.saveBookToLibrary(book: book, service: service, modelContext: modelContext, onDismiss: { dismiss() }) }
                 } label: {
-                    Text(viewModel.alreadyExists ? "Already in library" : (viewModel.isSaving ? "Saving..." : "Add to library"))
+                    Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
                         .font(.system(.title3, weight: .semibold))
                         .foregroundStyle(.componentBackground)
                         .frame(width: 361, height: 61)
@@ -89,7 +89,7 @@ struct SearchBookDetails: View {
             .padding(.vertical, 20)
         }
         .background(.backgroundPrimary)
-        .navigationTitle("Book details")
+        .navigationTitle(Localization.BookDetails.title.string)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
             viewModel.alreadyExists = books.contains { $0.title.caseInsensitiveCompare(book.title) == .orderedSame && $0.author.caseInsensitiveCompare(book.author) == .orderedSame }

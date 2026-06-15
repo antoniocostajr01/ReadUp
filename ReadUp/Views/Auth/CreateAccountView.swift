@@ -23,28 +23,28 @@ struct CreateAccountView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text("Create Account")
+                Text(Localization.Auth.createAccount.string)
                     .font(.system(size: 30, weight: .bold))
                     .padding(.top, 24)
                     .padding(.bottom, 12)
 
-                AuthTextField(placeholder: "Name", text: $name,
+                AuthTextField(placeholder: Localization.Auth.name.string, text: $name,
                               textContentType: .givenName, autocapitalization: .words)
 
-                AuthTextField(placeholder: "Last name", text: $lastName,
+                AuthTextField(placeholder: Localization.Auth.lastName.string, text: $lastName,
                               textContentType: .familyName, autocapitalization: .words)
 
-                AuthTextField(placeholder: "Email", text: $email,
+                AuthTextField(placeholder: Localization.Auth.email.string, text: $email,
                               keyboardType: .emailAddress, textContentType: .emailAddress)
 
-                AuthSecureField(placeholder: "Password", text: $password,
+                AuthSecureField(placeholder: Localization.Auth.password.string, text: $password,
                                 textContentType: .newPassword)
 
-                AuthSecureField(placeholder: "Confirm password", text: $confirmPassword,
+                AuthSecureField(placeholder: Localization.Auth.confirmPassword.string, text: $confirmPassword,
                                 textContentType: .newPassword)
 
                 if !confirmPassword.isEmpty && !passwordsMatch {
-                    Text("Passwords don't match.")
+                    Text(Localization.Auth.passwordsMismatch.string)
                         .font(.footnote)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -54,7 +54,7 @@ struct CreateAccountView: View {
                     Button {
                         showTerms = true
                     } label: {
-                        Text("I accept the terms and privacy policy")
+                        Text(Localization.Auth.acceptTerms.string)
                             .font(.subheadline)
                             .foregroundStyle(Color(uiColor: .label))
                             .underline()
@@ -74,7 +74,7 @@ struct CreateAccountView: View {
                 }
 
                 AuthPrimaryButton(
-                    title: "Create Account",
+                    title: Localization.Auth.createAccount.string,
                     isLoading: authManager.isLoading,
                     isEnabled: isFormValid
                 ) {
@@ -89,7 +89,7 @@ struct CreateAccountView: View {
             .padding(.bottom, 24)
         }
         .background(.backgroundPrimary)
-        .navigationTitle("Create Account")
+        .navigationTitle(Localization.Auth.createAccount.string)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }
         .sheet(isPresented: $showTerms) {
@@ -105,32 +105,20 @@ fileprivate struct TermsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Terms of Service & Privacy Policy")
+                    Text(Localization.Auth.termsTitle.string)
                         .font(.title2.bold())
                     
-                    Text("""
-                        By creating an account on ReadUp, you agree to the following terms:
-                        
-                        1. Data Collection: We collect the books you search and save, to provide a personalized reading experience.
-                        
-                        2. AI Assistant: The AI recommendations are generated based on your reading preferences. Responses may occasionally be inaccurate.
-                        
-                        3. Privacy: We do not sell your personal data to third parties. Your reading data is yours.
-                        
-                        4. Usage: You agree not to misuse our services or help anyone else do so.
-                        
-                        (These are generic placeholder terms for demonstration purposes.)
-                        """)
+                    Text(Localization.Auth.termsBody.string)
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }
                 .padding()
             }
-            .navigationTitle("Terms")
+            .navigationTitle(Localization.Auth.termsTitle.string)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button(Localization.Generic.done.string) {
                         dismiss()
                     }
                 }

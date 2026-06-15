@@ -6,9 +6,7 @@ import SwiftUI
 final class LiteraryAssistantViewModel {
     var inputText = ""
     var messages: [AIChatMessage] = [
-        AIChatMessage(role: .assistant, text: Locale.current.language.languageCode?.identifier == "pt"
-                      ? "Oi! Posso te ajudar com livros, leitura e recomendações personalizadas."
-                      : "Hi! I can help with books, reading habits, and personalized recommendations.")
+        AIChatMessage(role: .assistant, text: Localization.AI.chatGreeting.string)
     ]
     var isThinking = false
     var isSearchingRecommendations = false
@@ -182,9 +180,7 @@ final class LiteraryAssistantViewModel {
         }
 
         // 3. Último recurso: mensagem estática
-        return appLanguageCode == "pt"
-            ? "Tive um problema para gerar a resposta agora. Tente novamente sobre livros, gêneros ou recomendações."
-            : "I had trouble generating a response right now. Ask again about books, genres, or recommendations."
+        return Localization.AI.chatErrorFallback.string
     }
 
     // MARK: - Text Cleanup

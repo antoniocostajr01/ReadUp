@@ -4,10 +4,6 @@ struct AIMessageBubble: View {
     let message: AIChatMessage
     let service: GoogleBooksService
     
-    private var isPortuguese: Bool {
-        Locale.current.language.languageCode?.identifier == "pt"
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -35,7 +31,7 @@ struct AIMessageBubble: View {
             
             if let books = message.recommendedBooks, !books.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(isPortuguese ? "Recomendados para você" : "Recommended for you")
+                    Text(Localization.AI.recommendedForYou.string)
                         .font(.system(.subheadline, weight: .bold))
                         .foregroundStyle(.secundaryLabel)
 

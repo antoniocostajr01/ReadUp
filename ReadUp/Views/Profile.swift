@@ -45,7 +45,7 @@ struct Profile: View {
                 Button(role: .destructive) {
                     showSignOutConfirmation = true
                 } label: {
-                    Text("Sign Out")
+                    Text(Localization.Profile.signOut.string)
                         .font(.system(.headline, weight: .semibold))
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity)
@@ -62,19 +62,19 @@ struct Profile: View {
         }
         .frame(maxWidth: .infinity)
         .background(.backgroundPrimary)
-        .navigationTitle("Profile")
-        .confirmationDialog("Sign out of ReadUp?", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
-            Button("Sign Out", role: .destructive) {
+        .navigationTitle(Localization.Profile.title.string)
+        .confirmationDialog(Localization.Profile.signOutConfirmTitle.string, isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
+            Button(Localization.Profile.signOut.string, role: .destructive) {
                 authManager.signOut()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(Localization.Generic.cancel.string, role: .cancel) {}
         }
     }
 
     private var genresSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Your genres")
+                Text(Localization.Profile.yourGenres.string)
                     .font(.system(.title3, weight: .bold))
                 Spacer()
                 if !availableToAdd.isEmpty {
@@ -83,11 +83,11 @@ struct Profile: View {
                             Button {
                                 add(genre)
                             } label: {
-                                Label(genre.title, systemImage: genre.icon)
+                                Label(title: { Text(genre.localizedTitle) }, icon: { Image(systemName: genre.icon) })
                             }
                         }
                     } label: {
-                        Label("Add", systemImage: "plus")
+                        Label(Localization.Generic.add.string, systemImage: "plus")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.emphasis)
                     }
@@ -96,7 +96,7 @@ struct Profile: View {
             }
 
             if chosenGenres.isEmpty {
-                Text("No genres yet. Add some to personalize your recommendations.")
+                Text(Localization.Profile.noGenres.string)
                     .font(.subheadline)
                     .foregroundStyle(.secundaryLabel)
             } else {
@@ -123,7 +123,7 @@ struct Profile: View {
         HStack(spacing: 6) {
             Image(systemName: genre.icon)
                 .font(.caption)
-            Text(genre.title)
+            Text(genre.localizedTitle)
                 .font(.subheadline.weight(.medium))
                 .lineLimit(1)
             Button {

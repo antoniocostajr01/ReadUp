@@ -23,7 +23,7 @@ struct Search: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .background(.backgroundPrimary)
-        .navigationTitle("Search")
+        .navigationTitle(Localization.Search.title.string)
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .search(book, viewModel.service))
                 .presentationDragIndicator(.visible)
@@ -48,7 +48,7 @@ struct Search: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
 
-            TextField("Search books, authors, or ISBN", text: $bindableViewModel.searchText)
+            TextField(Localization.Search.placeholder.string, text: $bindableViewModel.searchText)
                 .foregroundStyle(Color(uiColor: .label))
                 .focused($isSearchFocused)
                 .submitLabel(.search)
@@ -99,14 +99,14 @@ struct Search: View {
                         ForEach(viewModel.genreSections) { section in
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {
-                                    Text(section.genre.title)
+                                    Text(section.genre.localizedTitle)
                                         .font(.system(.title2, weight: .bold))
                                         
                                     Spacer()
                                     
-                                    Button("See All") {
+                                    Button(Localization.Search.seeAll.string) {
                                         isSearchFocused = false
-                                        viewModel.searchText = section.genre.title
+                                        viewModel.searchText = section.genre.localizedTitle
                                         Task { await viewModel.runSearch(with: section.genre.query) }
                                     }
                                     .foregroundStyle(.emphasis)
@@ -131,12 +131,12 @@ struct Search: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("Discover")
+                        Text(Localization.Search.discover.string)
                             .font(.system(.title2, weight: .bold))
 
                         Spacer()
 
-                        Button("See All") {
+                        Button(Localization.Search.seeAll.string) {
                             isSearchFocused = false
                             viewModel.searchText = "best books"
                             Task { await viewModel.runSearch(with: "best books") }
@@ -145,7 +145,7 @@ struct Search: View {
                     }
 
                     if viewModel.discoverBooks.isEmpty {
-                        ProgressView("Loading discovery...")
+                        ProgressView(Localization.Search.loadingDiscovery.string)
                             .frame(maxWidth: .infinity, minHeight: 120)
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -159,7 +159,7 @@ struct Search: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Browse by Genre")
+                    Text(Localization.Search.browseByGenre.string)
                         .font(.system(.title2, weight: .bold))
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -180,7 +180,7 @@ struct Search: View {
                                         .padding(.top, 14)
                                         .padding(.trailing, 12)
 
-                                    Text(genre.title)
+                                    Text(genre.localizedTitle)
                                         .font(.system(.title3, weight: .semibold))
                                         .foregroundStyle(Color(uiColor: .label))
                                         .padding(14)
@@ -234,12 +234,12 @@ struct Search: View {
     private var resultsView: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView("Searching books...")
+                ProgressView(Localization.Search.searching.string)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let errorMessage = viewModel.errorMessage {
-                ContentUnavailableView("Search failed", systemImage: "exclamationmark.triangle", description: Text(errorMessage))
+                ContentUnavailableView(Localization.Search.failed.string, systemImage: "exclamationmark.triangle", description: Text(errorMessage))
             } else if viewModel.results.isEmpty {
-                ContentUnavailableView("No books found", systemImage: "book.closed", description: Text("Try another title."))
+                ContentUnavailableView(Localization.Search.noResults.string, systemImage: "book.closed", description: Text(Localization.Search.tryAnother.string))
             } else {
                 List {
                     ForEach(viewModel.results) { book in
@@ -291,7 +291,7 @@ struct Search: View {
                             }
                         }
                     } else if !viewModel.results.isEmpty {
-                        Text("No more books for this search.")
+                        Text(Localization.Search.noMoreResults.string)
                             .font(.footnote)
                             .foregroundStyle(.secundaryLabel)
                             .frame(maxWidth: .infinity, alignment: .center)

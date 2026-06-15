@@ -56,7 +56,7 @@ struct AIChatView: View {
 
             // Área de Input
             HStack(alignment: .bottom, spacing: 12) {
-                TextField("Message Assistant...", text: $viewModel.inputText, axis: .vertical)
+                TextField(Localization.AI.chatPlaceholder.string, text: $viewModel.inputText, axis: .vertical)
                     .focused($isInputFocused)
                     .lineLimit(1...5)
                     .padding(10)
@@ -77,7 +77,7 @@ struct AIChatView: View {
             .background(Color(uiColor: .systemBackground).ignoresSafeArea())
         }
         .background(.backgroundPrimary)
-        .navigationTitle("AI Chat")
+        .navigationTitle(Localization.AI.chatTitle.string)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {

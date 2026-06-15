@@ -41,13 +41,13 @@ struct Home: View {
                     .padding(.top, 8)
                 
                 HStack(spacing: 12) {
-                    MetricCard(value: "\(viewModel.currentSessionStreak(from: sessions))", title: "DAY STREAK", icon: "flame.fill", accentColor: .orange)
-                    MetricCard(value: "\(viewModel.averageMinutesPerDay(from: sessions))", title: "AVERAGE TIME", icon: "clock.fill", accentColor: .indigo)
+                    MetricCard(value: "\(viewModel.currentSessionStreak(from: sessions))", title: Localization.Home.metricDayStreak.string, icon: "flame.fill", accentColor: .orange)
+                    MetricCard(value: "\(viewModel.averageMinutesPerDay(from: sessions))", title: Localization.Home.metricAverageTime.string, icon: "clock.fill", accentColor: .indigo)
                 }
                 
         
                 
-                Text("Recent Activity")
+                Text(Localization.Home.recentActivity.string)
                     .font(.system(.title2, weight: .bold))
                 
                 if sessions.isEmpty {
@@ -87,10 +87,10 @@ struct Home: View {
         .navigationDestination(item: $selectedUpNextBook) { book in
             BookDetails(book: book)
         }
-        .alert("No Books Found" ,isPresented: $isShowingAlert) {
-            Button("Ok") {}
+        .alert(Localization.Home.alertNoBooksTitle.string, isPresented: $isShowingAlert) {
+            Button(Localization.Generic.ok.string) {}
         } message: {
-            Text("You aren't reading any book. Please add some book with 'Reading' status to your library.")
+            Text(Localization.Home.alertNoBooksMessage.string)
         }
     }
     
@@ -102,10 +102,10 @@ struct Home: View {
                         .font(.system(size: 38, weight: .medium))
                         .foregroundStyle(.emphasis)
                     
-                    Text("No book in progress")
+                    Text(Localization.Home.emptyTitle.string)
                         .font(.system(.title2, weight: .bold))
                     
-                    Text("Add a book as Reading and start your next session.")
+                    Text(Localization.Home.emptySubtitle.string)
                         .font(.body)
                         .foregroundStyle(.secundaryLabel)
                         .multilineTextAlignment(.center)
@@ -168,7 +168,7 @@ struct Home: View {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 38, weight: .regular))
                             .foregroundStyle(.emphasis)
-                        Text("Add Book")
+                        Text(Localization.Home.addBook.string)
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.emphasis)
                     }

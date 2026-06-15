@@ -16,7 +16,7 @@ struct TabBar: View {
                 Home()
             }
             .tabItem {
-                Label("Home", systemImage: "house.fill")
+                Label(Localization.Tab.home.string, systemImage: "house.fill")
             }
             .tag(0)
             
@@ -24,7 +24,7 @@ struct TabBar: View {
                 Library()
             }
             .tabItem {
-                Label("Library", systemImage: "books.vertical.fill")
+                Label(Localization.Tab.library.string, systemImage: "books.vertical.fill")
             }
             .tag(1)
             
@@ -32,7 +32,7 @@ struct TabBar: View {
                 Search()
             }
             .tabItem {
-                Label("Search", systemImage: "magnifyingglass")
+                Label(Localization.Tab.search.string, systemImage: "magnifyingglass")
             }
             .tag(2)
             
@@ -40,7 +40,7 @@ struct TabBar: View {
                 AI()
             }
             .tabItem {
-                Label("AI", systemImage: "sparkles")
+                Label(Localization.Tab.ai.string, systemImage: "sparkles")
             }
             .tag(3)
             
@@ -48,7 +48,7 @@ struct TabBar: View {
                 Profile()
             }
             .tabItem {
-                Label("Profile", systemImage: "person.fill")
+                Label(Localization.Tab.profile.string, systemImage: "person.fill")
             }
             .tag(4)
         }

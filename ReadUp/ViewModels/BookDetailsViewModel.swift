@@ -5,8 +5,8 @@ import SwiftUI
 @MainActor
 @Observable
 final class BookDetailsViewModel {
-    var isShowingActionSheet = false
-    var isShowingAlert = false
+    var isShowingStatusDialog = false
+    var isShowingDeleteAlert = false
     
     func deleteBook(_ book: Book, context: ModelContext) throws {
         let bookIdToDelete = book.id

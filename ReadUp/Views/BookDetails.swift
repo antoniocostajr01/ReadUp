@@ -57,16 +57,16 @@ struct BookDetails: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button(role: .destructive) {
-                        viewModel.isShowingAlert.toggle()
+                        viewModel.isShowingDeleteAlert.toggle()
                     } label: {
-                        Label("Delete Book", systemImage: "trash.fill")
+                        Label(Localization.BookDetails.deleteBook.string, systemImage: "trash.fill")
                     }
                     
                     Button{
-                        viewModel.isShowingActionSheet = true
+                        viewModel.isShowingStatusDialog = true
                         
                     } label: {
-                        Label("Change Status", systemImage: "arrow.trianglehead.2.clockwise")
+                        Label(Localization.BookDetails.changeStatus.string, systemImage: "arrow.triangle.2.circlepath")
                     }
 
                 } label: {
@@ -77,16 +77,16 @@ struct BookDetails: View {
         .background(.backgroundPrimary)
         .toolbar(.hidden, for: .tabBar)
         .ignoresSafeArea()
-        .confirmationDialog("Select a status to this book", isPresented: $viewModel.isShowingActionSheet){
-            ForEach(BookStatus.allCases, id: \.self){enumStatus in
-                Button(enumStatus.rawValue){
+        .confirmationDialog(Localization.BookDetails.selectStatus.string, isPresented: $viewModel.isShowingStatusDialog){
+            ForEach(BookStatus.allCases, id: \.self){ enumStatus in
+                Button(enumStatus.displayName){
                     book.status = enumStatus
                 }
             }
             
         }
-        .alert("Are you sure you want to delete this book?", isPresented: $viewModel.isShowingAlert) {
-            Button("Delete", role: .destructive) {
+        .alert(Localization.BookDetails.deleteConfirmTitle.string, isPresented: $viewModel.isShowingDeleteAlert) {
+            Button(Localization.Generic.delete.string, role: .destructive) {
                 do {
                     try viewModel.deleteBook(book, context: modelContext)
                     dismiss()
@@ -95,9 +95,9 @@ struct BookDetails: View {
                 }
 
             }
-            Button("Cancel", role: .cancel) {}
+            Button(Localization.Generic.cancel.string, role: .cancel) {}
         } message: {
-            Text("Your book and your progress will be deleted.")
+            Text(Localization.BookDetails.deleteConfirmMessage.string)
         }
 
     }

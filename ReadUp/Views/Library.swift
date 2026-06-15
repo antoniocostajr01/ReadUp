@@ -35,7 +35,7 @@ struct Library: View {
                 libraryList
             }
         }
-        .navigationTitle("Library")
+        .navigationTitle(Localization.Library.title.string)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -55,7 +55,7 @@ struct Library: View {
     private var libraryList: some View {
         List {
             ForEach(booksByStatus, id: \.status) { section in
-                Section(section.status.rawValue) {
+                Section(section.status.displayName) {
                     ForEach(section.items) { book in
                         Button {
                             selectedBook = book
@@ -102,10 +102,10 @@ struct Library: View {
                     .font(.system(size: 38, weight: .medium))
                     .foregroundStyle(.emphasis)
                 
-                Text("No books yet")
+                Text(Localization.Library.emptyTitle.string)
                     .font(.system(.title2, weight: .bold))
                 
-                Text("Use Search to find books and add them to your library.")
+                Text(Localization.Library.emptySubtitle.string)
                     .font(.body)
                     .foregroundStyle(.secundaryLabel)
                     .multilineTextAlignment(.center)

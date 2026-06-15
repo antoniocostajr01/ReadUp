@@ -9,17 +9,17 @@ struct ForgotPasswordView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                Text("Forgot password")
+                Text(Localization.Auth.forgotPasswordTitle.string)
                     .font(.system(size: 30, weight: .bold))
                     .padding(.top, 24)
 
-                Text("Enter your email and we'll send you a 6-digit code to reset your password.")
+                Text(Localization.Auth.forgotPasswordDescription.string)
                     .font(.subheadline)
                     .foregroundStyle(.secundaryLabel)
                     .multilineTextAlignment(.center)
 
                 AuthTextField(
-                    placeholder: "Email",
+                    placeholder: Localization.Auth.email.string,
                     text: $email,
                     systemImage: "envelope.fill",
                     keyboardType: .emailAddress,
@@ -35,7 +35,7 @@ struct ForgotPasswordView: View {
                 }
 
                 AuthPrimaryButton(
-                    title: "Send code",
+                    title: Localization.Auth.sendCode.string,
                     isLoading: authManager.isLoading,
                     isEnabled: !email.isEmpty
                 ) {
@@ -50,7 +50,7 @@ struct ForgotPasswordView: View {
             .padding(.horizontal, 24)
         }
         .background(.backgroundPrimary)
-        .navigationTitle("Forgot password")
+        .navigationTitle(Localization.Auth.forgotPasswordTitle.string)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }
         .navigationDestination(isPresented: $navigateToReset) {

@@ -32,7 +32,7 @@ struct BookDetailsSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         if shouldShowReadMore {
-                            Button(viewModel.isShowingFullDescription ? "Read less" : "Read more") {
+                            Button(viewModel.isShowingFullDescription ? Localization.BookDetails.readLess.string : Localization.BookDetails.readMore.string) {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     viewModel.isShowingFullDescription.toggle()
                                 }
@@ -50,7 +50,7 @@ struct BookDetailsSheet: View {
                     switch source {
                     case .library(let book):
                         HStack {
-                            Text(book.status.rawValue)
+                            Text(book.status.displayName)
                                 .foregroundStyle(.mainText)
                                 .font(.system(.title3, weight: .semibold))
                         }
@@ -63,7 +63,7 @@ struct BookDetailsSheet: View {
                     case .search:
                         Picker("Status", selection: $viewModel.selectedStatus) {
                             ForEach(BookStatus.allCases, id: \.self) { status in
-                                Text(status.rawValue).tag(status)
+                                Text(status.displayName).tag(status)
                             }
                         }
                         .pickerStyle(.menu)
@@ -76,7 +76,7 @@ struct BookDetailsSheet: View {
                         Button {
                             Task { await viewModel.saveBookToLibrary(source: source, modelContext: modelContext, onDismiss: { dismiss() }) }
                         } label: {
-                            Text(viewModel.alreadyExists ? "Already in library" : (viewModel.isSaving ? "Saving..." : "Add to library"))
+                            Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
                                 .font(.system(.title3, weight: .semibold))
                                 .foregroundStyle(.componentBackground)
                                 .frame(width: 361, height: 61)
@@ -98,7 +98,7 @@ struct BookDetailsSheet: View {
                 .padding(.vertical, 20)
             }
             .background(.backgroundPrimary)
-            .navigationTitle("Book details")
+            .navigationTitle(Localization.BookDetails.title.string)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if case .library = source {
@@ -107,13 +107,13 @@ struct BookDetailsSheet: View {
                             Button(role: .destructive) {
                                 viewModel.isShowingDeleteAlert = true
                             } label: {
-                                Label("Delete Book", systemImage: "trash.fill")
+                                Label(Localization.BookDetails.deleteBook.string, systemImage: "trash.fill")
                             }
 
                             Button {
                                 viewModel.isShowingStatusDialog = true
                             } label: {
-                                Label("Change Status", systemImage: "arrow.trianglehead.2.clockwise")
+                                Label(Localization.BookDetails.changeStatus.string, systemImage: "arrow.trianglehead.2.clockwise")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
@@ -121,22 +121,22 @@ struct BookDetailsSheet: View {
                     }
                 }
             }
-            .confirmationDialog("Select a status to this book", isPresented: $viewModel.isShowingStatusDialog) {
+            .confirmationDialog(Localization.BookDetails.selectStatus.string, isPresented: $viewModel.isShowingStatusDialog) {
                 if case .library(let book) = source {
                     ForEach(BookStatus.allCases, id: \.self) { enumStatus in
-                        Button(enumStatus.rawValue) {
+                        Button(enumStatus.displayName) {
                             book.status = enumStatus
                         }
                     }
                 }
             }
-            .alert("Are you sure you want to delete this book?", isPresented: $viewModel.isShowingDeleteAlert) {
-                Button("Delete", role: .destructive) {
+            .alert(Localization.BookDetails.deleteConfirmTitle.string, isPresented: $viewModel.isShowingDeleteAlert) {
+                Button(Localization.Generic.delete.string, role: .destructive) {
                     viewModel.deleteLibraryBookIfNeeded(source: source, modelContext: modelContext, onDismiss: { dismiss() })
                 }
-                Button("Cancel", role: .cancel) {}
+                Button(Localization.Generic.cancel.string, role: .cancel) {}
             } message: {
-                Text("Your book and your progress will be deleted.")
+                Text(Localization.BookDetails.deleteConfirmMessage.string)
             }
             .onAppear {
                 if case .search(let searchBook, _) = source {

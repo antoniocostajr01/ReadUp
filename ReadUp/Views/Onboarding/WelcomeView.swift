@@ -11,11 +11,11 @@ struct WelcomeView: View {
         VStack(spacing: 0) {
             HStack {
                 if currentPage > 0 {
-                    Button("Back") { withAnimation { currentPage -= 1 } }
+                    Button(Localization.Generic.back.string) { withAnimation { currentPage -= 1 } }
                         .foregroundStyle(.emphasis)
                 }
                 Spacer()
-                Button("Skip") { withAnimation { currentPage = pages.count - 1 } }
+                Button(Localization.Generic.skip.string) { withAnimation { currentPage = pages.count - 1 } }
                     .foregroundStyle(.emphasis)
             }
             .font(.body.weight(.medium))
@@ -49,7 +49,7 @@ struct WelcomeView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Text(currentPage < pages.count - 1 ? "Next" : "Get Started")
+                    Text(currentPage < pages.count - 1 ? Localization.Onboarding.next.string : Localization.Onboarding.getStarted.string)
                     if currentPage < pages.count - 1 {
                         Image(systemName: "arrow.right")
                     }
@@ -86,13 +86,13 @@ private struct OnboardingPage: Identifiable {
 
     static let all: [OnboardingPage] = [
         .init(title: "ReadUp",
-              subtitle: "Your book. Your history. Your progress.",
+              subtitle: Localization.Onboarding.page1Subtitle.string,
               kind: .logo),
         .init(title: "",
-              subtitle: "Turn reading into a habit. Log your books, follow your journey, reflect on your ideas, and create your personal library.",
+              subtitle: Localization.Onboarding.page2Subtitle.string,
               kind: .covers),
-        .init(title: "Your reading assistant",
-              subtitle: "Get personalized recommendations and chat about books, genres, and what to read next.",
+        .init(title: Localization.Onboarding.page3Title.string,
+              subtitle: Localization.Onboarding.page3Subtitle.string,
               kind: .assistant),
     ]
 }
