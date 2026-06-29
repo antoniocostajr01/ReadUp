@@ -11,6 +11,11 @@ final class LiteraryAssistantViewModel {
     var isThinking = false
     var isSearchingRecommendations = false
 
+    /// Quantas mensagens o usuário já enviou (usado pelo limite do modo convidado).
+    var userMessageCount: Int {
+        messages.filter { $0.role == .user }.count
+    }
+
     private var appLanguageCode: String {
         guard let preferred = Locale.preferredLanguages.first else { return "en" }
         let base = Locale(identifier: preferred).language.languageCode?.identifier ?? "en"

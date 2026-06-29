@@ -19,6 +19,7 @@ public extension Localization {
         case or
         case `continue`
         case tryAgain
+        case error
 
         public var key: String.LocalizationValue {
             switch self {
@@ -34,6 +35,7 @@ public extension Localization {
             case .or: "generic.or"
             case .continue: "generic.continue"
             case .tryAgain: "generic.tryAgain"
+            case .error: "generic.error"
             }
         }
     }

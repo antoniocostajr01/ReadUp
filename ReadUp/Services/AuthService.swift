@@ -130,6 +130,11 @@ struct AuthService {
         return user
     }
 
+    /// Exclui permanentemente a conta do usuário logado e todos os seus dados.
+    func deleteAccount(token: String) async throws {
+        _ = try await authedRequest(path: "/users/me", method: "DELETE", token: token, body: nil)
+    }
+
     /// Atualiza os gêneros do usuário e retorna a lista salva.
     func updateGenres(_ genres: [String], token: String) async throws -> [String] {
         let data = try await authedRequest(

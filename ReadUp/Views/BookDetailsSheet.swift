@@ -7,11 +7,13 @@ struct BookDetailsSheet: View {
     }
 
     @Environment(LibraryStore.self) private var store
+    @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
 
     let source: Source
 
     @State private var viewModel = BookDetailsSheetViewModel()
+    @State private var showAuth = false
 
     var body: some View {
         NavigationStack {
@@ -71,7 +73,11 @@ struct BookDetailsSheet: View {
                         )
 
                         Button {
-                            Task { await viewModel.saveBookToLibrary(source: source, store: store, onDismiss: { dismiss() }) }
+                            if authManager.isGuest {
+                                showAuth = true
+                            } else {
+                                Task { await viewModel.saveBookToLibrary(source: source, store: store, onDismiss: { dismiss() }) }
+                            }
                         } label: {
                             Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
                                 .font(.system(.title3, weight: .semibold))
@@ -147,6 +153,9 @@ struct BookDetailsSheet: View {
                 if case .search(let searchBook, _) = source {
                     viewModel.alreadyExists = store.contains(searchBook)
                 }
+            }
+            .sheet(isPresented: $showAuth) {
+                AuthSheet()
             }
         }
     }

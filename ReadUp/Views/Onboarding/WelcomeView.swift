@@ -2,10 +2,13 @@ import SwiftUI
 
 /// Introdução multi-página mostrada antes do login (carrossel com dots).
 struct WelcomeView: View {
+    @Environment(AuthManager.self) private var authManager
     @State private var currentPage = 0
     @State private var navigateToLogin = false
 
     private let pages = OnboardingPage.all
+
+    private var isLastPage: Bool { currentPage == pages.count - 1 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -42,15 +45,15 @@ struct WelcomeView: View {
             .padding(.bottom, 24)
 
             Button {
-                if currentPage < pages.count - 1 {
+                if !isLastPage {
                     withAnimation { currentPage += 1 }
                 } else {
-                    navigateToLogin = true
+                    authManager.enterGuestMode()
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Text(currentPage < pages.count - 1 ? Localization.Onboarding.next.string : Localization.Onboarding.getStarted.string)
-                    if currentPage < pages.count - 1 {
+                    Text(isLastPage ? Localization.Onboarding.getStarted.string : Localization.Onboarding.next.string)
+                    if !isLastPage {
                         Image(systemName: "arrow.right")
                     }
                 }
@@ -64,7 +67,17 @@ struct WelcomeView: View {
                 )
             }
             .padding(.horizontal, 24)
+            .padding(.bottom, isLastPage ? 8 : 16)
+
+            // Na última página, oferece o login pra quem já tem conta.
+            Button(Localization.Onboarding.alreadyHaveAccount.string) {
+                navigateToLogin = true
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.emphasis)
             .padding(.bottom, 16)
+            .opacity(isLastPage ? 1 : 0)
+            .disabled(!isLastPage)
         }
         .background(.backgroundPrimary)
         .navigationBarHidden(true)

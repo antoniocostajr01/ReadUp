@@ -20,6 +20,8 @@ public extension Localization {
         case fallback1
         case fallback2
         case fallback3
+        case guestLimitTitle
+        case guestLimitMessage
 
         public var key: String.LocalizationValue {
             switch self {
@@ -36,6 +38,8 @@ public extension Localization {
             case .fallback1: "ai.fallback1"
             case .fallback2: "ai.fallback2"
             case .fallback3: "ai.fallback3"
+            case .guestLimitTitle: "ai.guestLimit.title"
+            case .guestLimitMessage: "ai.guestLimit.message"
             }
         }
     }

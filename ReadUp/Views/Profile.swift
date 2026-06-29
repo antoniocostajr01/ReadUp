@@ -3,6 +3,8 @@ import SwiftUI
 struct Profile: View {
     @Environment(AuthManager.self) private var authManager
     @State private var showSignOutConfirmation = false
+    @State private var showDeleteAccountConfirmation = false
+    @State private var showDeleteAccountError = false
 
     private var displayName: String {
         authManager.currentUser?.name ?? "Reader"
@@ -56,6 +58,22 @@ struct Profile: View {
                         )
                 }
                 .padding(.top, 8)
+
+                Button(role: .destructive) {
+                    showDeleteAccountConfirmation = true
+                } label: {
+                    HStack(spacing: 8) {
+                        if authManager.isLoading {
+                            ProgressView()
+                        }
+                        Text(Localization.Profile.deleteAccount.string)
+                            .font(.system(.subheadline, weight: .semibold))
+                    }
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                }
+                .disabled(authManager.isLoading)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
@@ -68,6 +86,22 @@ struct Profile: View {
                 authManager.signOut()
             }
             Button(Localization.Generic.cancel.string, role: .cancel) {}
+        }
+        .alert(Localization.Profile.deleteAccountConfirmTitle.string, isPresented: $showDeleteAccountConfirmation) {
+            Button(Localization.Profile.deleteAccountConfirmAction.string, role: .destructive) {
+                Task {
+                    let ok = await authManager.deleteAccount()
+                    if !ok { showDeleteAccountError = true }
+                }
+            }
+            Button(Localization.Generic.cancel.string, role: .cancel) {}
+        } message: {
+            Text(Localization.Profile.deleteAccountConfirmMessage.string)
+        }
+        .alert(Localization.Generic.error.string, isPresented: $showDeleteAccountError) {
+            Button(Localization.Generic.ok.string, role: .cancel) {}
+        } message: {
+            Text(authManager.errorMessage ?? "")
         }
     }
 

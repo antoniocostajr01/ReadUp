@@ -13,6 +13,10 @@ public extension Localization {
         case signOutConfirmTitle
         case yourGenres
         case noGenres
+        case deleteAccount
+        case deleteAccountConfirmTitle
+        case deleteAccountConfirmMessage
+        case deleteAccountConfirmAction
 
         public var key: String.LocalizationValue {
             switch self {
@@ -22,6 +26,10 @@ public extension Localization {
             case .signOutConfirmTitle: "profile.signOutConfirmTitle"
             case .yourGenres: "profile.yourGenres"
             case .noGenres: "profile.noGenres"
+            case .deleteAccount: "profile.deleteAccount"
+            case .deleteAccountConfirmTitle: "profile.deleteAccountConfirmTitle"
+            case .deleteAccountConfirmMessage: "profile.deleteAccountConfirmMessage"
+            case .deleteAccountConfirmAction: "profile.deleteAccountConfirmAction"
             }
         }
     }
