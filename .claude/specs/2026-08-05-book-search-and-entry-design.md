@@ -142,20 +142,16 @@ scanned ISBN
 
 ### Data
 
-One migration with three changes:
+One migration with two changes:
 
 ```prisma
-model User {
-  avatar String? @db.Text        // already in the schema, migration never applied
-}
-
 model Book {
   isbn       String?             // from the scanner; used for deduplication
   coverImage String? @db.Text    // gallery cover, base64
 }
 ```
 
-Profile photo is **already implemented** in the app ([Profile.swift:41](../../ReadUp/Views/Profile.swift), [AuthManager.swift:204](../../ReadUp/ViewModels/AuthManager.swift)) and in the backend (`PUT /users/me`, `UserService.updateProfile`). It only fails because the migration was never run. This is not a new feature.
+**Profile photo needs no work — it is already finished.** Verified on 2026-08-05: the app resizes to 512px, compresses to JPEG at 0.7 and uploads base64 ([Profile.swift:154](../../ReadUp/Views/Profile.swift), [Profile.swift:184](../../ReadUp/Views/Profile.swift)); `PUT /users/me` and `UserService.updateProfile` accept it; `avatarView` renders it; removal works. Migration `20260628000000_add_user_avatar` is applied — `prisma migrate status` reports "Database schema is up to date!". The only pending item is that these files are uncommitted in the working tree.
 
 **User-supplied covers.** Stored in `coverImage` (base64) and served by `GET /books/:id/cover`. When `coverImage` exists, the backend returns `coverUrl = <API>/books/<id>/cover`. That way `BookCoverView` keeps loading an ordinary URL and needs no change.
 
@@ -178,13 +174,13 @@ Rejected alternatives: base64 straight into `coverUrl` would bloat every listing
 
 | # | Cycle | Deliverable |
 |---|---|---|
-| 0 | Migration + documentation structure | Profile photo starts working; new columns in the database; `.claude/` folders created |
+| 0 | Migration + documentation structure | New columns in the database; `.claude/` folders created; test runner wired up |
 | 1 | Search engine | Open Library replaces Google in search and genre browsing; ~250 lines removed |
 | 2 | Unified form | Manual entry, editing and gallery covers |
 | 3 | Scanner | Camera, ISBN chain, fallback to the form |
 | 4 | Documentation | Consolidated `CLAUDE.md` in both repositories |
 
-Cycle 0 comes first for two reasons: it unblocks the profile photo, which is already written, and it creates the columns cycles 2 and 3 depend on.
+Cycle 0 comes first because it creates the columns cycles 2 and 3 depend on, and the test runner cycle 1 needs.
 
 ## Success criteria
 
@@ -194,7 +190,6 @@ Cycle 0 comes first for two reasons: it unblocks the profile photo, which is alr
 - A book can be added with no API involved, using the user's own cover.
 - Any field of any book can be corrected afterwards, including imported ones.
 - Scanning a Brazilian book's barcode leads to a completed entry — with API data when it exists, with a prefilled form when it does not.
-- Profile photo saves and persists.
 
 ## Documentation structure
 
