@@ -8,8 +8,8 @@ struct CreateBookPayload: Encodable {
     let details: String?
     let coverUrl: String?
     let status: String
-    let isbn: String? = nil
-    let coverImage: String? = nil
+    var isbn: String? = nil
+    var coverImage: String? = nil
 }
 
 /// Payload para atualizar um livro (PUT /books/:id).

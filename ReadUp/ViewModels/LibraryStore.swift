@@ -117,6 +117,39 @@ final class LibraryStore {
         }
     }
 
+    /// Cria um livro cadastrado manualmente (sem passar pela busca).
+    @discardableResult
+    func createManualBook(_ payload: CreateBookPayload) async -> Bool {
+        guard let token else { return false }
+        do {
+            let book = try await bookService.createBook(payload, token: token)
+            books.append(book)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Atualiza os campos editáveis de um livro existente (formulário de edição).
+    @discardableResult
+    func updateBook(_ book: Book, with payload: UpdateBookPayload) async -> Bool {
+        guard let token else { return false }
+        do {
+            let updated = try await bookService.updateBook(id: book.id, payload, token: token)
+            if let index = books.firstIndex(where: { $0.id == updated.id }) {
+                books[index] = updated
+            }
+            for i in sessions.indices where sessions[i].book.id == updated.id {
+                sessions[i].book = updated
+            }
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     func updateStatus(_ book: Book, to status: BookStatus) async {
         await applyUpdate(bookId: book.id, payload: UpdateBookPayload(status: status.rawValue))
     }
