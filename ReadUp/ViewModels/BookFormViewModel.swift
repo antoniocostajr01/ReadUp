@@ -83,11 +83,11 @@ final class BookFormViewModel {
         case .edit(let book):
             let payload = UpdateBookPayload(
                 title: trimmedTitle,
-                author: trimmedAuthor,
+                author: trimmedAuthor.isEmpty ? nil : trimmedAuthor,
                 totalPages: pages,
-                details: details,
+                details: details.isEmpty ? nil : details,
                 status: status.rawValue,
-                isbn: trimmedIsbn,
+                isbn: trimmedIsbn.isEmpty ? nil : trimmedIsbn,
                 coverImage: newCoverBase64
             )
             success = await store.updateBook(book, with: payload)
