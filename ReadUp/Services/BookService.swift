@@ -8,6 +8,8 @@ struct CreateBookPayload: Encodable {
     let details: String?
     let coverUrl: String?
     let status: String
+    let isbn: String? = nil
+    let coverImage: String? = nil
 }
 
 /// Payload para atualizar um livro (PUT /books/:id).
@@ -20,6 +22,8 @@ struct UpdateBookPayload: Encodable {
     var coverUrl: String?
     var status: String?
     var progress: Int?
+    var isbn: String?
+    var coverImage: String?
 }
 
 /// Chamadas HTTP de livros. Segue o padrão de `AuthService`, usando `BackendClient`.

@@ -18,9 +18,10 @@ struct Book: Codable, Identifiable, Hashable {
     var coverUrl: String?
     var status: BookStatus
     var progress: Int?
+    var isbn: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, author, details, coverUrl, status, progress
+        case id, title, author, details, coverUrl, status, progress, isbn
         case numberOfPages = "totalPages"
     }
 
@@ -32,7 +33,8 @@ struct Book: Codable, Identifiable, Hashable {
         details: String,
         coverUrl: String?,
         status: BookStatus,
-        progress: Int? = nil
+        progress: Int? = nil,
+        isbn: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -42,6 +44,7 @@ struct Book: Codable, Identifiable, Hashable {
         self.coverUrl = coverUrl
         self.status = status
         self.progress = progress
+        self.isbn = isbn
     }
 
     init(from decoder: Decoder) throws {
@@ -55,5 +58,6 @@ struct Book: Codable, Identifiable, Hashable {
         coverUrl = try c.decodeIfPresent(String.self, forKey: .coverUrl)
         status = try c.decodeIfPresent(BookStatus.self, forKey: .status) ?? .reading
         progress = try c.decodeIfPresent(Int.self, forKey: .progress)
+        isbn = try c.decodeIfPresent(String.self, forKey: .isbn)
     }
 }
