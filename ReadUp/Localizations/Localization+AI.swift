@@ -16,10 +16,15 @@ public extension Localization {
         case chatPlaceholder
         case chatGreeting
         case chatErrorFallback
+        case offTopicRedirect1
+        case offTopicRedirect2
+        case offTopicRedirect3
         case recommendedForYou
         case fallback1
         case fallback2
         case fallback3
+        case guestLimitTitle
+        case guestLimitMessage
 
         public var key: String.LocalizationValue {
             switch self {
@@ -32,10 +37,15 @@ public extension Localization {
             case .chatPlaceholder: "ai.chat.placeholder"
             case .chatGreeting: "ai.chat.greeting"
             case .chatErrorFallback: "ai.chat.errorFallback"
+            case .offTopicRedirect1: "ai.chat.offTopicRedirect1"
+            case .offTopicRedirect2: "ai.chat.offTopicRedirect2"
+            case .offTopicRedirect3: "ai.chat.offTopicRedirect3"
             case .recommendedForYou: "ai.recommendedForYou"
             case .fallback1: "ai.fallback1"
             case .fallback2: "ai.fallback2"
             case .fallback3: "ai.fallback3"
+            case .guestLimitTitle: "ai.guestLimit.title"
+            case .guestLimitMessage: "ai.guestLimit.message"
             }
         }
     }

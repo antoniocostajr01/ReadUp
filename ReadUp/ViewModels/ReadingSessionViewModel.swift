@@ -11,43 +11,47 @@ final class ReadingSessionViewModel {
     var countdown = 5
     var isSessionRunning = false
     var previousProgress = 0
-    
-    private var timer: Timer?
-    private var countdownTimer: Timer?
-    
-    func startCountdown() {
-        stopAllTimers()
-        countdown = 5
-        isSessionRunning = false
 
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
-            Task { @MainActor in
-                guard let self = self else { return }
-                if self.countdown > 1 {
-                    self.countdown -= 1
-                } else {
-                    timer.invalidate()
-                    self.countdownTimer = nil
-                    self.isSessionRunning = true
-                    self.startSessionTimer()
-                }
-            }
+    private static let countdownDuration: TimeInterval = 5
+
+    // Âncora: fim do countdown == início da sessão. Todo o estado do timer é
+    // derivado de Date.now - âncora, então o tempo segue contando mesmo com o
+    // app suspenso (tela bloqueada/background).
+    private(set) var sessionStartDate: Date?
+    private var uiTimer: Timer?
+
+    // Idempotente: não reseta a âncora se a sessão já começou (ex.: voltar do summary).
+    func start() {
+        if sessionStartDate == nil {
+            sessionStartDate = Date.now.addingTimeInterval(Self.countdownDuration)
+        }
+        refresh()
+        startUITimer()
+    }
+
+    func refresh(now: Date = .now) {
+        guard let start = sessionStartDate else { return }
+        let delta = now.timeIntervalSince(start)
+        if delta < 0 {
+            countdown = max(1, Int((-delta).rounded(.up)))
+        } else {
+            if !isSessionRunning { isSessionRunning = true }
+            timeElapsed = Int(delta)
         }
     }
 
-    func startSessionTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+    private func startUITimer() {
+        uiTimer?.invalidate()
+        uiTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                self?.timeElapsed += 1
+                self?.refresh()
             }
         }
     }
 
     func stopAllTimers() {
-        timer?.invalidate()
-        countdownTimer?.invalidate()
-        timer = nil
-        countdownTimer = nil
+        uiTimer?.invalidate()
+        uiTimer = nil
     }
 
     func timeString(from seconds: Int) -> String {

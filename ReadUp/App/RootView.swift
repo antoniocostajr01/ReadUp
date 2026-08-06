@@ -31,6 +31,8 @@ struct RootView: View {
                     NavigationStack {
                         WelcomeView()
                     }
+                case .guest:
+                    TabBar()
                 case .loading:
                     EmptyView()
                 case .onboarding:
@@ -42,11 +44,11 @@ struct RootView: View {
         }
         .animation(.easeInOut, value: phaseKey)
         .onChange(of: authManager.phase) { _, newPhase in
-            if newPhase == .unauthenticated || newPhase == .loading {
+            if newPhase == .unauthenticated || newPhase == .guest || newPhase == .loading {
                 isPreloading = true
             }
-            // Logout (ou troca de usuário): zera os dados em memória do usuário anterior.
-            if newPhase == .unauthenticated {
+            // Logout/convidado: zera os dados em memória do usuário anterior.
+            if newPhase == .unauthenticated || newPhase == .guest {
                 libraryStore.reset()
             }
         }
@@ -57,6 +59,7 @@ struct RootView: View {
         if isPreloading && (authManager.phase == .ready || authManager.phase == .loading) { return 1 }
         switch authManager.phase {
         case .unauthenticated: return 0
+        case .guest: return 4
         case .loading: return 1
         case .onboarding: return 2
         case .ready: return 3

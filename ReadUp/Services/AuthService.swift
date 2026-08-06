@@ -30,18 +30,21 @@ enum AuthServiceError: LocalizedError {
 
 struct AuthUser: Codable, Identifiable {
     let id: String
-    let name: String?
+    var name: String?
     let email: String
+    /// Foto de perfil em base64 (sem prefixo data:). Vinda do backend.
+    var avatar: String?
     var genres: [String]
 
     enum CodingKeys: String, CodingKey {
-        case id, name, email, genres
+        case id, name, email, avatar, genres
     }
 
-    init(id: String, name: String?, email: String, genres: [String] = []) {
+    init(id: String, name: String?, email: String, avatar: String? = nil, genres: [String] = []) {
         self.id = id
         self.name = name
         self.email = email
+        self.avatar = avatar
         self.genres = genres
     }
 
@@ -50,6 +53,7 @@ struct AuthUser: Codable, Identifiable {
         id = try c.decode(String.self, forKey: .id)
         name = try c.decodeIfPresent(String.self, forKey: .name)
         email = try c.decode(String.self, forKey: .email)
+        avatar = try c.decodeIfPresent(String.self, forKey: .avatar)
         // genres pode não vir em respostas antigas → default vazio.
         genres = try c.decodeIfPresent([String].self, forKey: .genres) ?? []
     }
@@ -128,6 +132,33 @@ struct AuthService {
             throw AuthServiceError.invalidResponse
         }
         return user
+    }
+
+    /// Atualiza nome e/ou foto (base64) do usuário e devolve o perfil atualizado.
+    /// Passe `avatar = NSNull()`-equivalente removendo a foto via `removeAvatar`.
+    func updateProfile(name: String?, avatar: String?, token: String) async throws -> AuthUser {
+        var body: [String: Any] = [:]
+        if let name { body["name"] = name }
+        if let avatar { body["avatar"] = avatar }
+        let data = try await authedRequest(path: "/users/me", method: "PUT", token: token, body: body)
+        guard let user = try? JSONDecoder().decode(AuthUser.self, from: data) else {
+            throw AuthServiceError.invalidResponse
+        }
+        return user
+    }
+
+    /// Remove a foto de perfil (envia avatar = null).
+    func removeAvatar(token: String) async throws -> AuthUser {
+        let data = try await authedRequest(path: "/users/me", method: "PUT", token: token, body: ["avatar": NSNull()])
+        guard let user = try? JSONDecoder().decode(AuthUser.self, from: data) else {
+            throw AuthServiceError.invalidResponse
+        }
+        return user
+    }
+
+    /// Exclui permanentemente a conta do usuário logado e todos os seus dados.
+    func deleteAccount(token: String) async throws {
+        _ = try await authedRequest(path: "/users/me", method: "DELETE", token: token, body: nil)
     }
 
     /// Atualiza os gêneros do usuário e retorna a lista salva.

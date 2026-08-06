@@ -3,7 +3,8 @@ import AuthenticationServices
 
 /// Fase atual da sessão — dirige o que o `RootView` mostra.
 enum SessionPhase {
-    case unauthenticated   // sem login → Welcome/Login
+    case unauthenticated   // primeiro uso, ainda não viu o Welcome → Welcome
+    case guest             // navegando sem conta → TabBar (com features travadas)
     case loading           // carregando infos do usuário → LoadingView (verde)
     case onboarding        // logado mas sem gêneros → seleção de gostos
     case ready             // tudo pronto → TabBar
@@ -21,24 +22,55 @@ final class AuthManager {
     var isLoading: Bool = false      // spinner inline dos botões de auth
     var errorMessage: String?
 
-    /// Compat: usado por telas que só querem saber se há sessão.
+    /// `true` quando há uma conta logada (exclui convidado e primeiro uso).
     var isAuthenticated: Bool {
-        if case .unauthenticated = phase { return false }
-        return true
+        switch phase {
+        case .unauthenticated, .guest: return false
+        case .loading, .onboarding, .ready: return true
+        }
+    }
+
+    /// `true` quando o usuário está navegando sem conta.
+    var isGuest: Bool {
+        if case .guest = phase { return true }
+        return false
     }
 
     private let service = AuthService()
+    private let hasSeenWelcomeKey = "hasSeenWelcome"
+    private let hasLaunchedKey = "hasLaunchedBefore"
 
     private var token: String? {
         KeychainHelper.read(KeychainKey.authToken)
     }
 
     init() {
-        // Auto-login: se há token salvo, vai pra tela de loading e carrega o perfil.
+        // Primeiro lançamento após instalar: o UserDefaults vem zerado, mas o Keychain
+        // sobrevive à reinstalação — pode haver um token antigo que pularia o Welcome.
+        // Limpamos tudo para garantir que o primeiro acesso sempre comece no onboarding.
+        if !UserDefaults.standard.bool(forKey: hasLaunchedKey) {
+            KeychainHelper.delete(KeychainKey.authToken)
+            UserDefaults.standard.removeObject(forKey: hasSeenWelcomeKey)
+            UserDefaults.standard.set(true, forKey: hasLaunchedKey)
+        }
+
         if token != nil {
+            // Auto-login: há token salvo → carrega o perfil.
             phase = .loading
             Task { await bootstrap() }
+        } else if UserDefaults.standard.bool(forKey: hasSeenWelcomeKey) {
+            // Já passou pelo Welcome antes → entra direto como convidado.
+            phase = .guest
+        } else {
+            // Primeiro uso → mostra o Welcome (onboarding).
+            phase = .unauthenticated
         }
+    }
+
+    /// Entra no app sem conta (chamado pelo botão do Welcome).
+    func enterGuestMode() {
+        UserDefaults.standard.set(true, forKey: hasSeenWelcomeKey)
+        phase = .guest
     }
 
     // MARK: - Bootstrap (carrega o perfil e decide a fase)
@@ -46,7 +78,7 @@ final class AuthManager {
     /// Busca /users/me e decide entre onboarding (sem gêneros) e ready.
     func bootstrap() async {
         guard let token else {
-            phase = .unauthenticated
+            phase = .guest
             return
         }
         phase = .loading
@@ -140,6 +172,63 @@ final class AuthManager {
         }
     }
 
+    // MARK: - Perfil (nome / foto)
+
+    /// Atualiza o nome do usuário no backend e no estado local. Retorna sucesso.
+    @discardableResult
+    func updateName(_ newName: String) async -> Bool {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let token else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let updated = try await service.updateProfile(name: trimmed, avatar: nil, token: token)
+            currentUser = updated
+            genres = updated.genres
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Atualiza a foto de perfil (base64) no backend e no estado local. Retorna sucesso.
+    @discardableResult
+    func updateAvatar(_ base64: String) async -> Bool {
+        guard let token else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let updated = try await service.updateProfile(name: nil, avatar: base64, token: token)
+            currentUser = updated
+            genres = updated.genres
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Remove a foto de perfil.
+    @discardableResult
+    func removeAvatar() async -> Bool {
+        guard let token else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let updated = try await service.removeAvatar(token: token)
+            currentUser = updated
+            genres = updated.genres
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - Forgot / Reset
 
     func requestPasswordReset(email: String) async -> Bool {
@@ -154,6 +243,26 @@ final class AuthManager {
         }
     }
 
+    // MARK: - Exclusão de conta
+
+    /// Exclui a conta no backend e, em caso de sucesso, encerra a sessão local.
+    /// Retorna `true` se a conta foi removida.
+    @discardableResult
+    func deleteAccount() async -> Bool {
+        guard let token else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            try await service.deleteAccount(token: token)
+            signOut()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - Logout
 
     func signOut() {
@@ -161,7 +270,9 @@ final class AuthManager {
         currentUser = nil
         genres = []
         errorMessage = nil
-        phase = .unauthenticated
+        // Após sair (ou excluir conta), o usuário continua navegando como convidado.
+        UserDefaults.standard.set(true, forKey: hasSeenWelcomeKey)
+        phase = .guest
     }
 
     // MARK: - Helpers privados

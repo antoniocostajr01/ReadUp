@@ -36,10 +36,12 @@ final class SearchViewModel {
         self.service = service
     }
 
+    // Descoberta sem gêneros: termos amplos e atuais. O ranking de recência do backend
+    // já favorece lançamentos, então evitamos "classic novels" (que puxava livros antigos).
     private let discoverQueries: [String] = [
-        "best seller books",
-        "classic novels",
-        "award winning books"
+        "bestsellers",
+        "new releases fiction",
+        "popular books"
     ]
 
     // MARK: - Busca manual
@@ -117,7 +119,7 @@ final class SearchViewModel {
                 continue
             }
             do {
-                let books = try await service.searchBooks(query: genre.query)
+                let books = try await service.searchBooks(query: genre.query, mode: .browse)
                 cache[genre.title] = books
                 result.append(GenreSection(genre: genre, books: books))
             } catch {
@@ -141,7 +143,7 @@ final class SearchViewModel {
 
         for query in discoverQueries {
             do {
-                let found = try await service.searchBooks(query: query)
+                let found = try await service.searchBooks(query: query, mode: .browse)
                 for book in found where !ids.contains(book.id) {
                     ids.insert(book.id)
                     merged.append(book)

@@ -17,6 +17,7 @@ public extension Localization {
         case genresSubtitle
         case selectAtLeast
         case selected
+        case alreadyHaveAccount
 
         public var key: String.LocalizationValue {
             switch self {
@@ -30,6 +31,7 @@ public extension Localization {
             case .genresSubtitle: "onboarding.genres.subtitle"
             case .selectAtLeast: "onboarding.genres.selectAtLeast"
             case .selected: "onboarding.genres.selected"
+            case .alreadyHaveAccount: "onboarding.alreadyHaveAccount"
             }
         }
     }

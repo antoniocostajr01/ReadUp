@@ -35,6 +35,9 @@ public extension Localization {
         case backToLogin
         case passwordResetSuccess
         case appleCredentialsError
+        case signInOrCreate
+        case guestWallTitle
+        case guestWallMessage
 
         public var key: String.LocalizationValue {
             switch self {
@@ -66,6 +69,9 @@ public extension Localization {
             case .backToLogin: "auth.backToLogin"
             case .passwordResetSuccess: "auth.passwordResetSuccess"
             case .appleCredentialsError: "auth.appleCredentialsError"
+            case .signInOrCreate: "auth.signInOrCreate"
+            case .guestWallTitle: "auth.guestWallTitle"
+            case .guestWallMessage: "auth.guestWallMessage"
             }
         }
     }

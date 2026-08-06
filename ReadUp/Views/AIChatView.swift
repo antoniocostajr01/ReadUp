@@ -14,9 +14,18 @@ struct AIChatView: View {
         self.initialPrompt = initialPrompt
     }
 
+    @Environment(AuthManager.self) private var authManager
     @State private var viewModel = LiteraryAssistantViewModel()
+    @State private var showAuth = false
     private let booksService = GoogleBooksService()
     @FocusState private var isInputFocused: Bool
+
+    /// Convidado pode trocar até 3 mensagens antes de precisar criar conta.
+    private let guestMessageLimit = 3
+
+    private var guestLimitReached: Bool {
+        authManager.isGuest && viewModel.userMessageCount >= guestMessageLimit
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,32 +63,20 @@ struct AIChatView: View {
                 isInputFocused = false
             }
 
-            // Área de Input
-            HStack(alignment: .bottom, spacing: 12) {
-                TextField(Localization.AI.chatPlaceholder.string, text: $viewModel.inputText, axis: .vertical)
-                    .focused($isInputFocused)
-                    .lineLimit(1...5)
-                    .padding(10)
-                    .background(Color(uiColor: .systemGray6))
-                    .cornerRadius(20)
-                    .disabled(viewModel.isThinking)
-
-                Button(action: sendMessage) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .resizable()
-                        .frame(width: 32, height: 32)
-                        .foregroundColor(viewModel.inputText.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isThinking ? .gray : .emphasis)
-                }
-                .disabled(viewModel.inputText.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isThinking)
-                .padding(.bottom, 4)
+            // Área de Input — ou parede de "criar conta" pro convidado.
+            if guestLimitReached {
+                guestLimitBar
+            } else {
+                inputBar
             }
-            .padding()
-            .background(Color(uiColor: .systemBackground).ignoresSafeArea())
         }
         .background(.backgroundPrimary)
         .navigationTitle(Localization.AI.chatTitle.string)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .sheet(isPresented: $showAuth) {
+            AuthSheet()
+        }
         .onAppear {
             if let initialPrompt = initialPrompt, viewModel.messages.count <= 1 {
                 viewModel.inputText = initialPrompt
@@ -88,6 +85,58 @@ struct AIChatView: View {
                 }
             }
         }
+    }
+
+    private var inputBar: some View {
+        HStack(alignment: .bottom, spacing: 12) {
+            TextField(Localization.AI.chatPlaceholder.string, text: $viewModel.inputText, axis: .vertical)
+                .focused($isInputFocused)
+                .lineLimit(1...5)
+                .padding(10)
+                .background(Color(uiColor: .systemGray6))
+                .cornerRadius(20)
+                .disabled(viewModel.isThinking)
+
+            Button(action: sendMessage) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .resizable()
+                    .frame(width: 32, height: 32)
+                    .foregroundColor(viewModel.inputText.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isThinking ? .gray : .emphasis)
+            }
+            .disabled(viewModel.inputText.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isThinking)
+            .padding(.bottom, 4)
+        }
+        .padding()
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+    }
+
+    private var guestLimitBar: some View {
+        VStack(spacing: 10) {
+            Text(Localization.AI.guestLimitTitle.string)
+                .font(.system(.headline, weight: .semibold))
+                .multilineTextAlignment(.center)
+
+            Text(Localization.AI.guestLimitMessage.string)
+                .font(.subheadline)
+                .foregroundStyle(.secundaryLabel)
+                .multilineTextAlignment(.center)
+
+            Button {
+                showAuth = true
+            } label: {
+                Text(Localization.Auth.signInOrCreate.string)
+                    .font(.system(.headline, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.emphasis)
+                    )
+            }
+        }
+        .padding()
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
     }
 
     // MARK: - Actions
@@ -137,5 +186,6 @@ struct MachineThinkingIndicator: View {
 #Preview {
     NavigationStack {
         AIChatView()
+            .environment(AuthManager())
     }
 }

@@ -17,6 +17,9 @@ public extension Localization {
         case saveSession
         case totalProgress
         case ofPages
+        case shareToInstagram
+        case clipboardInstruction
+        case clipboardCopied
 
         public var key: String.LocalizationValue {
             switch self {
@@ -30,6 +33,9 @@ public extension Localization {
             case .saveSession: "sessionSummary.saveSession"
             case .totalProgress: "sessionSummary.totalProgress"
             case .ofPages: "sessionSummary.ofPages"
+            case .shareToInstagram: "sessionSummary.shareToInstagram"
+            case .clipboardInstruction: "sessionSummary.clipboardInstruction"
+            case .clipboardCopied: "sessionSummary.clipboardCopied"
             }
         }
     }

@@ -32,6 +32,12 @@ struct Home: View {
     private var upNextBooks: [Book] {
         books.filter { $0.status == .iWantToRead || $0.status == .rereading }
     }
+
+    /// Capa em cache para um livro (se já baixada pela `LibraryStore`).
+    private func coverData(for book: Book) -> Data? {
+        guard let url = book.coverUrl else { return nil }
+        return store.coverCache[url]
+    }
     
     var body: some View {
         ScrollView {
@@ -79,6 +85,10 @@ struct Home: View {
         .navigationTitle(viewModel.greetingText(name: authManager.currentUser?.name))
         .navigationBarTitleDisplayMode(.inline)
         .background(.backgroundPrimary)
+        .task(id: readingBooks.map(\.id)) {
+            // Verifica o estado das capas dos livros 'reading' e baixa as que faltam.
+            await store.ensureReadingCovers()
+        }
         .navigationDestination(item: $activeReadingBook) { book in
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
         }
@@ -119,7 +129,7 @@ struct Home: View {
                 HStack(spacing: 12) {
                     Spacer()
                     ForEach(readingBooks) { book in
-                        CurrentlyReadingCard(book: book, progressValue: viewModel.progressValue(for: book), onStartReading: {
+                        CurrentlyReadingCard(book: book, progressValue: viewModel.progressValue(for: book), coverData: coverData(for: book), onStartReading: {
                             activeReadingBook = book
                         })
                             .frame(width: 320)
@@ -130,7 +140,7 @@ struct Home: View {
                 ScrollView(.horizontal) {
                     HStack{
                         ForEach(readingBooks) { book in
-                            CurrentlyReadingCard(book: book, progressValue: viewModel.progressValue(for: book), onStartReading: {
+                            CurrentlyReadingCard(book: book, progressValue: viewModel.progressValue(for: book), coverData: coverData(for: book), onStartReading: {
                                 activeReadingBook = book
                             })
                                 .frame(width: 320)
