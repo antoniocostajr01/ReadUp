@@ -4,7 +4,8 @@ struct SessionSummaryShareCard: View {
     let currentBook: Book
     let coverImage: UIImage?
     let sessionPagesRead: Int
-    let sessionMinutes: Int
+    let sessionTime: String
+    let totalProgress: Int
     let completionPercentage: Int
     
     private var cardBackground: some View {
@@ -20,7 +21,7 @@ struct SessionSummaryShareCard: View {
             
             HStack(spacing: 10) {
                 ShareStatCard(icon: "book.pages", title: "Pages Read", value: "\(sessionPagesRead)")
-                ShareStatCard(icon: "timer", title: "Session Time", value: "\(sessionMinutes) mins")
+                ShareStatCard(icon: "timer", title: "Session Time", value: sessionTime)
             }
             
             HStack(spacing: 10) {
@@ -66,7 +67,7 @@ struct SessionSummaryShareCard: View {
                 .foregroundStyle(.secundaryLabel)
             
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(currentBook.progress ?? 0)")
+                Text("\(totalProgress)")
                     .font(.system(.largeTitle, weight: .bold))
                     .foregroundStyle(.emphasis)
                 Text("/ \(currentBook.numberOfPages) pages")

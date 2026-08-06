@@ -12,6 +12,7 @@ struct ReadingSession: View {
     @State private var isPhoneLocked = false
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 24) {
@@ -70,10 +71,15 @@ struct ReadingSession: View {
         }
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
-            viewModel.startCountdown()
+            viewModel.start()
         }
         .onDisappear {
             viewModel.stopAllTimers()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                viewModel.refresh()
+            }
         }
         .alert(Localization.ReadingSession.pagePrompt.string, isPresented: $viewModel.isShowingAlertValue) {
             TextField(Localization.ReadingSession.pagePlaceholder.string, text: $viewModel.lastPageRead)
@@ -98,6 +104,7 @@ struct ReadingSession: View {
                     // Salva o progresso anterior; o novo progresso é persistido ao salvar a sessão.
                     viewModel.previousProgress = currentProgress
                     viewModel.lastPageRead = "\(page)"
+                    viewModel.refresh()
                     viewModel.isShowingSummary = true
                 }
             }

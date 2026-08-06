@@ -3,12 +3,14 @@ import SwiftUI
 struct CurrentlyReadingCard: View {
     let book: Book
     let progressValue: Double
+    /// Capa já baixada (cache da `LibraryStore`). Se presente, é exibida direto, sem `AsyncImage`.
+    var coverData: Data? = nil
     let onStartReading: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 14) {
-                BookCoverView(coverUrl: book.coverUrl, width: 86, height: 124)
+                coverView
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(book.title.uppercased())
@@ -60,5 +62,19 @@ struct CurrentlyReadingCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(uiColor: .secondarySystemBackground))
         )
+    }
+
+    /// Mostra a capa do cache (estável) ou cai no `BookCoverView` (AsyncImage) se ainda não baixada.
+    @ViewBuilder
+    private var coverView: some View {
+        if let coverData, let image = UIImage(data: coverData) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 86, height: 124)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        } else {
+            BookCoverView(coverUrl: book.coverUrl, width: 86, height: 124)
+        }
     }
 }

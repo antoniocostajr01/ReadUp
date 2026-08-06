@@ -7,8 +7,10 @@ struct SessionSummary: View {
 
     @State private var viewModel: SessionSummaryViewModel
     @State private var shareURL: URL?
+    @State private var shareImage: UIImage?
     @State private var showShareSheet = false
     @State private var coverImage: UIImage?
+    @State private var isShowingClipboardToast = false
     var onSessionSaved: (() -> Void)? = nil
 
     init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, onSessionSaved: (() -> Void)? = nil, sessionToEdit: LiterarySession? = nil) {
@@ -25,7 +27,7 @@ struct SessionSummary: View {
 
                 HStack(spacing: 10) {
                     StatCard(icon: "book.pages", title: Localization.SessionSummary.pagesRead.string, value: "\(viewModel.sessionPagesRead)")
-                    StatCard(icon: "timer", title: Localization.SessionSummary.sessionTime.string, value: "\(viewModel.sessionMinutes) \(Localization.SessionSummary.mins.string)")
+                    StatCard(icon: "timer", title: Localization.SessionSummary.sessionTime.string, value: viewModel.sessionTimeFormatted)
                 }
 
                 HStack(spacing: 10) {
@@ -43,23 +45,14 @@ struct SessionSummary: View {
                             .fill(Color(uiColor: .secondarySystemBackground))
                     )
 
-                Button(action: {
-                    Task { await viewModel.saveSession(store: store, onSessionSaved: onSessionSaved, onDismiss: { dismiss() }) }
-                }) {
-                    Label(Localization.SessionSummary.saveSession.string, systemImage: "square.and.arrow.down")
-                        .font(.system(.title3, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                .fill(Color.emphasis)
-                        )
-                }
-                .padding(.top, 8)
+                confirmButton
+
+                instagramShareSection
             }
             .padding(16)
         }
+        .scrollDismissesKeyboard(.interactively)
+        .simultaneousGesture(TapGesture().onEnded { hideKeyboard() })
         .background(.backgroundPrimary)
         .navigationTitle(Localization.SessionSummary.title.string)
         .navigationBarTitleDisplayMode(.inline)
@@ -84,7 +77,18 @@ struct SessionSummary: View {
                     .presentationDetents([.medium, .large])
             }
         }
+        .overlay(alignment: .bottom) {
+            if isShowingClipboardToast {
+                clipboardToast
+            }
+        }
         .onAppear(perform: viewModel.setupForEditting)
+        .onDisappear {
+            // Rede de segurança: garante que a sessão seja registrada ao finalizar,
+            // mesmo que o usuário saia sem tocar em Confirmar (ex.: swipe back).
+            guard viewModel.sessionToEdit == nil, !viewModel.hasSaved else { return }
+            Task { await viewModel.saveSession(store: store, onSessionSaved: onSessionSaved, onDismiss: {}) }
+        }
         .task {
             // Carrega a capa (por URL) antes de renderizar o card de compartilhamento,
             // pois o ImageRenderer é síncrono e não aguarda um AsyncImage.
@@ -94,13 +98,106 @@ struct SessionSummary: View {
         }
     }
 
+    private var confirmButton: some View {
+        Button(action: {
+            Task { await viewModel.saveSession(store: store, onSessionSaved: onSessionSaved, onDismiss: { dismiss() }) }
+        }) {
+            Label(Localization.SessionSummary.saveSession.string, systemImage: "checkmark.circle")
+                .font(.system(.title3, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(Color.emphasis)
+                )
+        }
+        .disabled(viewModel.isSaving)
+        .padding(.top, 8)
+    }
+
+    // MARK: - Compartilhamento no Instagram
+
+    private var instagramShareSection: some View {
+        VStack(spacing: 8) {
+            Button(action: shareToInstagram) {
+                Label(Localization.SessionSummary.shareToInstagram.string, systemImage: "camera.fill")
+                    .font(.system(.headline, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .fill(instagramGradient)
+                    )
+            }
+            .disabled(shareImage == nil)
+            .opacity(shareImage == nil ? 0.5 : 1)
+
+            Label(Localization.SessionSummary.clipboardInstruction.string, systemImage: "doc.on.clipboard")
+                .font(.footnote)
+                .foregroundStyle(.secundaryLabel)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var instagramGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.40, green: 0.22, blue: 0.72),
+                Color(red: 0.83, green: 0.18, blue: 0.42),
+                Color(red: 0.98, green: 0.51, blue: 0.23)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var clipboardToast: some View {
+        Label(Localization.SessionSummary.clipboardCopied.string, systemImage: "checkmark.circle.fill")
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Capsule().fill(Color.black.opacity(0.85)))
+            .padding(.bottom, 24)
+            .padding(.horizontal, 24)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// Copia a imagem do resumo para a área de transferência e abre a câmera de
+    /// stories do Instagram, para o usuário colar a foto no story.
+    private func shareToInstagram() {
+        guard let shareImage else { return }
+        UIPasteboard.general.image = shareImage
+
+        withAnimation { isShowingClipboardToast = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            withAnimation { isShowingClipboardToast = false }
+        }
+
+        let candidates = ["instagram://story-camera", "instagram-stories://share"]
+        for urlString in candidates {
+            if let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+                return
+            }
+        }
+
+        // Instagram não instalado → cai no share sheet padrão do sistema.
+        showShareSheet = true
+    }
+
     @MainActor
     private func renderShareImage() {
         let viewToRender = SessionSummaryShareCard(
             currentBook: viewModel.currentBook,
             coverImage: coverImage,
             sessionPagesRead: viewModel.sessionPagesRead,
-            sessionMinutes: viewModel.sessionMinutes,
+            sessionTime: viewModel.sessionTimeFormatted,
+            totalProgress: viewModel.pagesRead,
             completionPercentage: viewModel.completionPercentage
         )
         let renderer = ImageRenderer(content: viewToRender)
@@ -108,6 +205,7 @@ struct SessionSummary: View {
         renderer.isOpaque = false // Transparent background
 
         if let uiImage = renderer.uiImage, let pngData = uiImage.pngData() {
+            shareImage = uiImage
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ReadUp_Session.png")
             do {
                 try pngData.write(to: tempURL)
@@ -149,7 +247,7 @@ struct SessionSummary: View {
                 .foregroundStyle(.secundaryLabel)
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(viewModel.currentBook.progress ?? 0)")
+                Text("\(viewModel.pagesRead)")
                     .font(.system(.largeTitle, weight: .bold))
                     .foregroundStyle(.emphasis)
                 Text("/ \(viewModel.currentBook.numberOfPages) \(Localization.SessionSummary.ofPages.string)")

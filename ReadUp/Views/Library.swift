@@ -14,28 +14,34 @@ struct Library: View {
     private var books: [Book] { store.books }
 
     @State private var selectedBook: Book?
-    
-    private var booksByStatus: [(status: BookStatus, items: [Book])] {
-        let orderedStatuses = BookStatus.allCases.filter { status in
-            books.contains(where: { $0.status == status })
+    @State private var searchText = ""
+
+    /// Livros filtrados pela busca (título ou autor). Sem texto, retorna todos.
+    private var filteredBooks: [Book] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return books }
+        return books.filter {
+            $0.title.localizedCaseInsensitiveContains(query) ||
+            $0.author.localizedCaseInsensitiveContains(query)
         }
-        
+    }
+
+    private var booksByStatus: [(status: BookStatus, items: [Book])] {
+        let source = filteredBooks
+        let orderedStatuses = BookStatus.allCases.filter { status in
+            source.contains(where: { $0.status == status })
+        }
+
         return orderedStatuses.map { status in
-            let items = books
+            let items = source
                 .filter { $0.status == status }
                 .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
             return (status, items)
         }
     }
-    
+
     var body: some View {
-        Group {
-            if books.isEmpty {
-                emptyState
-            } else {
-                libraryList
-            }
-        }
+        content
         .navigationTitle(Localization.Library.title.string)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -52,7 +58,34 @@ struct Library: View {
         }
         .background(.backgroundPrimary)
     }
-    
+
+    /// Livraria vazia mostra o empty state; com livros, habilita a busca e mostra
+    /// a lista (ou o estado "nada encontrado" quando a busca não retorna nada).
+    @ViewBuilder
+    private var content: some View {
+        if books.isEmpty {
+            emptyState
+        } else {
+            Group {
+                if booksByStatus.isEmpty {
+                    noResultsState
+                } else {
+                    libraryList
+                }
+            }
+            .searchable(text: $searchText, prompt: Localization.Library.searchPrompt.string)
+        }
+    }
+
+    private var noResultsState: some View {
+        ContentUnavailableView {
+            Label(Localization.Library.noResultsTitle.string, systemImage: "magnifyingglass")
+        } description: {
+            Text(Localization.Library.noResultsSubtitle.string)
+        }
+        .background(.backgroundPrimary)
+    }
+
     private var libraryList: some View {
         List {
             ForEach(booksByStatus, id: \.status) { section in

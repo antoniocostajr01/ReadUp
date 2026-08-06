@@ -4,6 +4,7 @@ enum GoogleBooksServiceError: LocalizedError {
     case invalidURL
     case apiError(message: String)
     case invalidResponse
+    case networkUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -13,93 +14,69 @@ enum GoogleBooksServiceError: LocalizedError {
             return message
         case .invalidResponse:
             return "Invalid server response."
+        case .networkUnavailable:
+            return "Unable to reach the server. Check your connection."
         }
     }
 }
 
-private struct GoogleBooksAPIErrorResponse: Decodable {
-    struct APIError: Decodable {
-        struct APIErrorItem: Decodable {
-            let message: String?
-        }
-        let message: String?
-        let errors: [APIErrorItem]?
-    }
-    let error: APIError?
+private struct BackendErrorResponse: Decodable {
+    let error: String?
 }
 
+/// Busca de livros via backend (`GET /books/search`), que faz proxy da Google Books API
+/// com ranking de relevância/recência e esconde a API key. Rota pública (convidados também buscam).
 struct GoogleBooksService {
-    var apiKey: String {
-        guard let apiKey = Bundle.main.object(forInfoDictionaryKey: "GOOGLE_BOOKS_API_KEY") as? String else {
-            fatalError("A chave GOOGLE_BOOKS_API_KEY não foi encontrada no Info.plist")
-        }
-        return apiKey
-    }
 
+    private var baseURL: String { AppConfig.baseURL }
     private let supportedLanguages = ["pt", "en"]
 
-    func searchBooks(query: String, maxResults: Int = 20, startIndex: Int = 0) async throws -> [SearchBook] {
+    /// Modo de ranking no backend: `search` (busca por título, relevância manda) ou
+    /// `browse` (gênero/descoberta, favorece contemporâneos).
+    enum Mode: String {
+        case search
+        case browse
+    }
+
+    func searchBooks(query: String, maxResults: Int = 20, startIndex: Int = 0, mode: Mode = .search) async throws -> [SearchBook] {
         let cleanedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard cleanedQuery.count >= 2 else { return [] }
-        let preferredLanguageCode = appLanguageCode()
 
-        var components = URLComponents(string: "https://www.googleapis.com/books/v1/volumes")
+        var components = URLComponents(string: "\(baseURL)/books/search")
         components?.queryItems = [
             URLQueryItem(name: "q", value: cleanedQuery),
+            URLQueryItem(name: "lang", value: appLanguageCode()),
             URLQueryItem(name: "maxResults", value: "\(maxResults)"),
             URLQueryItem(name: "startIndex", value: "\(startIndex)"),
-            URLQueryItem(name: "orderBy", value: "relevance"),
-            URLQueryItem(name: "key", value: apiKey)
+            URLQueryItem(name: "mode", value: mode.rawValue)
         ]
 
         guard let url = components?.url else {
             throw GoogleBooksServiceError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(from: url)
+        } catch {
+            throw GoogleBooksServiceError.networkUnavailable
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw GoogleBooksServiceError.invalidResponse
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
-            if let apiError = try? JSONDecoder().decode(GoogleBooksAPIErrorResponse.self, from: data) {
-                let message = apiError.error?.message
-                    ?? apiError.error?.errors?.first?.message
-                    ?? "Google Books request failed (\(httpResponse.statusCode))."
-                throw GoogleBooksServiceError.apiError(message: message)
-            }
-            throw GoogleBooksServiceError.apiError(message: "Google Books request failed (\(httpResponse.statusCode)).")
+            let message = (try? JSONDecoder().decode(BackendErrorResponse.self, from: data))?.error
+                ?? "Book search failed (\(httpResponse.statusCode))."
+            throw GoogleBooksServiceError.apiError(message: message)
         }
 
-        let decoded = try JSONDecoder().decode(GoogleBooksResponse.self, from: data)
-
-        return (decoded.items ?? []).compactMap { item in
-            let info = item.volumeInfo
-            let normalizedLanguage = normalizedLanguageCode(info.language)
-            let description = info.description?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            guard let normalizedLanguage, supportedLanguages.contains(normalizedLanguage) else {
-                return nil
-            }
-
-            guard let description, !description.isEmpty else {
-                return nil
-            }
-
-            let rawURL = info.imageLinks?.thumbnail?.replacingOccurrences(of: "http://", with: "https://")
-            return SearchBook(
-                id: item.id,
-                title: info.title,
-                author: info.authors?.joined(separator: ", ") ?? String(localized: "search.unknown_author", defaultValue: "Unknown author"),
-                details: description,
-                numberOfPages: info.pageCount ?? 0,
-                languageCode: normalizedLanguage,
-                thumbnailURL: rawURL.flatMap(URL.init(string:))
-            )
-        }
-        .sorted { lhs, rhs in
-            (lhs.languageCode == preferredLanguageCode ? 0 : 1) < (rhs.languageCode == preferredLanguageCode ? 0 : 1)
+        do {
+            return try JSONDecoder().decode([SearchBook].self, from: data)
+        } catch {
+            throw GoogleBooksServiceError.invalidResponse
         }
     }
 
@@ -117,18 +94,12 @@ struct GoogleBooksService {
         }
     }
 
+    /// Idioma preferido do usuário (pt/en), enviado ao backend como `langRestrict`.
     private func appLanguageCode() -> String {
         guard let preferred = Locale.preferredLanguages.first else {
             return "en"
         }
-
         let baseLanguage = Locale(identifier: preferred).language.languageCode?.identifier ?? "en"
         return supportedLanguages.contains(baseLanguage) ? baseLanguage : "en"
-    }
-
-    private func normalizedLanguageCode(_ languageCode: String?) -> String? {
-        guard let languageCode else { return nil }
-        let normalized = Locale(identifier: languageCode).language.languageCode?.identifier ?? languageCode.lowercased()
-        return normalized
     }
 }

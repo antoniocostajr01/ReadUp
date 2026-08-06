@@ -172,6 +172,63 @@ final class AuthManager {
         }
     }
 
+    // MARK: - Perfil (nome / foto)
+
+    /// Atualiza o nome do usuário no backend e no estado local. Retorna sucesso.
+    @discardableResult
+    func updateName(_ newName: String) async -> Bool {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let token else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let updated = try await service.updateProfile(name: trimmed, avatar: nil, token: token)
+            currentUser = updated
+            genres = updated.genres
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Atualiza a foto de perfil (base64) no backend e no estado local. Retorna sucesso.
+    @discardableResult
+    func updateAvatar(_ base64: String) async -> Bool {
+        guard let token else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let updated = try await service.updateProfile(name: nil, avatar: base64, token: token)
+            currentUser = updated
+            genres = updated.genres
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Remove a foto de perfil.
+    @discardableResult
+    func removeAvatar() async -> Bool {
+        guard let token else { return false }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            let updated = try await service.removeAvatar(token: token)
+            currentUser = updated
+            genres = updated.genres
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - Forgot / Reset
 
     func requestPasswordReset(email: String) async -> Bool {

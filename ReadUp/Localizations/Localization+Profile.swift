@@ -9,6 +9,10 @@ public extension Localization {
     enum Profile: LocalizationProtocol {
         case title
         case defaultName
+        case changePhoto
+        case removePhoto
+        case editName
+        case namePlaceholder
         case signOut
         case signOutConfirmTitle
         case yourGenres
@@ -22,6 +26,10 @@ public extension Localization {
             switch self {
             case .title: "profile.title"
             case .defaultName: "profile.defaultName"
+            case .changePhoto: "profile.changePhoto"
+            case .removePhoto: "profile.removePhoto"
+            case .editName: "profile.editName"
+            case .namePlaceholder: "profile.namePlaceholder"
             case .signOut: "profile.signOut"
             case .signOutConfirmTitle: "profile.signOutConfirmTitle"
             case .yourGenres: "profile.yourGenres"

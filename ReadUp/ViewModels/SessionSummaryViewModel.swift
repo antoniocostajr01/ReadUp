@@ -10,6 +10,7 @@ final class SessionSummaryViewModel {
     var thoughts: String = ""
     var sessionToEdit: LiterarySession?
     var isSaving = false
+    private(set) var hasSaved = false
 
     init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, sessionToEdit: LiterarySession? = nil) {
         self.readingTime = readingTime
@@ -35,6 +36,14 @@ final class SessionSummaryViewModel {
         max(1, readingTime / 60)
     }
 
+    /// Duração real da sessão formatada como hh:mm:ss.
+    var sessionTimeFormatted: String {
+        let hours = readingTime / 3600
+        let minutes = (readingTime % 3600) / 60
+        let seconds = readingTime % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
     func setupForEditting() {
         if let session = sessionToEdit {
             pagesRead = session.pagesRead
@@ -46,6 +55,12 @@ final class SessionSummaryViewModel {
 
     /// Registra a sessão no backend (via store) e atualiza o progresso do livro.
     func saveSession(store: LibraryStore, onSessionSaved: (() -> Void)?, onDismiss: @escaping () -> Void) async {
+        // Idempotente: evita salvar duas vezes quando o botão Confirmar e a rede
+        // de segurança do onDisappear disparam para a mesma sessão.
+        guard !hasSaved else {
+            onDismiss()
+            return
+        }
         isSaving = true
         defer { isSaving = false }
 
@@ -58,6 +73,7 @@ final class SessionSummaryViewModel {
         )
 
         if success {
+            hasSaved = true
             onSessionSaved?()
             onDismiss()
         }

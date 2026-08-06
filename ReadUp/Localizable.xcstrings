@@ -366,6 +366,54 @@
         }
       }
     },
+    "ai.chat.offTopicRedirect1": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm strictly a books person! But I'd love to help you find your next great read — any genre in mind?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eu só entendo de livros! Mas adoraria te ajudar a achar sua próxima leitura — algum gênero em mente?"
+          }
+        }
+      }
+    },
+    "ai.chat.offTopicRedirect2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's outside my library! Ask me about books, authors, or recommendations and I'm all yours."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isso foge da minha estante! Me pergunta sobre livros, autores ou recomendações que eu te ajudo."
+          }
+        }
+      }
+    },
+    "ai.chat.offTopicRedirect3": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I only chat about literature. How about a book recommendation instead?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eu só converso sobre literatura. Que tal uma recomendação de livro?"
+          }
+        }
+      }
+    },
     "ai.chat.placeholder": {
       "localizations": {
         "en": {
@@ -1886,6 +1934,54 @@
         }
       }
     },
+    "library.noResults.subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try a different title or author."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tente outro título ou autor."
+          }
+        }
+      }
+    },
+    "library.noResults.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No books found"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhum livro encontrado"
+          }
+        }
+      }
+    },
+    "library.searchPrompt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search your library"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar na biblioteca"
+          }
+        }
+      }
+    },
     "library.title": {
       "localizations": {
         "en": {
@@ -2078,6 +2174,22 @@
         }
       }
     },
+    "profile.changePhoto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change photo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alterar foto"
+          }
+        }
+      }
+    },
     "profile.defaultName": {
       "localizations": {
         "en": {
@@ -2158,6 +2270,38 @@
         }
       }
     },
+    "profile.editName": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit name"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar nome"
+          }
+        }
+      }
+    },
+    "profile.namePlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu nome"
+          }
+        }
+      }
+    },
     "profile.noGenres": {
       "localizations": {
         "en": {
@@ -2170,6 +2314,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nenhum gênero ainda. Adicione para personalizar suas recomendações."
+          }
+        }
+      }
+    },
+    "profile.removePhoto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove photo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remover foto"
           }
         }
       }
@@ -2651,6 +2811,38 @@
         }
       }
     },
+    "sessionSummary.clipboardCopied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summary copied! Paste it into your Instagram story."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumo copiado! É só colar no seu story do Instagram."
+          }
+        }
+      }
+    },
+    "sessionSummary.clipboardInstruction": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The summary image goes to your clipboard — just paste it into your story."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A foto do resumo vai para a área de transferência — é só colar no seu story."
+          }
+        }
+      }
+    },
     "sessionSummary.finalThoughts": {
       "localizations": {
         "en": {
@@ -2720,13 +2912,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save Session"
+            "value": "Confirm"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Salvar Sessão"
+            "value": "Confirmar"
           }
         }
       }
@@ -2743,6 +2935,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tempo de Sessão"
+          }
+        }
+      }
+    },
+    "sessionSummary.shareToInstagram": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share to Instagram"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartilhar no Instagram"
           }
         }
       }

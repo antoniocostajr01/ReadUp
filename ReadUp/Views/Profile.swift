@@ -1,13 +1,24 @@
 import SwiftUI
+import PhotosUI
 
 struct Profile: View {
     @Environment(AuthManager.self) private var authManager
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAccountConfirmation = false
     @State private var showDeleteAccountError = false
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var showEditName = false
+    @State private var draftName = ""
 
     private var displayName: String {
         authManager.currentUser?.name ?? "Reader"
+    }
+
+    /// Foto de perfil decodada do base64 vindo do backend (se houver).
+    private var avatarImage: UIImage? {
+        guard let base64 = authManager.currentUser?.avatar,
+              let data = Data(base64Encoded: base64) else { return nil }
+        return UIImage(data: data)
     }
 
     private var email: String {
@@ -27,17 +38,46 @@ struct Profile: View {
             VStack(spacing: 24) {
                 // Cabeçalho do usuário
                 VStack(spacing: 8) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 84))
-                        .foregroundStyle(.emphasis)
+                    PhotosPicker(selection: $selectedPhoto, matching: .images, photoLibrary: .shared()) {
+                        ZStack(alignment: .bottomTrailing) {
+                            avatarView
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(7)
+                                .background(Circle().fill(Color.emphasis))
+                                .overlay(Circle().stroke(.backgroundPrimary, lineWidth: 2))
+                        }
+                    }
+                    .disabled(authManager.isLoading)
 
-                    Text(displayName)
-                        .font(.title2.weight(.bold))
+                    HStack(spacing: 6) {
+                        Text(displayName)
+                            .font(.title2.weight(.bold))
+                        Button {
+                            draftName = authManager.currentUser?.name ?? ""
+                            showEditName = true
+                        } label: {
+                            Image(systemName: "pencil")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.emphasis)
+                        }
+                        .disabled(authManager.isLoading)
+                    }
 
                     if !email.isEmpty {
                         Text(email)
                             .font(.subheadline)
                             .foregroundStyle(.secundaryLabel)
+                    }
+
+                    if avatarImage != nil {
+                        Button(Localization.Profile.removePhoto.string) {
+                            Task { await authManager.removeAvatar() }
+                        }
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.red)
+                        .disabled(authManager.isLoading)
                     }
                 }
                 .padding(.top, 16)
@@ -103,6 +143,57 @@ struct Profile: View {
         } message: {
             Text(authManager.errorMessage ?? "")
         }
+        .alert(Localization.Profile.editName.string, isPresented: $showEditName) {
+            TextField(Localization.Profile.namePlaceholder.string, text: $draftName)
+            Button(Localization.Generic.save.string) {
+                let newName = draftName
+                Task { await authManager.updateName(newName) }
+            }
+            Button(Localization.Generic.cancel.string, role: .cancel) {}
+        }
+        .onChange(of: selectedPhoto) { _, item in
+            guard let item else { return }
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self),
+                   let base64 = Self.compressedBase64(from: data) {
+                    await authManager.updateAvatar(base64)
+                }
+                selectedPhoto = nil
+            }
+        }
+    }
+
+    /// Avatar: foto do usuário (se houver) ou o ícone padrão.
+    @ViewBuilder
+    private var avatarView: some View {
+        if let image = avatarImage {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 96, height: 96)
+                .clipShape(Circle())
+        } else {
+            Image(systemName: "person.crop.circle.fill")
+                .font(.system(size: 84))
+                .foregroundStyle(.emphasis)
+                .frame(width: 96, height: 96)
+        }
+    }
+
+    /// Redimensiona (máx. 512px) e comprime a imagem em JPEG, devolvendo base64 leve pro backend.
+    private static func compressedBase64(from data: Data) -> String? {
+        guard let image = UIImage(data: data) else { return nil }
+        let maxDimension: CGFloat = 512
+        let largestSide = max(image.size.width, image.size.height)
+        let scale = largestSide > maxDimension ? maxDimension / largestSide : 1
+        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let resized = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+        guard let jpeg = resized.jpegData(compressionQuality: 0.7) else { return nil }
+        return jpeg.base64EncodedString()
     }
 
     private var genresSection: some View {

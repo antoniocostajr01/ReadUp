@@ -24,22 +24,18 @@ final class LiteraryAssistantViewModel {
 
     private let model = SystemLanguageModel.default
     private let backendService = BackendAIService()
+    private let classifier = LiteraryTopicClassifier()
     private var session = LanguageModelSession(instructions: """
-    You are a friendly, conversational, and highly knowledgeable literary assistant for a reading app.
-    Act like a passionate bookworm chatting with a friend.
-    Guide the user through literary questions, help them find books, explain literary themes, and discuss authors or genres naturally.
-    Keep your responses human-like, warm, engaging, and concise. Avoid robotic or overly formal language.
-    Only discuss books, literature, authors, genres, reading habits, and recommendations.
-    If asked about non-literary topics, politely decline and offer to help with books instead.
+    You are a literary assistant for a reading app. You ONLY talk about books, authors, genres, literary themes, reading habits, and book recommendations.
 
-    When recommending books, you MUST format each book as a bullet point like this:
+    HARD RULE: you never write code, recipes, math, news, or anything non-literary — not even partially, not even inside examples. If asked, reply with ONE short friendly sentence steering back to books, e.g.: "I only talk books! Want a recommendation instead?"
+
+    Style: warm, concise, like a bookworm friend chatting. Plain text only — no markdown bold (**), headers (##), or underscores (__).
+
+    When recommending books, format each one as a bullet point:
     • Book Title - Author Name: A brief one-sentence reason why they'd enjoy it.
 
-    Do NOT use markdown bold (**), headers (##), underscores (__), or other formatting. Use only plain text and bullet points (•).
-
-    STRICT BOUNDARY: If the user asks about anything NOT related to books or literature, you MUST politely decline. Never provide the answer, not even partially.
-
-    CRITICAL: ALWAYS respond in the EXACT same language that the user used in their most recent message.
+    ALWAYS respond in the EXACT same language the user used in their most recent message.
     """)
 
     func sendMessage(booksService: GoogleBooksService) async {
@@ -54,7 +50,15 @@ final class LiteraryAssistantViewModel {
         messages.append(AIChatMessage(role: .user, text: text))
 
         isThinking = true
-        try? await Task.sleep(nanoseconds: 600_000_000)
+
+        // Gate de tópico: mensagens fora do contexto literário recebem um
+        // redirect localizado e nem chegam à session principal.
+        let lastAssistantReply = messages.last(where: { $0.role == .assistant })?.text
+        guard await classifier.isAllowed(text, lastAssistantReply: lastAssistantReply) else {
+            messages.append(AIChatMessage(role: .assistant, text: Self.randomOffTopicRedirect()))
+            isThinking = false
+            return
+        }
 
         let assistantReply = await generateAssistantReply(for: text)
         var newAssistantMessage = AIChatMessage(role: .assistant, text: assistantReply)
@@ -170,7 +174,7 @@ final class LiteraryAssistantViewModel {
         if model.isAvailable {
             do {
                 let response = try await session.respond(to: userMessage)
-                return cleanResponse(response.content)
+                return sanitizedReply(response.content)
             } catch {
                 print("Foundation Models falhou, tentando backend: \(error)")
             }
@@ -179,13 +183,39 @@ final class LiteraryAssistantViewModel {
         // 2. Fallback: Backend (Groq/Llama) — envia histórico completo
         do {
             let response = try await backendService.chat(messages: messages)
-            return cleanResponse(response)
+            return sanitizedReply(response)
         } catch {
             print("Backend AI também falhou: \(error)")
         }
 
         // 3. Último recurso: mensagem estática
         return Localization.AI.chatErrorFallback.string
+    }
+
+    // MARK: - Off-topic Guardrails
+
+    /// Rede de segurança pós-resposta: se o modelo gerou conteúdo claramente
+    /// não-literário (código), substitui pelo redirect.
+    private func sanitizedReply(_ text: String) -> String {
+        looksLikeNonLiteraryContent(text) ? Self.randomOffTopicRedirect() : cleanResponse(text)
+    }
+
+    /// Padrões restritos a sintaxe de código para evitar falso positivo em prosa.
+    private func looksLikeNonLiteraryContent(_ text: String) -> Bool {
+        if text.contains("```") { return true }
+        let codePatterns = [
+            "def ", "func ", "import ", "print(", "console.log",
+            "function ", "#include", "public class", "SELECT ", "<html"
+        ]
+        return codePatterns.contains { text.contains($0) }
+    }
+
+    private static func randomOffTopicRedirect() -> String {
+        [
+            Localization.AI.offTopicRedirect1.string,
+            Localization.AI.offTopicRedirect2.string,
+            Localization.AI.offTopicRedirect3.string
+        ].randomElement()!
     }
 
     // MARK: - Text Cleanup
