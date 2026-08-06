@@ -155,7 +155,8 @@ struct Profile: View {
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self),
-                   let base64 = Self.compressedBase64(from: data) {
+                   let image = UIImage(data: data),
+                   let base64 = image.compressedBase64() {
                     await authManager.updateAvatar(base64)
                 }
                 selectedPhoto = nil
@@ -178,22 +179,6 @@ struct Profile: View {
                 .foregroundStyle(.emphasis)
                 .frame(width: 96, height: 96)
         }
-    }
-
-    /// Redimensiona (máx. 512px) e comprime a imagem em JPEG, devolvendo base64 leve pro backend.
-    private static func compressedBase64(from data: Data) -> String? {
-        guard let image = UIImage(data: data) else { return nil }
-        let maxDimension: CGFloat = 512
-        let largestSide = max(image.size.width, image.size.height)
-        let scale = largestSide > maxDimension ? maxDimension / largestSide : 1
-        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        let resized = renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-        guard let jpeg = resized.jpegData(compressionQuality: 0.7) else { return nil }
-        return jpeg.base64EncodedString()
     }
 
     private var genresSection: some View {
