@@ -140,6 +140,9 @@ final class LibraryStore {
             if let index = books.firstIndex(where: { $0.id == updated.id }) {
                 books[index] = updated
             }
+            if let coverUrl = updated.coverUrl {
+                coverCache[coverUrl] = nil
+            }
             for i in sessions.indices where sessions[i].book.id == updated.id {
                 sessions[i].book = updated
             }
