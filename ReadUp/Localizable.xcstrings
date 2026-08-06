@@ -270,6 +270,22 @@
         }
       }
     },
+    "addBook.isbnPlaceholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ISBN (optional)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ISBN (opcional)"
+          }
+        }
+      }
+    },
     "addBook.pagesPlaceholder": {
       "localizations": {
         "en": {
@@ -1214,6 +1230,22 @@
         }
       }
     },
+    "bookDetails.editBook": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Book"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar Livro"
+          }
+        }
+      }
+    },
     "bookDetails.readLess": {
       "localizations": {
         "en": {
@@ -1898,6 +1930,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Atividade Recente"
+          }
+        }
+      }
+    },
+    "library.addMenu.addManually": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Manually"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cadastrar Manualmente"
+          }
+        }
+      }
+    },
+    "library.addMenu.search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar"
           }
         }
       }

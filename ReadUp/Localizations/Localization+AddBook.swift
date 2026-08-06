@@ -12,6 +12,7 @@ public extension Localization {
         case authorPlaceholder
         case pagesPlaceholder
         case detailsPlaceholder
+        case isbnPlaceholder
         case selectStatus
         case saveBook
 
@@ -22,6 +23,7 @@ public extension Localization {
             case .authorPlaceholder: "addBook.authorPlaceholder"
             case .pagesPlaceholder: "addBook.pagesPlaceholder"
             case .detailsPlaceholder: "addBook.detailsPlaceholder"
+            case .isbnPlaceholder: "addBook.isbnPlaceholder"
             case .selectStatus: "addBook.selectStatus"
             case .saveBook: "addBook.saveBook"
             }
