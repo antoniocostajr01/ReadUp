@@ -15,6 +15,7 @@ struct Library: View {
 
     @State private var selectedBook: Book?
     @State private var searchText = ""
+    @State private var isShowingAddManually = false
 
     /// Livros filtrados pela busca (título ou autor). Sem texto, retorna todos.
     private var filteredBooks: [Book] {
@@ -45,8 +46,17 @@ struct Library: View {
         .navigationTitle(Localization.Library.title.string)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    tabState.goToSearchTab()
+                Menu {
+                    Button {
+                        tabState.goToSearchTab()
+                    } label: {
+                        Label(Localization.Library.searchOption.string, systemImage: "magnifyingglass")
+                    }
+                    Button {
+                        isShowingAddManually = true
+                    } label: {
+                        Label(Localization.Library.addManually.string, systemImage: "square.and.pencil")
+                    }
                 } label: {
                     Image(systemName: "plus")
                 }
@@ -55,6 +65,9 @@ struct Library: View {
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .library(book))
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingAddManually) {
+            BookFormView(mode: .create)
         }
         .background(.backgroundPrimary)
     }

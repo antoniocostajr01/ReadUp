@@ -14,6 +14,7 @@ struct BookDetailsSheet: View {
 
     @State private var viewModel = BookDetailsSheetViewModel()
     @State private var showAuth = false
+    @State private var isShowingEditForm = false
 
     var body: some View {
         NavigationStack {
@@ -114,6 +115,12 @@ struct BookDetailsSheet: View {
                             }
 
                             Button {
+                                isShowingEditForm = true
+                            } label: {
+                                Label(Localization.BookDetails.editBook.string, systemImage: "pencil")
+                            }
+
+                            Button {
                                 viewModel.isShowingStatusDialog = true
                             } label: {
                                 Label(Localization.BookDetails.changeStatus.string, systemImage: "arrow.trianglehead.2.clockwise")
@@ -156,6 +163,13 @@ struct BookDetailsSheet: View {
             }
             .sheet(isPresented: $showAuth) {
                 AuthSheet()
+            }
+            .sheet(isPresented: $isShowingEditForm) {
+                if case .library(let book) = source {
+                    BookFormView(mode: .edit(book)) {
+                        dismiss()
+                    }
+                }
             }
         }
     }
