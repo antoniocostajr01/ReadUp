@@ -65,8 +65,9 @@ struct ReadingSession: View {
                 Button {
                     showExitConfirmation = true
                 } label: {
-                    Text(Localization.ReadingSession.leave.string)
+                    Image(systemName: "xmark")
                 }
+                .accessibilityLabel(Localization.ReadingSession.leave.string)
             }
         }
         .toolbar(.hidden, for: .tabBar)

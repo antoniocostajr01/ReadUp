@@ -57,6 +57,9 @@ struct SessionSummary: View {
         .background(.backgroundPrimary)
         .navigationTitle(Localization.SessionSummary.title.string)
         .navigationBarTitleDisplayMode(.inline)
+        // Sessão recém-concluída: só sai daqui confirmando. Ao editar uma sessão
+        // antiga (vinda de Home/History), o voltar continua disponível.
+        .navigationBarBackButtonHidden(viewModel.sessionToEdit == nil)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
