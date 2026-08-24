@@ -48,7 +48,7 @@ struct Home: View {
                 
                 HStack(spacing: 12) {
                     MetricCard(value: "\(viewModel.currentSessionStreak(from: sessions))", title: Localization.Home.metricDayStreak.string, icon: "flame.fill", accentColor: .orange)
-                    MetricCard(value: "\(viewModel.averageMinutesPerDay(from: sessions))", title: Localization.Home.metricAverageTime.string, icon: "clock.fill", accentColor: .indigo)
+                    MetricCard(value: viewModel.averageTimePerDayFormatted(from: sessions), title: Localization.Home.metricAverageTime.string, icon: "clock.fill", accentColor: .indigo)
                 }
                 
         

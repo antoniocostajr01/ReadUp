@@ -18,10 +18,13 @@ final class HomeViewModel {
         return "\(greeting), \(name)"
     }
     
-    func averageMinutesPerDay(from sessions: [LiterarySession]) -> Int {
-        guard !sessions.isEmpty else { return 0 }
-        let totalMinutes = sessions.reduce(0) { $0 + ($1.timeRead / 60) }
-        return totalMinutes / sessions.count
+    /// Média diária de leitura em `mm:ss` — soma os segundos e divide pelos dias
+    /// em que houve leitura (não pelo número de sessões).
+    func averageTimePerDayFormatted(from sessions: [LiterarySession]) -> String {
+        let days = Set(sessions.map { Calendar.current.startOfDay(for: $0.timesTamp) }).count
+        guard days > 0 else { return "00:00" }
+        let averageSeconds = sessions.reduce(0) { $0 + $1.timeRead } / days
+        return String(format: "%02d:%02d", averageSeconds / 60, averageSeconds % 60)
     }
     
     func currentSessionStreak(from sessions: [LiterarySession]) -> Int {
