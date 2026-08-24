@@ -80,6 +80,49 @@ struct GoogleBooksService {
         }
     }
 
+    /// Resolve um ISBN escaneado num único livro (`GET /books/lookup`). `nil` quando o
+    /// backend responde 404 — código de barras válido, mas sem correspondência: um
+    /// resultado normal do fluxo de scanner, não um erro.
+    func lookupISBN(_ isbn: String) async throws -> SearchBook? {
+        var components = URLComponents(string: "\(baseURL)/books/lookup")
+        components?.queryItems = [
+            URLQueryItem(name: "isbn", value: isbn),
+            URLQueryItem(name: "lang", value: appLanguageCode())
+        ]
+
+        guard let url = components?.url else {
+            throw GoogleBooksServiceError.invalidURL
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(from: url)
+        } catch {
+            throw GoogleBooksServiceError.networkUnavailable
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw GoogleBooksServiceError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 404 {
+            return nil
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let message = (try? JSONDecoder().decode(BackendErrorResponse.self, from: data))?.error
+                ?? "ISBN lookup failed (\(httpResponse.statusCode))."
+            throw GoogleBooksServiceError.apiError(message: message)
+        }
+
+        do {
+            return try JSONDecoder().decode(SearchBook.self, from: data)
+        } catch {
+            throw GoogleBooksServiceError.invalidResponse
+        }
+    }
+
     func loadImageData(from url: URL?) async -> Data? {
         guard let url else { return nil }
 

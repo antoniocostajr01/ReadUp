@@ -97,7 +97,7 @@ final class LibraryStore {
 
     /// Adiciona um livro vindo da busca (Google Books) à biblioteca do usuário.
     @discardableResult
-    func addBook(from searchBook: SearchBook, status: BookStatus) async -> Bool {
+    func addBook(from searchBook: SearchBook, status: BookStatus, isbn: String? = nil) async -> Bool {
         guard let token else { return false }
         let payload = CreateBookPayload(
             title: searchBook.title,
@@ -105,7 +105,8 @@ final class LibraryStore {
             totalPages: searchBook.numberOfPages,
             details: searchBook.details,
             coverUrl: searchBook.thumbnailURL?.absoluteString,
-            status: status.rawValue
+            status: status.rawValue,
+            isbn: isbn
         )
         do {
             let book = try await bookService.createBook(payload, token: token)
@@ -141,7 +142,7 @@ final class LibraryStore {
                 books[index] = updated
             }
             if let coverUrl = updated.coverUrl {
-                coverCache[coverUrl] = nil
+                coverCache.removeValue(forKey: coverUrl)
             }
             for i in sessions.indices where sessions[i].book.id == updated.id {
                 sessions[i].book = updated

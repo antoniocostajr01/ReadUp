@@ -68,17 +68,23 @@ struct BookFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(Localization.Generic.cancel.string) { dismiss() }
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel(Localization.Generic.cancel.string)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(Localization.AddBook.saveBook.string) {
+                    Button {
                         Task {
                             if await viewModel.save(store: store) {
                                 onSaved()
                                 dismiss()
                             }
                         }
+                    } label: {
+                        Image(systemName: "checkmark")
                     }
+                    .accessibilityLabel(Localization.AddBook.saveBook.string)
                     .disabled(!viewModel.isSaveEnabled || viewModel.isSaving)
                 }
             }

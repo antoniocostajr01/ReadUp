@@ -3,6 +3,7 @@ import Foundation
 
 struct SessionSummary: View {
     @Environment(LibraryStore.self) private var store
+    @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: SessionSummaryViewModel
@@ -198,7 +199,10 @@ struct SessionSummary: View {
             sessionPagesRead: viewModel.sessionPagesRead,
             sessionTime: viewModel.sessionTimeFormatted,
             totalProgress: viewModel.pagesRead,
-            completionPercentage: viewModel.completionPercentage
+            userName: authManager.currentUser?.name ?? "Reader",
+            userAvatar: authManager.currentUser?.avatar
+                .flatMap { Data(base64Encoded: $0) }
+                .flatMap { UIImage(data: $0) }
         )
         let renderer = ImageRenderer(content: viewToRender)
         renderer.scale = UIScreen.main.scale

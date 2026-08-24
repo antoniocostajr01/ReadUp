@@ -8,13 +8,19 @@
 import SwiftUI
 
 struct Library: View {
-    @EnvironmentObject private var tabState: AppTabState
     @Environment(LibraryStore.self) private var store
 
     private var books: [Book] { store.books }
 
     @State private var selectedBook: Book?
     @State private var searchText = ""
+    private enum AddOption { case scan, search, manual }
+
+    @State private var isShowingAddOptions = false
+    @State private var pendingOption: AddOption?
+    @Namespace private var addButtonNamespace
+    @State private var isShowingScanner = false
+    @State private var isShowingSearch = false
     @State private var isShowingAddManually = false
 
     /// Livros filtrados pela busca (título ou autor). Sem texto, retorna todos.
@@ -46,30 +52,108 @@ struct Library: View {
         .navigationTitle(Localization.Library.title.string)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button {
-                        tabState.goToSearchTab()
-                    } label: {
-                        Label(Localization.Library.searchOption.string, systemImage: "magnifyingglass")
-                    }
-                    Button {
-                        isShowingAddManually = true
-                    } label: {
-                        Label(Localization.Library.addManually.string, systemImage: "square.and.pencil")
-                    }
+                Button {
+                    isShowingAddOptions = true
                 } label: {
                     Image(systemName: "plus")
                 }
+                // O modal cresce a partir do próprio "+", em vez de subir do rodapé.
+                .matchedTransitionSource(id: "addBook", in: addButtonNamespace)
             }
+        }
+        // A tela escolhida abre no onDismiss, não no toque: apresentar uma sheet enquanto
+        // outra ainda está saindo faz o SwiftUI engolir a segunda.
+        .sheet(isPresented: $isShowingAddOptions, onDismiss: openPendingOption) {
+            addOptionsSheet
+                .navigationTransition(.zoom(sourceID: "addBook", in: addButtonNamespace))
         }
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .library(book))
                 .presentationDragIndicator(.visible)
         }
+        .fullScreenCover(isPresented: $isShowingScanner) {
+            ISBNScanView()
+        }
+        .sheet(isPresented: $isShowingSearch) {
+            NavigationStack {
+                Search()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                isShowingSearch = false
+                            } label: {
+                                Image(systemName: "checkmark")
+                            }
+                            .accessibilityLabel(Localization.Generic.done.string)
+                        }
+                    }
+            }
+        }
         .sheet(isPresented: $isShowingAddManually) {
             BookFormView(mode: .create)
         }
         .background(.backgroundPrimary)
+    }
+
+    // MARK: - Modal de adicionar livro
+
+    private var addOptionsSheet: some View {
+        VStack(spacing: 12) {
+            Text(Localization.BookDetails.addToLibrary.string)
+                .font(.system(.title2, weight: .bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 4)
+
+            addOptionRow(Localization.Library.scan.string, icon: "barcode.viewfinder", option: .scan)
+            addOptionRow(Localization.Library.searchOption.string, icon: "magnifyingglass", option: .search)
+            addOptionRow(Localization.Library.addManually.string, icon: "square.and.pencil", option: .manual)
+
+            Spacer()
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Sem cor de fundo opaca: o vidro do sistema deixa a biblioteca aparecer atrás,
+        // que é o que dá a leitura de "camada por cima" em vez de tela preta nova.
+        .presentationBackground(.regularMaterial)
+        .presentationDetents([.height(340)])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func addOptionRow(_ title: String, icon: String, option: AddOption) -> some View {
+        Button {
+            pendingOption = option
+            isShowingAddOptions = false
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.emphasis)
+                    .frame(width: 28)
+
+                Text(title)
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(Color(uiColor: .label))
+
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 18)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func openPendingOption() {
+        switch pendingOption {
+        case .scan: isShowingScanner = true
+        case .search: isShowingSearch = true
+        case .manual: isShowingAddManually = true
+        case nil: break
+        }
+        pendingOption = nil
     }
 
     /// Livraria vazia mostra o empty state; com livros, habilita a busca e mostra
@@ -168,7 +252,6 @@ struct Library: View {
 #Preview {
     NavigationStack {
         Library()
-            .environmentObject(AppTabState())
             .environment(LibraryStore())
     }
 }

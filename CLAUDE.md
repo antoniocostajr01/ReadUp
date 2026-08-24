@@ -19,9 +19,15 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   `SessionSummaryShareCard`).
 - **Book search.** `Search` proxies through the backend, which indexes Open Library
   (work-level search, so a query returns the actual books people mean, not every
-  loose edition and derivative) with Google Books as a fallback and for ISBN lookups.
+  loose edition and derivative) with Google Books as a fallback.
   See `.claude/specs/2026-08-05-book-search-and-entry-design.md` for why.
-- **Genre discovery.** Curated genre shelves on the Search tab, backed by the same
+  Search is not a tab: it is reached from Library's `+` (Scan / Search / Add manually),
+  and only guests still see a Search tab.
+- **Barcode scanning.** `ISBNScanView` scans book barcodes in batch (VisionKit
+  `DataScannerViewController`) and resolves each ISBN through `GET /books/lookup`, which
+  uses Open Library's edition record (`/isbn/{isbn}.json` — exact, unlike a text search
+  for `isbn:`) with Google Books as fallback.
+- **Genre discovery.** Curated genre shelves on the Search screen, backed by the same
   Open Library engine — no hand-maintained title lists.
 - **Profile.** Editable display name and a profile photo (picked from the library,
   resized and compressed client-side, stored as base64 on the backend).

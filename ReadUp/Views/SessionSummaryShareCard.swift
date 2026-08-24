@@ -6,8 +6,9 @@ struct SessionSummaryShareCard: View {
     let sessionPagesRead: Int
     let sessionTime: String
     let totalProgress: Int
-    let completionPercentage: Int
-    
+    let userName: String
+    let userAvatar: UIImage?
+
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
             .fill(Color(uiColor: .secondarySystemBackground).opacity(0.7))
@@ -24,9 +25,7 @@ struct SessionSummaryShareCard: View {
                 ShareStatCard(icon: "timer", title: "Session Time", value: sessionTime)
             }
             
-            HStack(spacing: 10) {
-                ShareStatCard(icon: "chart.line.uptrend.xyaxis", title: "Total Completion", value: "\(completionPercentage)%")
-            }
+            footerCard
         }
         .padding(24)
         .background(Color.clear)
@@ -44,22 +43,57 @@ struct SessionSummaryShareCard: View {
             }
             
             VStack(alignment: .leading, spacing: 6) {
+                // Título completo: sem lineLimit, o card cresce se precisar.
                 Text(currentBook.title)
                     .font(.system(.title2, weight: .bold))
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(Color(uiColor: .label))
-                
+
                 Text(currentBook.author)
                     .font(.title3)
                     .foregroundStyle(.secundaryLabel)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer()
+            Spacer(minLength: 0)
         }
         .padding(14)
         .background(cardBackground)
     }
-    
+
+    /// Assinatura do leitor: foto e nome do perfil.
+    private var footerCard: some View {
+        HStack(spacing: 12) {
+            if let userAvatar {
+                Image(uiImage: userAvatar)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(.emphasis)
+                    .frame(width: 40, height: 40)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(userName)
+                    .font(.system(.headline, weight: .bold))
+                    .lineLimit(1)
+                    .foregroundStyle(Color(uiColor: .label))
+
+                Text("ReadUp")
+                    .font(.subheadline)
+                    .foregroundStyle(.secundaryLabel)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(cardBackground)
+    }
+
     private var totalProgressCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Total Progress", systemImage: "book")

@@ -18,6 +18,9 @@ public extension Localization {
         case noResults
         case tryAnother
         case noMoreResults
+        case manualEntryHint
+        case manualEntryDescription
+        case addManually
 
         public var key: String.LocalizationValue {
             switch self {
@@ -32,6 +35,9 @@ public extension Localization {
             case .noResults: "search.noResults"
             case .tryAnother: "search.tryAnother"
             case .noMoreResults: "search.noMoreResults"
+            case .manualEntryHint: "search.manualEntryHint"
+            case .manualEntryDescription: "search.manualEntryDescription"
+            case .addManually: "search.addManually"
             }
         }
     }

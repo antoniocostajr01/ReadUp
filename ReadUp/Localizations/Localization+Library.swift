@@ -15,6 +15,7 @@ public extension Localization {
         case noResultsSubtitle
         case searchOption
         case addManually
+        case scan
 
         public var key: String.LocalizationValue {
             switch self {
@@ -26,6 +27,7 @@ public extension Localization {
             case .noResultsSubtitle: "library.noResults.subtitle"
             case .searchOption: "library.addMenu.search"
             case .addManually: "library.addMenu.addManually"
+            case .scan: "library.addMenu.scan"
             }
         }
     }

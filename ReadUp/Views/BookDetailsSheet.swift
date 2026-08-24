@@ -82,7 +82,7 @@ struct BookDetailsSheet: View {
                         } label: {
                             Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
                                 .font(.system(.title3, weight: .semibold))
-                                .foregroundStyle(.componentBackground)
+                                .foregroundStyle(.white)
                                 .frame(width: 361, height: 61)
                                 .background(
                                     RoundedRectangle(cornerRadius: 50)

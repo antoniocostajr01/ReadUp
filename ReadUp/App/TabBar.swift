@@ -9,10 +9,10 @@ import SwiftUI
 
 struct TabBar: View {
     @Environment(AuthManager.self) private var authManager
-    @StateObject private var tabState = AppTabState()
+    @State private var selectedTab = 0
 
     var body: some View {
-        TabView(selection: $tabState.selectedTab) {
+        TabView(selection: $selectedTab) {
             NavigationStack{
                 gated(Home(), icon: "house.fill", title: Localization.Tab.home.string)
             }
@@ -29,21 +29,15 @@ struct TabBar: View {
             }
             .tag(1)
 
-            NavigationStack{
-                Search()
+            if authManager.isGuest {
+                NavigationStack{
+                    Search()
+                }
+                .tabItem {
+                    Label(Localization.Tab.search.string, systemImage: "magnifyingglass")
+                }
+                .tag(2)
             }
-            .tabItem {
-                Label(Localization.Tab.search.string, systemImage: "magnifyingglass")
-            }
-            .tag(2)
-
-            NavigationStack{
-                AI()
-            }
-            .tabItem {
-                Label(Localization.Tab.ai.string, systemImage: "sparkles")
-            }
-            .tag(3)
 
             NavigationStack{
                 gated(Profile(), icon: "person.fill", title: Localization.Tab.profile.string)
@@ -53,10 +47,9 @@ struct TabBar: View {
             }
             .tag(4)
         }
-        .environmentObject(tabState)
         .onAppear {
             // Convidado começa na busca (Home/Library/Perfil exigem conta).
-            if authManager.isGuest { tabState.selectedTab = 2 }
+            if authManager.isGuest { selectedTab = 2 }
         }
     }
 
