@@ -97,7 +97,7 @@ final class LibraryStore {
 
     /// Adiciona um livro vindo da busca (Google Books) à biblioteca do usuário.
     @discardableResult
-    func addBook(from searchBook: SearchBook, status: BookStatus) async -> Bool {
+    func addBook(from searchBook: SearchBook, status: BookStatus, isbn: String? = nil) async -> Bool {
         guard let token else { return false }
         let payload = CreateBookPayload(
             title: searchBook.title,
@@ -105,11 +105,48 @@ final class LibraryStore {
             totalPages: searchBook.numberOfPages,
             details: searchBook.details,
             coverUrl: searchBook.thumbnailURL?.absoluteString,
-            status: status.rawValue
+            status: status.rawValue,
+            isbn: isbn
         )
         do {
             let book = try await bookService.createBook(payload, token: token)
             books.append(book)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Cria um livro cadastrado manualmente (sem passar pela busca).
+    @discardableResult
+    func createManualBook(_ payload: CreateBookPayload) async -> Bool {
+        guard let token else { return false }
+        do {
+            let book = try await bookService.createBook(payload, token: token)
+            books.append(book)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Atualiza os campos editáveis de um livro existente (formulário de edição).
+    @discardableResult
+    func updateBook(_ book: Book, with payload: UpdateBookPayload) async -> Bool {
+        guard let token else { return false }
+        do {
+            let updated = try await bookService.updateBook(id: book.id, payload, token: token)
+            if let index = books.firstIndex(where: { $0.id == updated.id }) {
+                books[index] = updated
+            }
+            if let coverUrl = updated.coverUrl {
+                coverCache.removeValue(forKey: coverUrl)
+            }
+            for i in sessions.indices where sessions[i].book.id == updated.id {
+                sessions[i].book = updated
+            }
             return true
         } catch {
             errorMessage = error.localizedDescription

@@ -4,6 +4,7 @@ struct Search: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(SearchViewModel.self) private var viewModel
     @State private var selectedBook: SearchBook?
+    @State private var isShowingAddManually = false
     @FocusState private var isSearchFocused: Bool
 
     private var chosenGenres: [Genre] {
@@ -27,6 +28,9 @@ struct Search: View {
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .search(book, viewModel.service))
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingAddManually) {
+            BookFormView(mode: .create)
         }
         .task {
             await reloadRecommendations()
@@ -229,6 +233,51 @@ struct Search: View {
         .buttonStyle(.plain)
     }
 
+    /// Estado "não achou o livro": ícone, título e atalho para o cadastro manual.
+    private func notFoundState(title: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "exclamationmark.magnifyingglass")
+                .font(.system(size: 52, weight: .regular))
+                .foregroundStyle(.secundaryLabel)
+                .padding(.bottom, 8)
+
+            Text(title)
+                .font(.system(.subheadline, weight: .semibold))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Color(uiColor: .label))
+                .padding(.bottom, 16)
+
+            Text(Localization.Search.manualEntryHint.string)
+                .font(.system(.subheadline, weight: .semibold))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(Color(uiColor: .label))
+
+            Text(Localization.Search.manualEntryDescription.string)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secundaryLabel)
+                .padding(.bottom, 24)
+
+            Button {
+                isSearchFocused = false
+                isShowingAddManually = true
+            } label: {
+                HStack(spacing: 12) {
+                    Text(Localization.Search.addManually.string)
+                    Image(systemName: "square.and.pencil")
+                }
+                .font(.system(.title3, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: 307, minHeight: 61)
+                .frame(maxWidth: .infinity)
+                .background(Capsule().fill(Color.emphasis))
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: 307)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Resultados da busca manual
 
     private var resultsView: some View {
@@ -239,7 +288,8 @@ struct Search: View {
             } else if let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView(Localization.Search.failed.string, systemImage: "exclamationmark.triangle", description: Text(errorMessage))
             } else if viewModel.results.isEmpty {
-                ContentUnavailableView(Localization.Search.noResults.string, systemImage: "book.closed", description: Text(Localization.Search.tryAnother.string))
+                notFoundState(title: Localization.Search.noResults.string)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
                     ForEach(viewModel.results) { book in
@@ -274,7 +324,7 @@ struct Search: View {
                             .padding(.vertical, 4)
                         }
                         .buttonStyle(.plain)
-                        .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                        .listRowBackground(Color.clear)
                     }
                     
                     if viewModel.hasMoreResults {
@@ -291,12 +341,9 @@ struct Search: View {
                             }
                         }
                     } else if !viewModel.results.isEmpty {
-                        Text(Localization.Search.noMoreResults.string)
-                            .font(.footnote)
-                            .foregroundStyle(.secundaryLabel)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 16)
-                            .listRowBackground(Color.clear)
+                        notFoundState(title: Localization.Search.noMoreResults.string)
+                            .padding(.vertical, 24)
+                        .listRowBackground(Color.clear)
                     }
                 }
                 .listStyle(.plain)

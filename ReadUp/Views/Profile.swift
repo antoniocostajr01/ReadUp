@@ -155,7 +155,8 @@ struct Profile: View {
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self),
-                   let base64 = Self.compressedBase64(from: data) {
+                   let image = UIImage(data: data),
+                   let base64 = image.compressedBase64() {
                     await authManager.updateAvatar(base64)
                 }
                 selectedPhoto = nil
@@ -178,22 +179,6 @@ struct Profile: View {
                 .foregroundStyle(.emphasis)
                 .frame(width: 96, height: 96)
         }
-    }
-
-    /// Redimensiona (máx. 512px) e comprime a imagem em JPEG, devolvendo base64 leve pro backend.
-    private static func compressedBase64(from data: Data) -> String? {
-        guard let image = UIImage(data: data) else { return nil }
-        let maxDimension: CGFloat = 512
-        let largestSide = max(image.size.width, image.size.height)
-        let scale = largestSide > maxDimension ? maxDimension / largestSide : 1
-        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        let resized = renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-        guard let jpeg = resized.jpegData(compressionQuality: 0.7) else { return nil }
-        return jpeg.base64EncodedString()
     }
 
     private var genresSection: some View {
@@ -225,11 +210,7 @@ struct Profile: View {
                     .font(.subheadline)
                     .foregroundStyle(.secundaryLabel)
             } else {
-                LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 120), spacing: 8)],
-                    alignment: .leading,
-                    spacing: 8
-                ) {
+                FlowLayout(spacing: 8) {
                     ForEach(chosenGenres) { genre in
                         chip(for: genre)
                     }
@@ -251,6 +232,7 @@ struct Profile: View {
             Text(genre.localizedTitle)
                 .font(.subheadline.weight(.medium))
                 .lineLimit(1)
+                .fixedSize()
             Button {
                 remove(genre)
             } label: {
@@ -276,6 +258,51 @@ struct Profile: View {
     private func remove(_ genre: Genre) {
         let updated = authManager.genres.filter { $0 != genre.title }
         Task { await authManager.updateGenres(updated) }
+    }
+}
+
+/// Quebra os chips em linhas conforme a largura disponível, cada um com a sua
+/// largura natural — diferente do LazyVGrid, que força colunas de largura igual.
+fileprivate struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var rowWidth: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var totalHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if rowWidth > 0, rowWidth + spacing + size.width > width {
+                totalHeight += rowHeight + spacing
+                rowWidth = size.width
+                rowHeight = size.height
+            } else {
+                rowWidth += rowWidth > 0 ? spacing + size.width : size.width
+                rowHeight = max(rowHeight, size.height)
+            }
+        }
+
+        return CGSize(width: width == .infinity ? rowWidth : width, height: totalHeight + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
     }
 }
 

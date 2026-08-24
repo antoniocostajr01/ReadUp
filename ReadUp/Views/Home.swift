@@ -85,8 +85,9 @@ struct Home: View {
         .navigationTitle(viewModel.greetingText(name: authManager.currentUser?.name))
         .navigationBarTitleDisplayMode(.inline)
         .background(.backgroundPrimary)
-        .task(id: readingBooks.map(\.id)) {
-            // Verifica o estado das capas dos livros 'reading' e baixa as que faltam.
+        // A chave inclui a coverUrl: trocando a capa de um livro que já estava aqui, a
+        // lista de ids não muda e a task não reexecutava — a capa antiga ficava na tela.
+        .task(id: readingBooks.map { "\($0.id):\($0.coverUrl ?? "")" }) {
             await store.ensureReadingCovers()
         }
         .navigationDestination(item: $activeReadingBook) { book in

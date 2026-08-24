@@ -8,6 +8,7 @@ import Foundation
 public extension Localization {
     enum BookDetails: LocalizationProtocol {
         case title
+        case editBook
         case deleteBook
         case changeStatus
         case selectStatus
@@ -24,6 +25,7 @@ public extension Localization {
         public var key: String.LocalizationValue {
             switch self {
             case .title: "bookDetails.title"
+            case .editBook: "bookDetails.editBook"
             case .deleteBook: "bookDetails.deleteBook"
             case .changeStatus: "bookDetails.changeStatus"
             case .selectStatus: "bookDetails.selectStatus"

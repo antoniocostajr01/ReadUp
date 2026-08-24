@@ -14,6 +14,7 @@ struct BookDetailsSheet: View {
 
     @State private var viewModel = BookDetailsSheetViewModel()
     @State private var showAuth = false
+    @State private var isShowingEditForm = false
 
     var body: some View {
         NavigationStack {
@@ -81,7 +82,7 @@ struct BookDetailsSheet: View {
                         } label: {
                             Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
                                 .font(.system(.title3, weight: .semibold))
-                                .foregroundStyle(.componentBackground)
+                                .foregroundStyle(.white)
                                 .frame(width: 361, height: 61)
                                 .background(
                                     RoundedRectangle(cornerRadius: 50)
@@ -111,6 +112,12 @@ struct BookDetailsSheet: View {
                                 viewModel.isShowingDeleteAlert = true
                             } label: {
                                 Label(Localization.BookDetails.deleteBook.string, systemImage: "trash.fill")
+                            }
+
+                            Button {
+                                isShowingEditForm = true
+                            } label: {
+                                Label(Localization.BookDetails.editBook.string, systemImage: "pencil")
                             }
 
                             Button {
@@ -156,6 +163,13 @@ struct BookDetailsSheet: View {
             }
             .sheet(isPresented: $showAuth) {
                 AuthSheet()
+            }
+            .sheet(isPresented: $isShowingEditForm) {
+                if case .library(let book) = source {
+                    BookFormView(mode: .edit(book)) {
+                        dismiss()
+                    }
+                }
             }
         }
     }
