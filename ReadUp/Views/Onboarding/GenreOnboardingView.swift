@@ -12,32 +12,30 @@ struct GenreOnboardingView: View {
 
     private let genres = GenreCatalog.all
 
-    private let palette: [Color] = [
-        .brand, .indigo, .orange, .pink, .teal,
-        .purple, .blue, .brown, .red, .mint, .cyan
-    ]
-    
     var body: some View {
         ZStack {
             Color.surface.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                VStack(spacing: Spacing.sm) {
-                    Text(Localization.Onboarding.genresTitle.string)
-                        .font(.system(size: 28, weight: .bold))
-                        .multilineTextAlignment(.center)
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text(Localization.Onboarding.genresTitleLine1.string)
+                        .textStyle(.titleXL)
+                        .foregroundStyle(.ink)
+                    Text(Localization.Onboarding.genresTitleLine2.string)
+                        .textStyle(.titleXL)
+                        .foregroundStyle(.ink)
 
                     Text(Localization.Onboarding.genresSubtitle.string)
-                        .font(.bodySupporting)
+                        .textStyle(.bodySupporting)
                         .foregroundStyle(.inkMuted)
-                        .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, Spacing.xl)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Spacing.gutterAuth)
                 .padding(.top, Spacing.xl)
                 .padding(.bottom, Spacing.sm)
                 .background(.surface)
                 .zIndex(1)
-                
+
                 // Área da física
                 GeometryReader { proxy in
                     ZStack {
@@ -52,27 +50,35 @@ struct GenreOnboardingView: View {
                         }
                     }
                 }
-                
-                VStack(spacing: 10) {
+
+                VStack(spacing: Spacing.sm) {
                     Text(selected.isEmpty ? Localization.Onboarding.selectAtLeast.string : String(format: Localization.Onboarding.selected.string, selected.count))
-                        .font(.captionDefault)
-                        .foregroundStyle(.inkMuted)
+                        .textStyle(.captionDefault)
+                        .foregroundStyle(.inkMeta)
 
                     if let errorMessage = authManager.errorMessage {
                         Text(errorMessage)
-                            .font(.captionDefault)
-                            .foregroundStyle(.red)
+                            .textStyle(.captionDefault)
+                            .foregroundStyle(.danger)
                     }
-            
-                    AuthPrimaryButton(
+
+                    ReadUpButton(
                         title: Localization.Generic.continue.string,
+                        variant: .primary,
                         isLoading: authManager.isLoading,
                         isEnabled: !selected.isEmpty
                     ) {
                         Task { await authManager.completeOnboarding(with: selected) }
                     }
+
+                    ReadUpButton(
+                        title: Localization.Onboarding.skipForNow.string,
+                        variant: .tertiary
+                    ) {
+                        Task { await authManager.completeOnboarding(with: []) }
+                    }
                 }
-                .padding(.horizontal, Spacing.xl)
+                .padding(.horizontal, Spacing.gutterAuth)
                 .padding(.bottom, Spacing.lg)
                 .background(.surface)
                 .zIndex(1)
@@ -84,8 +90,8 @@ struct GenreOnboardingView: View {
 
     @MainActor
     private func makeScene(size: CGSize) -> GenrePhysicsScene {
-        let renders = genres.enumerated().map { index, genre in
-            renderChip(genre, color: palette[index % palette.count])
+        let renders = genres.map { genre in
+            renderChip(genre)
         }
         return GenrePhysicsScene(
             size: size,
@@ -99,9 +105,9 @@ struct GenreOnboardingView: View {
     }
 
     @MainActor
-    private func renderChip(_ genre: Genre, color: Color) -> GenrePhysicsScene.ChipRender {
-        let normal = chipImage(genre: genre, color: color, selected: false)
-        let selectedImg = chipImage(genre: genre, color: color, selected: true)
+    private func renderChip(_ genre: Genre) -> GenrePhysicsScene.ChipRender {
+        let normal = chipImage(genre: genre, selected: false)
+        let selectedImg = chipImage(genre: genre, selected: true)
         let size = normal?.size ?? CGSize(width: 130, height: 48)
         return GenrePhysicsScene.ChipRender(
             id: genre.title,
@@ -112,30 +118,20 @@ struct GenreOnboardingView: View {
     }
 
     @MainActor
-    private func chipImage(genre: Genre, color: Color, selected: Bool) -> UIImage? {
-        let renderer = ImageRenderer(content: chipView(genre: genre, color: color, selected: selected))
+    private func chipImage(genre: Genre, selected: Bool) -> UIImage? {
+        let renderer = ImageRenderer(content: chipView(genre: genre, selected: selected))
         renderer.scale = displayScale
         return renderer.uiImage
     }
 
-    private func chipView(genre: Genre, color: Color, selected: Bool) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: genre.icon)
-                .font(.iconLabel)
-                .foregroundStyle(selected ? .white : color)
-            Text(genre.localizedTitle)
-                .font(.iconLabel)
-                .foregroundStyle(selected ? .white : Color.ink)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, Spacing.md)
-        .background(
-            Capsule().fill(selected ? Color.brand : Color.surfaceRaised)
-        )
-        .overlay(
-            Capsule().strokeBorder(selected ? Color.brand : color.opacity(0.55),
-                                   lineWidth: selected ? 2.5 : 1.2)
-        )
+    // ponytail: os chips são bitmaps dentro de um SpriteView, então não têm rótulo de
+    // VoiceOver nem respeitam Dynamic Type. Caminho de upgrade: uma grade de chips
+    // SwiftUI reais com `Layout`, que é o que o frame do Figma mostra de fato.
+    private func chipView(genre: Genre, selected: Bool) -> some View {
+        GenreChip(title: genre.localizedTitle, isSelected: selected)
+            // Fixa light mode: não há dark mode neste design system, mas o ImageRenderer
+            // usa o esquema de cores do dispositivo e geraria texturas erradas em modo escuro.
+            .environment(\.colorScheme, .light)
     }
 }
 

@@ -39,6 +39,17 @@ public extension Localization {
         case guestWallTitle
         case guestWallMessage
 
+        case welcomeBack
+        case forgotPasswordLink
+        case continueWithApple
+        case newHere
+        case createAccountLine1
+        case createAccountLine2
+        case crossDevicePromise
+        case placeholderName
+        case placeholderEmail
+        case placeholderPassword
+
         public var key: String.LocalizationValue {
             switch self {
             case .loginTitle: "auth.login.title"
@@ -72,6 +83,16 @@ public extension Localization {
             case .signInOrCreate: "auth.signInOrCreate"
             case .guestWallTitle: "auth.guestWallTitle"
             case .guestWallMessage: "auth.guestWallMessage"
+            case .welcomeBack: "auth.welcomeBack"
+            case .forgotPasswordLink: "auth.forgotPasswordLink"
+            case .continueWithApple: "auth.continueWithApple"
+            case .newHere: "auth.newHere"
+            case .createAccountLine1: "auth.createAccount.line1"
+            case .createAccountLine2: "auth.createAccount.line2"
+            case .crossDevicePromise: "auth.crossDevicePromise"
+            case .placeholderName: "auth.placeholder.name"
+            case .placeholderEmail: "auth.placeholder.email"
+            case .placeholderPassword: "auth.placeholder.password"
             }
         }
     }

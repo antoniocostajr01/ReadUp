@@ -740,6 +740,22 @@
         }
       }
     },
+    "auth.continueWithApple": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with Apple"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar com a Apple"
+          }
+        }
+      }
+    },
     "auth.createAccount": {
       "localizations": {
         "en": {
@@ -752,6 +768,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Criar Conta"
+          }
+        }
+      }
+    },
+    "auth.createAccount.line1": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create your"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crie sua"
+          }
+        }
+      }
+    },
+    "auth.createAccount.line2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "account"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "conta"
+          }
+        }
+      }
+    },
+    "auth.crossDevicePromise": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your library, sessions, and streak stay with you across devices."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua biblioteca, sessões e sequência acompanham você em todos os aparelhos."
           }
         }
       }
@@ -816,6 +880,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Esqueci a senha"
+          }
+        }
+      }
+    },
+    "auth.forgotPasswordLink": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot your password?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esqueceu sua senha?"
           }
         }
       }
@@ -900,6 +980,22 @@
         }
       }
     },
+    "auth.newHere": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New here?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo por aqui?"
+          }
+        }
+      }
+    },
     "auth.newPassword": {
       "localizations": {
         "en": {
@@ -976,6 +1072,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "As senhas não coincidem."
+          }
+        }
+      }
+    },
+    "auth.placeholder.email": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "you@example.com"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "voce@exemplo.com"
+          }
+        }
+      }
+    },
+    "auth.placeholder.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antônio Costa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Antônio Costa"
+          }
+        }
+      }
+    },
+    "auth.placeholder.password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least 8 characters"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No mínimo 8 caracteres"
           }
         }
       }
@@ -1152,6 +1296,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Termos de Uso e Política de Privacidade"
+          }
+        }
+      }
+    },
+    "auth.welcomeBack": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome back"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bem-vindo de volta"
           }
         }
       }
@@ -2116,6 +2276,22 @@
         }
       }
     },
+    "onboarding.continueAsGuest": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue as guest"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar como convidado"
+          }
+        }
+      }
+    },
     "onboarding.genres.selectAtLeast": {
       "localizations": {
         "en": {
@@ -2180,6 +2356,38 @@
         }
       }
     },
+    "onboarding.genres.titleLine1": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What do you"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que você"
+          }
+        }
+      }
+    },
+    "onboarding.genres.titleLine2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "like to read?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gosta de ler?"
+          }
+        }
+      }
+    },
     "onboarding.getStarted": {
       "localizations": {
         "en": {
@@ -2196,82 +2404,82 @@
         }
       }
     },
-    "onboarding.next": {
+    "onboarding.hero.line1": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Next"
+            "value": "Your book."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Próximo"
+            "value": "Seu livro."
           }
         }
       }
     },
-    "onboarding.page1.subtitle": {
+    "onboarding.hero.line2": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your book. Your history. Your progress."
+            "value": "Your history."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Seu livro. Sua história. Seu progresso."
+            "value": "Sua história."
           }
         }
       }
     },
-    "onboarding.page2.subtitle": {
+    "onboarding.hero.line3": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Turn reading into a habit. Log your books, follow your journey, reflect on your ideas, and create your personal library."
+            "value": "Your progress."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Transforme a leitura em um hábito. Registre seus livros, acompanhe sua jornada, reflita sobre suas ideias e crie sua biblioteca pessoal."
+            "value": "Seu progresso."
           }
         }
       }
     },
-    "onboarding.page3.subtitle": {
+    "onboarding.skipForNow": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Get personalized recommendations and chat about books, genres, and what to read next."
+            "value": "Skip for now"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Receba recomendações personalizadas e converse sobre livros, gêneros e o que ler a seguir."
+            "value": "Pular por enquanto"
           }
         }
       }
     },
-    "onboarding.page3.title": {
+    "onboarding.welcomeBody": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your reading assistant"
+            "value": "Turn reading into a habit. Log your books, time your sessions, and watch the pages add up."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Seu assistente de leitura"
+            "value": "Transforme a leitura em hábito. Registre seus livros, cronometre suas sessões e veja as páginas somarem."
           }
         }
       }
