@@ -6,6 +6,14 @@
 	<string>$(BASEURL)</string>
 	<key>GOOGLE_BOOKS_API_KEY</key>
 	<string>$(GOOGLE_BOOKS_API_KEY)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>InstrumentSerif-Regular.ttf</string>
+		<string>InstrumentSerif-Italic.ttf</string>
+		<string>InstrumentSans-Regular.ttf</string>
+		<string>InstrumentSans-Medium.ttf</string>
+		<string>InstrumentSans-SemiBold.ttf</string>
+	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>instagram</string>
