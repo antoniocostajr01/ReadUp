@@ -1,107 +1,101 @@
 import SwiftUI
 import AuthenticationServices
 
+/// Tela de login — Editorial Cream. Figma `26:92`.
 struct LoginView: View {
     @Environment(AuthManager.self) private var authManager
 
     @State private var email = ""
     @State private var password = ""
+    @State private var appleSignIn = AppleSignInCoordinator()
 
     private var isFormValid: Bool {
         !email.isEmpty && !password.isEmpty
     }
 
     var body: some View {
-        ZStack {
-            // Garante que o fundo ocupe a tela toda, ignorando as margens seguras (notch/bateria)
-            Color.surface
-                .ignoresSafeArea()
+        VStack(alignment: .leading, spacing: Spacing.xl) {
+            Text(Localization.Auth.welcomeBack.string)
+                .textStyle(.titleXL)
+                .foregroundStyle(.ink)
 
-            VStack {
-                VStack(spacing: 20) {
-                    Text(Localization.Auth.loginTitle.string)
-                        .font(.titleScreenLarge)
-                        .padding(.top, 40)
-                        .padding(.bottom, Spacing.md)
+            VStack(spacing: 22) {
+                UnderlinedField(
+                    label: Localization.Auth.email.string,
+                    text: $email,
+                    placeholder: Localization.Auth.placeholderEmail.string,
+                    keyboardType: .emailAddress,
+                    textContentType: .emailAddress
+                )
 
-                    AuthTextField(
-                        placeholder: Localization.Auth.email.string,
-                        text: $email,
-                        systemImage: "envelope.fill",
-                        keyboardType: .emailAddress,
-                        textContentType: .emailAddress
-                    )
-
-                    AuthSecureField(
-                        placeholder: Localization.Auth.password.string,
-                        text: $password,
-                        textContentType: .password
-                    )
-                    
-                    HStack {
-                        Spacer()
-                        NavigationLink(Localization.Auth.forgotPassword.string) {
-                            ForgotPasswordView()
-                        }
-                        .font(.bodySupportingStrong)
-                        .foregroundStyle(.brand)
-                    }
-
-                    if let errorMessage = authManager.errorMessage {
-                        Text(errorMessage)
-                            .font(.captionDefault)
-                            .foregroundStyle(.red)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    AuthPrimaryButton(
-                        title: Localization.Auth.signIn.string,
-                        isLoading: authManager.isLoading,
-                        isEnabled: isFormValid
-                    ) {
-                        Task { await authManager.signIn(email: email, password: password) }
-                    }
-                    .padding(.top, Spacing.sm)
-
-                    SignInWithAppleButton(.continue) { request in
-                        request.requestedScopes = [.fullName, .email]
-                    } onCompletion: { result in
-                        Task {
-                            await authManager.signInWithApple(result: result)
-                        }
-                    }
-                    .signInWithAppleButtonStyle(.black)
-                    .frame(height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
-                    
-                    HStack {
-                        Rectangle().fill(.inkMuted.opacity(0.3)).frame(height: 1)
-                        Text(Localization.Generic.or.string).font(.bodySupporting).foregroundStyle(.inkMuted)
-                        Rectangle().fill(.inkMuted.opacity(0.3)).frame(height: 1)
-                    }
-                    .padding(.vertical, Spacing.xs)
-
-                    NavigationLink {
-                        CreateAccountView()
-                    } label: {
-                        Text(Localization.Auth.createAccount.string)
-                            .font(.headingRow)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, Spacing.lg)
-                            .background(
-                                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                                    .fill(Color.black)
-                            )
-                    }
-                }
-                .padding(.horizontal, Spacing.xl)
-                .padding(.bottom, Spacing.xl)
+                UnderlinedField(
+                    label: Localization.Auth.password.string,
+                    text: $password,
+                    placeholder: Localization.Auth.placeholderPassword.string,
+                    isSecure: true,
+                    textContentType: .password
+                )
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            NavigationLink(Localization.Auth.forgotPasswordLink.string) {
+                ForgotPasswordView()
+            }
+            .textStyle(.label)
+            .foregroundStyle(.inkMeta)
+
+            if let errorMessage = authManager.errorMessage {
+                Text(errorMessage)
+                    .textStyle(.captionDefault)
+                    .foregroundStyle(.danger)
+            }
+
+            Spacer()
+
+            VStack(spacing: 10) {
+                ReadUpButton(
+                    title: Localization.Auth.signIn.string,
+                    variant: .primary,
+                    isLoading: authManager.isLoading,
+                    isEnabled: isFormValid
+                ) {
+                    Task { await authManager.signIn(email: email, password: password) }
+                }
+
+                appleSignInButton
+
+                HStack(spacing: 4) {
+                    Spacer()
+                    Text(Localization.Auth.newHere.string)
+                        .textStyle(.label)
+                        .foregroundStyle(.inkMeta)
+                    NavigationLink(Localization.Auth.createAccount.string) {
+                        CreateAccountView()
+                    }
+                    .textStyle(.label)
+                    .foregroundStyle(.ink)
+                    Spacer()
+                }
+                .padding(.top, 4)
+            }
         }
+        .padding(.horizontal, Spacing.gutterAuth)
+        .padding(.bottom, 30)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // O `ignoresSafeArea` fica só no fundo, senão o conteúdo sobe pro notch.
+        .background(Color.surface.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }
+    }
+
+    /// "Continue with Apple" é um `ReadUpButton(.secondary)` de verdade: o fluxo da
+    /// Apple é disparado direto pelo `AppleSignInCoordinator`, sem o botão nativo
+    /// escondido por baixo (que vazava por trás do nosso).
+    private var appleSignInButton: some View {
+        ReadUpButton(title: Localization.Auth.continueWithApple.string, variant: .secondary) {
+            appleSignIn.start { result in
+                Task { await authManager.signInWithApple(result: result) }
+            }
+        }
     }
 }
 

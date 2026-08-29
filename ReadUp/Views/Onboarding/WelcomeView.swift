@@ -1,196 +1,94 @@
 import SwiftUI
 
-/// Introdução multi-página mostrada antes do login (carrossel com dots).
+/// Tela de boas-vindas — ponto de entrada único do fluxo de auth.
+///
+/// Figma `24:82` (Editorial Cream). Estática, sem carrossel: três capas
+/// "espalhadas" no topo, headline serifada, corpo em sans e as três ações
+/// possíveis (criar conta, entrar, continuar como visitante) presas ao fundo.
 struct WelcomeView: View {
     @Environment(AuthManager.self) private var authManager
-    @State private var currentPage = 0
+    @State private var navigateToCreateAccount = false
     @State private var navigateToLogin = false
-
-    private let pages = OnboardingPage.all
-
-    private var isLastPage: Bool { currentPage == pages.count - 1 }
+    @State private var coversSettled = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                if currentPage > 0 {
-                    Button(Localization.Generic.back.string) { withAnimation { currentPage -= 1 } }
-                        .foregroundStyle(.brand)
-                }
-                Spacer()
-                Button(Localization.Generic.skip.string) { withAnimation { currentPage = pages.count - 1 } }
-                    .foregroundStyle(.brand)
-            }
-            .font(.body.weight(.medium))
-            .padding(.horizontal, 20)
-            .padding(.top, Spacing.sm)
-            .opacity(currentPage == pages.count - 1 ? 0 : 1)
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            coverStage
+                .padding(.top, Spacing.md)
 
-            TabView(selection: $currentPage) {
-                ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
-                    OnboardingPageView(page: page)
-                        .tag(index)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("\(Localization.Onboarding.heroLine1.string)\n\(Localization.Onboarding.heroLine2.string)\n\(Localization.Onboarding.heroLine3.string)")
+                    .textStyle(.displayHero)
+                    .foregroundStyle(.ink)
 
-            // Dots
-            HStack(spacing: Spacing.sm) {
-                ForEach(0..<pages.count, id: \.self) { index in
-                    Circle()
-                        .fill(index == currentPage ? Color.brand : Color.inkMuted.opacity(0.3))
-                        .frame(width: 8, height: 8)
-                }
+                Text(Localization.Onboarding.welcomeBody.string)
+                    .textStyle(.bodyDefault)
+                    .foregroundStyle(.inkStrongMuted)
             }
-            .padding(.bottom, Spacing.xl)
 
-            Button {
-                if !isLastPage {
-                    withAnimation { currentPage += 1 }
-                } else {
+            Spacer()
+
+            VStack(spacing: Spacing.sm) {
+                ReadUpButton(title: Localization.Onboarding.getStarted.string, variant: .primary) {
+                    navigateToCreateAccount = true
+                }
+                ReadUpButton(title: Localization.Onboarding.alreadyHaveAccount.string, variant: .tertiary) {
+                    navigateToLogin = true
+                }
+                // Único ponto de entrada do modo visitante — não remover.
+                ReadUpButton(title: Localization.Onboarding.continueAsGuest.string, variant: .tertiary) {
                     authManager.enterGuestMode()
                 }
-            } label: {
-                HStack(spacing: Spacing.sm) {
-                    Text(isLastPage ? Localization.Onboarding.getStarted.string : Localization.Onboarding.next.string)
-                    if !isLastPage {
-                        Image(systemName: "arrow.right")
-                    }
-                }
-                .font(.headingRow)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .background(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(Color.brand)
-                )
             }
-            .padding(.horizontal, Spacing.xl)
-            .padding(.bottom, isLastPage ? 8 : 16)
-
-            // Na última página, oferece o login pra quem já tem conta.
-            Button(Localization.Onboarding.alreadyHaveAccount.string) {
-                navigateToLogin = true
-            }
-            .font(.bodySupportingStrong)
-            .foregroundStyle(.brand)
-            .padding(.bottom, Spacing.lg)
-            .opacity(isLastPage ? 1 : 0)
-            .disabled(!isLastPage)
         }
-        .background(.surface)
+        .padding(.horizontal, Spacing.gutterAuth)
+        .padding(.bottom, 30)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // O `ignoresSafeArea` fica só no fundo: o creme sangra até as bordas, mas o
+        // conteúdo continua respeitando o notch. Aplicado na view inteira, as capas
+        // passavam por baixo da Dynamic Island.
+        .background(Color.surface.ignoresSafeArea())
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: $navigateToCreateAccount) {
+            CreateAccountView()
+        }
         .navigationDestination(isPresented: $navigateToLogin) {
             LoginView()
         }
-    }
-}
-
-// MARK: - Conteúdo das páginas
-
-private struct OnboardingPage: Identifiable {
-    let id = UUID()
-    let title: String
-    let subtitle: String
-    let kind: Kind
-
-    enum Kind { case logo, covers, assistant }
-
-    static let all: [OnboardingPage] = [
-        .init(title: "ReadUp",
-              subtitle: Localization.Onboarding.page1Subtitle.string,
-              kind: .logo),
-        .init(title: "",
-              subtitle: Localization.Onboarding.page2Subtitle.string,
-              kind: .covers),
-        .init(title: Localization.Onboarding.page3Title.string,
-              subtitle: Localization.Onboarding.page3Subtitle.string,
-              kind: .assistant),
-    ]
-}
-
-private struct OnboardingPageView: View {
-    let page: OnboardingPage
-
-    var body: some View {
-        VStack(spacing: Spacing.xl) {
-            Spacer()
-            illustration
-                .padding(.bottom, Spacing.xl)
-            VStack(spacing: Spacing.md) {
-                if !page.title.isEmpty {
-                    Text(page.title)
-                        .font(.titleScreenLarge)
-                        .multilineTextAlignment(.center)
-                }
-                Text(page.subtitle)
-                    .font(.title3)
-                    .foregroundStyle(page.kind == .logo ? .inkMuted : Color.ink)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, Spacing.xxl)
-            Spacer()
-        }
-    }
-    
-    @ViewBuilder
-    private var illustration: some View {
-        switch page.kind {
-        case .logo:
-            Image(.readUpIcon)
-                .resizable()
-                .frame(width: 100, height: 100)
-                .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
-                .background {
-                    RoundedRectangle(cornerRadius: 32, style: .continuous)
-                        .fill(Color.accent)
-                        .frame(width: 150, height: 150)
-                        .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
-                }
-            
-            
-        case .covers:
-            FannedCovers()
-        case .assistant:
-            Image(systemName: "sparkles")
-                .font(.system(size: 88, weight: .regular))
-                .foregroundStyle(.brand)
-        }
-    }
-}
-
-/// Capas de livros reais usadas no onboarding
-private struct FannedCovers: View {
-    private let books = ["hoobitbook", "stevejobsBook", "1984book", "homodeusbook"]
-    @State private var isVisible = false
-
-    var body: some View {
-        ZStack {
-            ForEach(Array(books.enumerated()), id: \.offset) { index, book in
-                Image(book)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 120, height: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .shadow(color: .black.opacity(0.25), radius: 6, x: 4, y: 3)
-                    .zIndex(Double(books.count - index))
-                    .offset(x: isVisible ? CGFloat(index) * 55 - 82.5 : CGFloat(index) * 55 - 82.5 - 40)
-                    .opacity(isVisible ? 1 : 0)
-                    .animation(
-                        .spring(response: 0.6, dampingFraction: 0.7)
-                        .delay(Double(index) * 0.15),
-                        value: isVisible
-                    )
-            }
-        }
-        .frame(height: 200)
         .onAppear {
-            isVisible = true
+            withAnimation(Motion.easeStandard) {
+                coversSettled = true
+            }
         }
-        .onDisappear {
-            isVisible = false
+    }
+
+    /// Palco das três capas, sobrepostas e levemente rotacionadas.
+    private var coverStage: some View {
+        ZStack {
+            cover("1984book", width: 104, shadow: .coverLg)
+                .rotationEffect(.degrees(-8))
+                .offset(x: -100, y: 26)
+
+            cover("homodeusbook", width: 104, shadow: .coverLg)
+                .rotationEffect(.degrees(9))
+                .offset(x: 100, y: 34)
+
+            cover("stevejobsBook", width: 124, shadow: .coverStack)
+                .offset(y: 0)
         }
+        .frame(maxWidth: .infinity)
+        .frame(height: 250)
+        .opacity(coversSettled ? 1 : 0)
+        .offset(y: coversSettled ? 0 : 12)
+    }
+
+    private func cover(_ name: String, width: CGFloat, shadow: Elevation) -> some View {
+        Image(name)
+            .resizable()
+            .aspectRatio(2 / 3, contentMode: .fill)
+            .frame(width: width, height: width * 3 / 2)
+            .clipShape(RoundedRectangle(cornerRadius: Radius.coverLg, style: .continuous))
+            .coverShadow(shadow)
     }
 }
 

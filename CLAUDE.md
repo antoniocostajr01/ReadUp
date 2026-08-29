@@ -54,18 +54,23 @@ ReadUp/
   Extensions/       SwiftUI/Foundation extensions
   Localizations/    One file per feature area, backed by Localizable.xcstrings
   Models/           Codable types mirroring the backend's DTOs
+  Resources/Fonts/  Five bundled Instrument Serif/Sans faces (Google Fonts, SIL OFL),
+                    registered via UIAppFonts in Info.plist
   Services/         HTTP clients — one per backend resource (auth, books, sessions...)
   ViewModels/       @Observable view models, one per feature
   Views/            SwiftUI views, one per screen
 ```
 
 `DesignSystem/` is a hard boundary: `Theme+Color.swift` (semantic roles on a `Palette`
-enum, mirrored onto both `Color` and `ShapeStyle`), `Theme+Typography.swift` (named type
-roles built on semantic text styles, so Dynamic Type keeps working),
-`Theme+Layout.swift` (`Spacing`, `Radius`), and `Theme+Surfaces.swift` (`.cardSurface()`).
-Views reference roles, never values. A raw colour or font size outside this directory is
-a regression; these two greps should stay empty (bar the deliberate one-off glyph sizes
-noted in `Theme+Typography.swift`):
+enum, mirrored onto both `Color` and `ShapeStyle`), `Theme+Typography.swift`
+(`TypeRole` values — face, size, tracking, and line height together, since SwiftUI's
+`Font` carries neither — applied via `.textStyle(_:)`; faces are addressed by
+PostScript name, not `.weight()`, because Google ships each Instrument Sans weight as
+its own family), `Theme+Layout.swift` (`Spacing`, `Radius`), and `Theme+Surfaces.swift`
+(`.cardSurface()` plus the shared components `ReadUpButton`, `UnderlinedField`,
+`GenreChip`, `ProgressTrack`). Views reference roles, never values. A raw colour or
+font size outside this directory is a regression; these two greps should stay empty
+(bar the deliberate one-off glyph sizes noted in `Theme+Typography.swift`):
 
 ```sh
 grep -rn 'Color(uiColor:' ReadUp --include='*.swift' | grep -v 'DesignSystem/'
@@ -74,7 +79,10 @@ grep -rn '\.secundaryLabel\|\.emphasis\b\|\.mainText\|\.backgroundPrimary' \
 ```
 
 Both exclude `DesignSystem/` itself, which is the one place allowed to name a raw value
-or a generated asset symbol — `Palette` is exactly that mapping layer.
+or a generated asset symbol — `Palette` is exactly that mapping layer. The colorsets
+those symbols point at still exist in `Assets.xcassets/Colors/`, but since Editorial
+Cream has no dark mode, `Palette` no longer relies on that asset-catalog indirection —
+its roles are literal values (`Color(hex:)`), not generated-symbol lookups.
 
 Services mirror backend resources 1:1 (`BookService` ↔ `/books`, `AuthService` ↔
 `/auth` and `/users/me`, etc.) — when the backend's response shape changes, the
@@ -123,19 +131,41 @@ backend commit by short SHA.
   through `prisma migrate dev --create-only` to generate, a manual read of the
   generated SQL, then `prisma migrate deploy` to apply — never `migrate dev` without
   `--create-only`, and never `migrate reset` or `db push`.
+- Commits on this project carry no AI-assistant attribution trailers.
 
 ## Design — Editorial Cream
 
 The app's redesign direction is **Editorial Cream**. It is defined in two places, and
-both are reachable from tooling configured in this repository.
+both are reachable from tooling configured in this repository. It is implemented for
+the design system and the auth/onboarding flow as of cycle 4
+(`.claude/specs/2026-08-29-editorial-cream-design-system.md`,
+`.claude/plans/2026-08-29-cycle-4-editorial-cream-and-auth-flow.md`); the remaining
+17 of 21 "Screens" artboards inherit the retuned tokens automatically but keep their
+existing layouts until a future cycle reworks them individually.
 
 **Figma** — file key `47zjMbONNMeZJ4WFmEe8MC` (file named "ReadUp"). Two pages:
 
-- `Screens` — 21 artboards at 393×852, the whole app restyled.
-- `Design System` — live specimens for every token: 31 colour variables, 24 text
+- `Screens` (`0:1`) — 21 artboards at 393×852, the whole app restyled. Section
+  `20:729` ("ReadUp — Welcome, Login and Onboarding") holds the four frames cycle 4
+  implemented: Welcome `24:82`, Sign in `26:92`, Create account `32:172`, Onboarding
+  genres `26:134`.
+- `Design System` — one frame `34:230` ("ReadUp — Editorial Cream") under node
+  `34:229`, with live specimens for every token: 31 colour variables, 24 text
   styles, the spacing/radius scales, the warm shadow family, and component states.
   Swatches are bound to the variables and specimens are set in the real text styles,
-  so the page moves when a token is retuned.
+  so the page moves when a token is retuned. Section ids: Colour `34:235`
+  (Surfaces `34:239`, Ink `34:277`, Brand & accent `34:325`, Status `34:343`,
+  Lines `34:371`), Typography `35:229` (Serif `35:233`, Italic `35:301`,
+  Sans `35:314`), Spacing `36:229`, Corners `36:320`, Elevation `36:369`,
+  Components `37:229` (specimens `37:233`: Buttons `37:234`, Chips `37:243`,
+  Text fields `37:257`, Progress `37:271`, Warning banner `37:290`, Chrome `37:296`).
+
+**Gotcha:** calling the Figma MCP `get_metadata` tool **without a `nodeId`** lists
+only the `Screens` page's contents — it silently omits the `Design System` page
+entirely. The Design System page is complete and fully reachable, but only when
+addressed explicitly by its node id (`34:229`). An earlier pass on this project was
+misled by the metadata call's default behavior into believing the page had been
+deleted; it had not.
 
 The Figma MCP server is declared in `.mcp.json` at the root of this repository, so it
 is committed with the project and anyone who clones it gets the connection. Claude Code
@@ -160,12 +190,17 @@ some other way. Figma covers are typeset placeholders until they do.
 - **No dark mode.** Night is a place, not a theme — the scanner is the only dark
   screen. Everything else is cream, always.
 - **Cards carry no shadow.** A card is `surface/raised` on `surface`, separated by
-  value alone. `cardShadow()` is deliberately dropped. Shadow is reserved for things
-  physically stacked: book covers and the device.
+  value alone. `cardShadow()` is kept as a deprecated no-op so the screens that still
+  call it keep compiling; the calls are removed as those screens are individually
+  reworked. Shadow is reserved for things physically stacked: book covers and the
+  device.
 - **Never a grey.** Anything that reads grey is ink at 9–22% alpha, or a cream step.
 - Type is Instrument Serif (content, and every number) + Instrument Sans (interface),
   with italic serif reserved for author names.
 
-`DesignSystem/` in the app already routes every screen through semantic tokens, so
-adopting the palette is an edit to `Palette` in `Theme+Color.swift` plus the colorsets
-in `App/Assets.xcassets/Colors/` — not a per-screen rewrite.
+`DesignSystem/` in the app already routed every screen through semantic tokens, so
+adopting the palette was an edit to `Palette` in `Theme+Color.swift` plus the colorsets
+in `App/Assets.xcassets/Colors/` — not a per-screen rewrite. Commit `81312d4` is the
+proof: it changed the four `DesignSystem/` files and the colorsets, and all 21 screens
+restyled without a single one being touched (`xcodebuild` succeeded with zero changed
+files under `Views/`).

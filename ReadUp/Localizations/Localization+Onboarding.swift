@@ -7,31 +7,37 @@ import Foundation
 
 public extension Localization {
     enum Onboarding: LocalizationProtocol {
-        case next
         case getStarted
-        case page1Subtitle
-        case page2Subtitle
-        case page3Title
-        case page3Subtitle
         case genresTitle
         case genresSubtitle
         case selectAtLeast
         case selected
         case alreadyHaveAccount
+        case heroLine1
+        case heroLine2
+        case heroLine3
+        case welcomeBody
+        case continueAsGuest
+        case skipForNow
+        case genresTitleLine1
+        case genresTitleLine2
 
         public var key: String.LocalizationValue {
             switch self {
-            case .next: "onboarding.next"
             case .getStarted: "onboarding.getStarted"
-            case .page1Subtitle: "onboarding.page1.subtitle"
-            case .page2Subtitle: "onboarding.page2.subtitle"
-            case .page3Title: "onboarding.page3.title"
-            case .page3Subtitle: "onboarding.page3.subtitle"
             case .genresTitle: "onboarding.genres.title"
             case .genresSubtitle: "onboarding.genres.subtitle"
             case .selectAtLeast: "onboarding.genres.selectAtLeast"
             case .selected: "onboarding.genres.selected"
             case .alreadyHaveAccount: "onboarding.alreadyHaveAccount"
+            case .heroLine1: "onboarding.hero.line1"
+            case .heroLine2: "onboarding.hero.line2"
+            case .heroLine3: "onboarding.hero.line3"
+            case .welcomeBody: "onboarding.welcomeBody"
+            case .continueAsGuest: "onboarding.continueAsGuest"
+            case .skipForNow: "onboarding.skipForNow"
+            case .genresTitleLine1: "onboarding.genres.titleLine1"
+            case .genresTitleLine2: "onboarding.genres.titleLine2"
             }
         }
     }

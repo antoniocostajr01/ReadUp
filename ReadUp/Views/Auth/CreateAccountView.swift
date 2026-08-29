@@ -5,7 +5,6 @@ struct CreateAccountView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var name = ""
-    @State private var lastName = ""
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
@@ -21,79 +20,132 @@ struct CreateAccountView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.lg) {
-                Text(Localization.Auth.createAccount.string)
-                    .font(.titleScreen)
-                    .padding(.top, Spacing.xl)
-                    .padding(.bottom, Spacing.md)
-
-                AuthTextField(placeholder: Localization.Auth.name.string, text: $name,
-                              textContentType: .givenName, autocapitalization: .words)
-
-                AuthTextField(placeholder: Localization.Auth.lastName.string, text: $lastName,
-                              textContentType: .familyName, autocapitalization: .words)
-
-                AuthTextField(placeholder: Localization.Auth.email.string, text: $email,
-                              keyboardType: .emailAddress, textContentType: .emailAddress)
-
-                AuthSecureField(placeholder: Localization.Auth.password.string, text: $password,
-                                textContentType: .newPassword)
-
-                AuthSecureField(placeholder: Localization.Auth.confirmPassword.string, text: $confirmPassword,
-                                textContentType: .newPassword)
-
-                if !confirmPassword.isEmpty && !passwordsMatch {
-                    Text(Localization.Auth.passwordsMismatch.string)
-                        .font(.captionDefault)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                HStack {
-                    Button {
-                        showTerms = true
-                    } label: {
-                        Text(Localization.Auth.acceptTerms.string)
-                            .font(.bodySupporting)
-                            .foregroundStyle(Color.ink)
-                            .underline()
-                    }
-                    Spacer()
-                    Toggle("", isOn: $acceptedTerms)
-                        .labelsHidden()
-                        .tint(.brand)
-                }
-                .padding(.top, Spacing.xs)
-
-                if let errorMessage = authManager.errorMessage {
-                    Text(errorMessage)
-                        .font(.captionDefault)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                AuthPrimaryButton(
-                    title: Localization.Auth.createAccount.string,
-                    isLoading: authManager.isLoading,
-                    isEnabled: isFormValid
-                ) {
-                    let fullName = [name, lastName]
-                        .filter { !$0.isEmpty }
-                        .joined(separator: " ")
-                    Task { await authManager.signUp(name: fullName, email: email, password: password) }
-                }
-                .padding(.top, Spacing.sm)
+        GeometryReader { proxy in
+            ScrollView {
+                content(minHeight: proxy.size.height)
             }
-            .padding(.horizontal, Spacing.xl)
-            .padding(.bottom, Spacing.xl)
         }
-        .background(.surface)
-        .navigationTitle(Localization.Auth.createAccount.string)
+        .background(Color.surface.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }
         .sheet(isPresented: $showTerms) {
             TermsView()
+        }
+    }
+
+    /// Conteúdo rolável com o bloco inferior (promessa + botão) fixado ao fundo
+    /// via `minHeight` do próprio `GeometryReader` — evita depender de `UIScreen`.
+    private func content(minHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xxl) {
+                // Título de duas linhas, igual ao frame do Figma.
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(Localization.Auth.createAccountLine1.string)
+                    Text(Localization.Auth.createAccountLine2.string)
+                }
+                .textStyle(.titleXL)
+                .foregroundStyle(.ink)
+                .padding(.top, Spacing.md)
+
+                VStack(spacing: Spacing.lg) {
+                    UnderlinedField(
+                        label: Localization.Auth.name.string,
+                        text: $name,
+                        placeholder: Localization.Auth.placeholderName.string,
+                        textContentType: .name,
+                        autocapitalization: .words
+                    )
+
+                    UnderlinedField(
+                        label: Localization.Auth.email.string,
+                        text: $email,
+                        placeholder: Localization.Auth.placeholderEmail.string,
+                        keyboardType: .emailAddress,
+                        textContentType: .emailAddress
+                    )
+
+                    UnderlinedField(
+                        label: Localization.Auth.password.string,
+                        text: $password,
+                        placeholder: Localization.Auth.placeholderPassword.string,
+                        isSecure: true,
+                        textContentType: .newPassword
+                    )
+
+                    UnderlinedField(
+                        label: Localization.Auth.confirmPassword.string,
+                        text: $confirmPassword,
+                        isSecure: true,
+                        textContentType: .newPassword
+                    )
+                }
+
+                if !confirmPassword.isEmpty && !passwordsMatch {
+                    Text(Localization.Auth.passwordsMismatch.string)
+                        .textStyle(.captionDefault)
+                        .foregroundStyle(.danger)
+                }
+
+                termsRow
+
+                if let errorMessage = authManager.errorMessage {
+                    Text(errorMessage)
+                        .textStyle(.captionDefault)
+                        .foregroundStyle(.danger)
+                }
+
+                Spacer(minLength: Spacing.xl)
+
+                bottomBlock
+            }
+        .padding(.horizontal, Spacing.gutterAuth)
+        .padding(.bottom, 30)
+        .frame(minHeight: minHeight, alignment: .top)
+    }
+
+    /// Linha de aceite dos termos: checkbox custom (SF Symbol, sem Toggle colorido).
+    /// Tocar no rótulo sublinhado abre o sheet; tocar no resto da linha alterna o aceite.
+    private var termsRow: some View {
+        HStack(spacing: Spacing.sm) {
+            Button {
+                acceptedTerms.toggle()
+            } label: {
+                Image(systemName: acceptedTerms ? "checkmark.square.fill" : "square")
+                    .foregroundStyle(.ink)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                showTerms = true
+            } label: {
+                Text(Localization.Auth.acceptTerms.string)
+                    .textStyle(.bodySupporting)
+                    .foregroundStyle(.ink)
+                    .underline()
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            acceptedTerms.toggle()
+        }
+    }
+
+    private var bottomBlock: some View {
+        VStack(spacing: Spacing.sm) {
+            Text(Localization.Auth.crossDevicePromise.string)
+                .textStyle(.captionFine)
+                .foregroundStyle(.inkMeta)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            ReadUpButton(
+                title: Localization.Auth.createAccount.string,
+                isLoading: authManager.isLoading,
+                isEnabled: isFormValid
+            ) {
+                Task { await authManager.signUp(name: name, email: email, password: password) }
+            }
         }
     }
 }
@@ -106,14 +158,16 @@ fileprivate struct TermsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.lg) {
                     Text(Localization.Auth.termsTitle.string)
-                        .font(.title2.bold())
-                    
+                        .textStyle(.titleSecondary)
+                        .foregroundStyle(.ink)
+
                     Text(Localization.Auth.termsBody.string)
-                        .font(.bodyDefault)
-                        .foregroundStyle(.secondary)
+                        .textStyle(.bodyDefault)
+                        .foregroundStyle(.inkMuted)
                 }
-                .padding()
+                .padding(Spacing.gutterAuth)
             }
+            .background(.surface)
             .navigationTitle(Localization.Auth.termsTitle.string)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
