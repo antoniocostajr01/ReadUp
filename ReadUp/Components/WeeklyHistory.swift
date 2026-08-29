@@ -13,17 +13,17 @@ struct WeeklyHistory: View {
     var bookRead: Bool = false
     
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Spacing.xs) {
             Image(systemName: bookRead == false ? "book.closed.fill" : "book.fill")
-                .foregroundStyle(bookRead == false ? .componentBackground : .green)
+                .foregroundStyle(bookRead == false ? .inkInverse : .green)
             Text(weekDay)
-                .foregroundStyle(bookRead == false ? .componentBackground : .green)
+                .foregroundStyle(bookRead == false ? .inkInverse : .green)
                 .font(.headline)
         }
         .frame(width: 44, height: 64)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .foregroundStyle(bookRead == false ? .secundaryLabel : .weekDayBackground )
+            RoundedRectangle(cornerRadius: Radius.md)
+                .foregroundStyle(bookRead == false ? .inkMuted : .brandSoft )
             )
     }
 }

@@ -23,17 +23,17 @@ struct ResetPasswordView: View {
         ScrollView {
             VStack(spacing: 18) {
                 Text(Localization.Auth.resetPasswordTitle.string)
-                    .font(.system(size: 30, weight: .bold))
-                    .padding(.top, 24)
+                    .font(.titleScreen)
+                    .padding(.top, Spacing.xl)
 
                 Text(String(format: Localization.Auth.resetPasswordDescription.string, email))
-                    .font(.subheadline)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
                     .multilineTextAlignment(.center)
 
                 Label(Localization.Auth.spamHint.string, systemImage: "exclamationmark.bubble")
-                    .font(.footnote)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.captionDefault)
+                    .foregroundStyle(.inkMuted)
                     .multilineTextAlignment(.center)
 
                 AuthTextField(
@@ -42,7 +42,7 @@ struct ResetPasswordView: View {
                     systemImage: "number",
                     keyboardType: .numberPad
                 )
-                .padding(.top, 8)
+                .padding(.top, Spacing.sm)
                 .onChange(of: code) {
                     // Limita a 6 dígitos numéricos.
                     code = String(code.filter(\.isNumber).prefix(6))
@@ -56,14 +56,14 @@ struct ResetPasswordView: View {
 
                 if !confirmPassword.isEmpty && !passwordsMatch {
                     Text(Localization.Auth.passwordsMismatch.string)
-                        .font(.footnote)
+                        .font(.captionDefault)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 if let errorMessage = authManager.errorMessage {
                     Text(errorMessage)
-                        .font(.footnote)
+                        .font(.captionDefault)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -81,11 +81,11 @@ struct ResetPasswordView: View {
                         }
                     }
                 }
-                .padding(.top, 8)
+                .padding(.top, Spacing.sm)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Spacing.xl)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.Auth.resetPasswordTitle.string)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }

@@ -16,7 +16,7 @@ struct BookCoverView: View {
                     .scaledToFill()
             default:
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color(uiColor: .tertiarySystemFill))
+                    .fill(Color.surfaceFill)
             }
         }
         .frame(width: width, height: height)

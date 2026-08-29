@@ -21,20 +21,20 @@ struct LoadingView: View {
 
                 // Mensagem de erro + retry (ex.: falha de rede no carregamento).
                 if let errorMessage = authManager.errorMessage {
-                    VStack(spacing: 12) {
+                    VStack(spacing: Spacing.md) {
                         Text(errorMessage)
-                            .font(.subheadline)
+                            .font(.bodySupporting)
                             .foregroundStyle(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                         Button(Localization.Generic.tryAgain.string) {
                             Task { await authManager.bootstrap() }
                         }
                         .font(.headline)
-                        .foregroundStyle(.emphasis)
-                        .padding(.horizontal, 24)
+                        .foregroundStyle(.brand)
+                        .padding(.horizontal, Spacing.xl)
                         .padding(.vertical, 10)
                     }
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, Spacing.xxl)
                     .transition(.opacity)
                 }
             }

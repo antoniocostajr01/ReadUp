@@ -33,15 +33,15 @@ struct ISBNScanView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.mainText)
+                            .font(.iconLabel)
+                            .foregroundStyle(.ink)
                             .padding(10)
-                            .background(Circle().fill(.componentBackground))
+                            .background(Circle().fill(.inkInverse))
                     }
                     Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.horizontal, Spacing.lg)
+                .padding(.top, Spacing.sm)
 
                 Spacer()
 
@@ -49,10 +49,10 @@ struct ISBNScanView: View {
                     Text(Localization.Scan.instructions.string)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, Spacing.cardInset)
+                        .padding(.vertical, Spacing.sm)
                         .background(Capsule().fill(.black.opacity(0.6)))
-                        .padding(.bottom, 12)
+                        .padding(.bottom, Spacing.md)
                 }
             }
         }
@@ -73,10 +73,10 @@ struct ISBNScanView: View {
         return VStack(spacing: 0) {
             if viewModel.scanned.isEmpty {
                 Text(Localization.Scan.emptyList.string)
-                    .font(.subheadline)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 24)
+                    .padding(.top, Spacing.xl)
                 Spacer()
             } else {
                 List {
@@ -98,33 +98,33 @@ struct ISBNScanView: View {
             }
 
             addButton
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
         }
     }
 
     private func scannedRow(_ row: Binding<ISBNScannerViewModel.ScannedBook>) -> some View {
         let book = row.wrappedValue
 
-        return HStack(spacing: 12) {
+        return HStack(spacing: Spacing.md) {
             cover(for: book)
                 .frame(width: 40, height: 58)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 switch book.state {
                 case .resolving:
                     ProgressView()
                     Text(book.isbn)
-                        .font(.footnote)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.captionDefault)
+                        .foregroundStyle(.inkMuted)
                 case .found(let found):
                     Text(found.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.bodySupportingStrong)
                         .lineLimit(1)
                     Text(found.author)
-                        .font(.footnote)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.captionDefault)
+                        .foregroundStyle(.inkMuted)
                         .lineLimit(1)
                     // Em linha própria: disputando a horizontal com o título, a cápsula
                     // era cortada ao trocar pra um status mais comprido.
@@ -132,10 +132,10 @@ struct ISBNScanView: View {
                         .padding(.top, 2)
                 case .notFound:
                     Text(Localization.Scan.notFound.string)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.bodySupportingStrong)
                     Text(book.isbn)
-                        .font(.footnote)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.captionDefault)
+                        .foregroundStyle(.inkMuted)
                 }
             }
             Spacer(minLength: 8)
@@ -147,13 +147,13 @@ struct ISBNScanView: View {
             } label: {
                 Image(systemName: "trash")
                     .font(.system(size: 15))
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
                     .padding(6)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Localization.Generic.delete.string)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
     }
 
     @ViewBuilder
@@ -164,11 +164,11 @@ struct ISBNScanView: View {
                 case .success(let image):
                     image.resizable().scaledToFill()
                 default:
-                    Color(uiColor: .tertiarySystemFill)
+                    Color.surfaceFill
                 }
             }
         } else {
-            Color(uiColor: .tertiarySystemFill)
+            Color.surfaceFill
         }
     }
 
@@ -182,7 +182,7 @@ struct ISBNScanView: View {
         } label: {
             // Cápsula com chevron: texto solto parecia rótulo fixo, e o usuário não
             // percebia que o status vem num padrão e pode ser trocado ali mesmo.
-            HStack(spacing: 4) {
+            HStack(spacing: Spacing.xs) {
                 Text(selection.wrappedValue.displayName)
                     .font(.footnote.weight(.semibold))
                     .lineLimit(1)
@@ -190,11 +190,11 @@ struct ISBNScanView: View {
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 9, weight: .semibold))
             }
-            .foregroundStyle(.emphasis)
+            .foregroundStyle(.brand)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
-                Capsule().fill(Color.emphasis.opacity(0.12))
+                Capsule().fill(Color.brand.opacity(0.12))
             )
         }
     }
@@ -211,13 +211,13 @@ struct ISBNScanView: View {
             }
         } label: {
             Text(String(format: Localization.Scan.addBooks.string, foundCount))
-                .font(.system(.title3, weight: .semibold))
-                .foregroundStyle(.componentBackground)
+                .font(.titleTertiary)
+                .foregroundStyle(.inkInverse)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
                 .background(
-                    RoundedRectangle(cornerRadius: 50)
-                        .foregroundStyle(foundCount == 0 || isAdding ? .secundaryLabel : .emphasis)
+                    RoundedRectangle(cornerRadius: Radius.pill)
+                        .foregroundStyle(foundCount == 0 || isAdding ? .inkMuted : .brand)
                 )
         }
         .disabled(foundCount == 0 || isAdding)

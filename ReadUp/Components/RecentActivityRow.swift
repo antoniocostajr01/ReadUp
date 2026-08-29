@@ -5,7 +5,7 @@ struct RecentActivityRow: View {
     let formattedDate: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.md) {
             BookCoverView(coverUrl: session.book.coverUrl, width: 40, height: 56)
             
             VStack(alignment: .leading, spacing: 2) {
@@ -13,17 +13,17 @@ struct RecentActivityRow: View {
                     .font(.headline)
                     .lineLimit(1)
                 Text(formattedDate)
-                    .font(.subheadline)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
             }
             
             Spacer()
             
             Text("+\(session.pagesRead) pages")
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.emphasis)
+                .foregroundStyle(.brand)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, Spacing.md)
         .padding(.vertical, 10)
     }
 }

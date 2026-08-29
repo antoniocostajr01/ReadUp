@@ -15,11 +15,11 @@ struct TitleAndAuthorBook: View {
         VStack{
             Text(bookTitle)
                 .lineLimit(1)
-                .font(.system(.title2, weight: .bold))
-                .foregroundStyle(.mainText)
+                .font(.titleSecondary)
+                .foregroundStyle(.ink)
             Text(bookAuthor)
-                .font(.system(size: 17, weight: .regular))
-                .foregroundStyle(.secundaryLabel)
+                .font(.bodyDefault)
+                .foregroundStyle(.inkMuted)
         }
     }
 }

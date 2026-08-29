@@ -8,21 +8,21 @@ struct CurrentlyReadingCard: View {
     let onStartReading: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: Spacing.cardInset) {
+            HStack(spacing: Spacing.cardInset) {
                 coverView
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(book.title.uppercased())
                         .font(.caption)
-                        .foregroundStyle(.secundaryLabel)
+                        .foregroundStyle(.inkMuted)
                         .lineLimit(1)
                     Text(book.title)
                         .font(.system(.title3, weight: .bold))
                         .lineLimit(2)
                     Text(book.author)
-                        .font(.subheadline)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.bodySupporting)
+                        .foregroundStyle(.inkMuted)
                         .lineLimit(1)
                     
                     let currentProgress = max(0, book.progress ?? 0)
@@ -31,37 +31,34 @@ struct CurrentlyReadingCard: View {
                     
                     HStack {
                         Text(String(format: Localization.Components.pageOf.string, currentProgress, book.numberOfPages))
-                            .font(.subheadline)
-                            .foregroundStyle(.secundaryLabel)
+                            .font(.bodySupporting)
+                            .foregroundStyle(.inkMuted)
                         Spacer()
                         Text("\(min(percentage, 100))%")
-                            .font(.system(.headline, weight: .semibold))
-                            .foregroundStyle(.emphasis)
+                            .font(.headingRow)
+                            .foregroundStyle(.brand)
                     }
-                    .padding(.top, 4)
+                    .padding(.top, Spacing.xs)
                 }
             }
             
             ProgressView(value: progressValue)
-                .tint(.emphasis)
+                .tint(.brand)
             
             Button(action: onStartReading) {
                 Text((book.progress ?? 0) == 0 ? Localization.Components.startReading.string : Localization.Components.continueReading.string)
-                    .font(.system(.headline, weight: .semibold))
+                    .font(.headingRow)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, Spacing.md)
                     .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.emphasis)
+                        RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
+                            .fill(Color.brand)
                     )
             }
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(Spacing.cardInset)
+        .cardSurface(radius: Radius.xl)
     }
 
     /// Mostra a capa do cache (estável) ou cai no `BookCoverView` (AsyncImage) se ainda não baixada.

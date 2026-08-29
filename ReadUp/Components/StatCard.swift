@@ -6,20 +6,17 @@ struct StatCard: View {
     let value: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Label(title, systemImage: icon)
-                .font(.subheadline)
-                .foregroundStyle(.secundaryLabel)
+                .font(.bodySupporting)
+                .foregroundStyle(.inkMuted)
 
             Text(value)
-                .font(.system(.title, weight: .bold))
-                .foregroundStyle(.emphasis)
+                .font(.titlePrimary)
+                .foregroundStyle(.brand)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(Spacing.cardInset)
+        .cardSurface(radius: Radius.lg)
     }
 }

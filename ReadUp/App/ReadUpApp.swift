@@ -20,7 +20,7 @@ struct ReadUpApp: App {
                 .environment(authManager)
                 .environment(searchViewModel)
                 .environment(libraryStore)
-                .background(.backgroundPrimary)
+                .background(.surface)
         }
     }
 }

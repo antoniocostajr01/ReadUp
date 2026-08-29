@@ -14,9 +14,9 @@ struct LibraryEmptyState: View {
     
     var body: some View {
         
-        VStack(alignment: .center, spacing: 32){
+        VStack(alignment: .center, spacing: Spacing.xxl){
                         
-            VStack(alignment: .center, spacing: 8){
+            VStack(alignment: .center, spacing: Spacing.sm){
                 Text(title)
                     .font(Font.title.bold())
                 

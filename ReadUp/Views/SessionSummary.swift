@@ -21,7 +21,7 @@ struct SessionSummary: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: Spacing.cardInset) {
                 headerCard
 
                 totalProgressCard
@@ -40,21 +40,18 @@ struct SessionSummary: View {
 
                 TextField(Localization.SessionSummary.thoughtsPlaceholder.string, text: $viewModel.thoughts, axis: .vertical)
                     .lineLimit(5...10)
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color(uiColor: .secondarySystemBackground))
-                    )
+                    .padding(Spacing.md)
+                    .cardSurface(radius: Radius.md)
 
                 confirmButton
 
                 instagramShareSection
             }
-            .padding(16)
+            .padding(Spacing.lg)
         }
         .scrollDismissesKeyboard(.interactively)
         .simultaneousGesture(TapGesture().onEnded { hideKeyboard() })
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.SessionSummary.title.string)
         .navigationBarTitleDisplayMode(.inline)
         // Sessão recém-concluída: só sai daqui confirmando. Ao editar uma sessão
@@ -107,29 +104,29 @@ struct SessionSummary: View {
             Task { await viewModel.saveSession(store: store, onSessionSaved: onSessionSaved, onDismiss: { dismiss() }) }
         }) {
             Label(Localization.SessionSummary.saveSession.string, systemImage: "checkmark.circle")
-                .font(.system(.title3, weight: .semibold))
+                .font(.titleTertiary)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, Spacing.cardInset)
                 .background(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(Color.emphasis)
+                        .fill(Color.brand)
                 )
         }
         .disabled(viewModel.isSaving)
-        .padding(.top, 8)
+        .padding(.top, Spacing.sm)
     }
 
     // MARK: - Compartilhamento no Instagram
 
     private var instagramShareSection: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             Button(action: shareToInstagram) {
                 Label(Localization.SessionSummary.shareToInstagram.string, systemImage: "camera.fill")
-                    .font(.system(.headline, weight: .semibold))
+                    .font(.headingRow)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, Spacing.cardInset)
                     .background(
                         RoundedRectangle(cornerRadius: 28, style: .continuous)
                             .fill(instagramGradient)
@@ -139,8 +136,8 @@ struct SessionSummary: View {
             .opacity(shareImage == nil ? 0.5 : 1)
 
             Label(Localization.SessionSummary.clipboardInstruction.string, systemImage: "doc.on.clipboard")
-                .font(.footnote)
-                .foregroundStyle(.secundaryLabel)
+                .font(.captionDefault)
+                .foregroundStyle(.inkMuted)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
@@ -162,11 +159,11 @@ struct SessionSummary: View {
         Label(Localization.SessionSummary.clipboardCopied.string, systemImage: "checkmark.circle.fill")
             .font(.subheadline.weight(.medium))
             .foregroundStyle(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.md)
             .background(Capsule().fill(Color.black.opacity(0.85)))
-            .padding(.bottom, 24)
-            .padding(.horizontal, 24)
+            .padding(.bottom, Spacing.xl)
+            .padding(.horizontal, Spacing.xl)
             .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
@@ -224,50 +221,44 @@ struct SessionSummary: View {
     }
 
     private var headerCard: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: Spacing.cardInset) {
             BookCoverView(coverUrl: viewModel.currentBook.coverUrl, width: 92, height: 132)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(viewModel.currentBook.title)
-                    .font(.system(.title2, weight: .bold))
+                    .font(.titleSecondary)
                     .lineLimit(2)
 
                 Text(viewModel.currentBook.author)
                     .font(.title3)
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
                     .lineLimit(1)
             }
 
             Spacer()
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(Spacing.cardInset)
+        .cardSurface(radius: Radius.lg)
     }
 
     private var totalProgressCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Label(Localization.SessionSummary.totalProgress.string, systemImage: "book")
-                .font(.subheadline)
-                .foregroundStyle(.secundaryLabel)
+                .font(.bodySupporting)
+                .foregroundStyle(.inkMuted)
 
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
                 Text("\(viewModel.pagesRead)")
                     .font(.system(.largeTitle, weight: .bold))
-                    .foregroundStyle(.emphasis)
+                    .foregroundStyle(.brand)
                 Text("/ \(viewModel.currentBook.numberOfPages) \(Localization.SessionSummary.ofPages.string)")
                     .font(.title3)
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(Spacing.cardInset)
+        .cardSurface(radius: Radius.lg)
     }
 }
 

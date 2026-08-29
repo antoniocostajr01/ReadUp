@@ -35,9 +35,9 @@ struct Profile: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: Spacing.xl) {
                 // Cabeçalho do usuário
-                VStack(spacing: 8) {
+                VStack(spacing: Spacing.sm) {
                     PhotosPicker(selection: $selectedPhoto, matching: .images, photoLibrary: .shared()) {
                         ZStack(alignment: .bottomTrailing) {
                             avatarView
@@ -45,8 +45,8 @@ struct Profile: View {
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .padding(7)
-                                .background(Circle().fill(Color.emphasis))
-                                .overlay(Circle().stroke(.backgroundPrimary, lineWidth: 2))
+                                .background(Circle().fill(Color.brand))
+                                .overlay(Circle().stroke(.surface, lineWidth: 2))
                         }
                     }
                     .disabled(authManager.isLoading)
@@ -59,16 +59,16 @@ struct Profile: View {
                             showEditName = true
                         } label: {
                             Image(systemName: "pencil")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.emphasis)
+                                .font(.bodySupportingStrong)
+                                .foregroundStyle(.brand)
                         }
                         .disabled(authManager.isLoading)
                     }
 
                     if !email.isEmpty {
                         Text(email)
-                            .font(.subheadline)
-                            .foregroundStyle(.secundaryLabel)
+                            .font(.bodySupporting)
+                            .foregroundStyle(.inkMuted)
                     }
 
                     if avatarImage != nil {
@@ -80,7 +80,7 @@ struct Profile: View {
                         .disabled(authManager.isLoading)
                     }
                 }
-                .padding(.top, 16)
+                .padding(.top, Spacing.lg)
 
                 genresSection
 
@@ -88,21 +88,18 @@ struct Profile: View {
                     showSignOutConfirmation = true
                 } label: {
                     Text(Localization.Profile.signOut.string)
-                        .font(.system(.headline, weight: .semibold))
+                        .font(.headingRow)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color(uiColor: .secondarySystemBackground))
-                        )
+                        .padding(.vertical, Spacing.lg)
+                        .cardSurface(radius: Radius.lg)
                 }
-                .padding(.top, 8)
+                .padding(.top, Spacing.sm)
 
                 Button(role: .destructive) {
                     showDeleteAccountConfirmation = true
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.sm) {
                         if authManager.isLoading {
                             ProgressView()
                         }
@@ -111,15 +108,15 @@ struct Profile: View {
                     }
                     .foregroundStyle(.red)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, Spacing.cardInset)
                 }
                 .disabled(authManager.isLoading)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.bottom, Spacing.xl)
         }
         .frame(maxWidth: .infinity)
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.Profile.title.string)
         .confirmationDialog(Localization.Profile.signOutConfirmTitle.string, isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
             Button(Localization.Profile.signOut.string, role: .destructive) {
@@ -176,13 +173,13 @@ struct Profile: View {
         } else {
             Image(systemName: "person.crop.circle.fill")
                 .font(.system(size: 84))
-                .foregroundStyle(.emphasis)
+                .foregroundStyle(.brand)
                 .frame(width: 96, height: 96)
         }
     }
 
     private var genresSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Text(Localization.Profile.yourGenres.string)
                     .font(.system(.title3, weight: .bold))
@@ -198,8 +195,8 @@ struct Profile: View {
                         }
                     } label: {
                         Label(Localization.Generic.add.string, systemImage: "plus")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.emphasis)
+                            .font(.bodySupportingStrong)
+                            .foregroundStyle(.brand)
                     }
                     .disabled(authManager.isLoading)
                 }
@@ -207,10 +204,10 @@ struct Profile: View {
 
             if chosenGenres.isEmpty {
                 Text(Localization.Profile.noGenres.string)
-                    .font(.subheadline)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
             } else {
-                FlowLayout(spacing: 8) {
+                FlowLayout(spacing: Spacing.sm) {
                     ForEach(chosenGenres) { genre in
                         chip(for: genre)
                     }
@@ -218,11 +215,8 @@ struct Profile: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(Spacing.lg)
+        .cardSurface(radius: Radius.xl)
     }
 
     private func chip(for genre: Genre) -> some View {
@@ -237,14 +231,14 @@ struct Profile: View {
                 remove(genre)
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
-        .foregroundStyle(.emphasis)
+        .padding(.vertical, Spacing.sm)
+        .padding(.horizontal, Spacing.md)
+        .foregroundStyle(.brand)
         .background(
-            Capsule().fill(Color.emphasis.opacity(0.14))
+            Capsule().fill(Color.brand.opacity(0.14))
         )
     }
 

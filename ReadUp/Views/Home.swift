@@ -44,9 +44,9 @@ struct Home: View {
             VStack(alignment: .leading, spacing: 20) {
                 
                 currentlyReadingSection
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.sm)
                 
-                HStack(spacing: 12) {
+                HStack(spacing: Spacing.md) {
                     MetricCard(value: "\(viewModel.currentSessionStreak(from: sessions))", title: Localization.Home.metricDayStreak.string, icon: "flame.fill", accentColor: .orange)
                     MetricCard(value: viewModel.averageTimePerDayFormatted(from: sessions), title: Localization.Home.metricAverageTime.string, icon: "clock.fill", accentColor: .indigo)
                 }
@@ -54,7 +54,7 @@ struct Home: View {
         
                 
                 Text(Localization.Home.recentActivity.string)
-                    .font(.system(.title2, weight: .bold))
+                    .font(.titleSecondary)
                 
                 if sessions.isEmpty {
                     HistoryEmptyState()
@@ -72,19 +72,16 @@ struct Home: View {
                             }
                         }
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color(uiColor: .secondarySystemBackground))
-                    )
+                    .cardSurface(radius: Radius.lg)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.top, Spacing.sm)
+            .padding(.bottom, Spacing.xl)
         }
         .navigationTitle(viewModel.greetingText(name: authManager.currentUser?.name))
         .navigationBarTitleDisplayMode(.inline)
-        .background(.backgroundPrimary)
+        .background(.surface)
         // A chave inclui a coverUrl: trocando a capa de um livro que já estava aqui, a
         // lista de ids não muda e a task não reexecutava — a capa antiga ficava na tela.
         .task(id: readingBooks.map { "\($0.id):\($0.coverUrl ?? "")" }) {
@@ -109,25 +106,25 @@ struct Home: View {
     private var currentlyReadingSection: some View {
         Group {
             if readingBooks.isEmpty {
-                VStack(spacing: 14) {
+                VStack(spacing: Spacing.cardInset) {
                     Image(systemName: "book.closed")
-                        .font(.system(size: 38, weight: .medium))
-                        .foregroundStyle(.emphasis)
+                        .font(.iconSection)
+                        .foregroundStyle(.brand)
                     
                     Text(Localization.Home.emptyTitle.string)
-                        .font(.system(.title2, weight: .bold))
+                        .font(.titleSecondary)
                     
                     Text(Localization.Home.emptySubtitle.string)
-                        .font(.body)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.bodyDefault)
+                        .foregroundStyle(.inkMuted)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, Spacing.xl)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 32)
+                .padding(.vertical, Spacing.xxl)
                 
             } else if readingBooks.count == 1 {
-                HStack(spacing: 12) {
+                HStack(spacing: Spacing.md) {
                     Spacer()
                     ForEach(readingBooks) { book in
                         CurrentlyReadingCard(book: book, progressValue: viewModel.progressValue(for: book), coverData: coverData(for: book), onStartReading: {
@@ -157,16 +154,16 @@ struct Home: View {
 
     private var upNextSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: Spacing.md) {
                 ForEach(upNextBooks.prefix(8)) { book in
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
                         BookCoverView(coverUrl: book.coverUrl, width: 120, height: 172)
                         Text(book.title)
                             .font(.headline)
                             .lineLimit(1)
                         Text(book.author)
-                            .font(.subheadline)
-                            .foregroundStyle(.secundaryLabel)
+                            .font(.bodySupporting)
+                            .foregroundStyle(.inkMuted)
                             .lineLimit(1)
                     }
                     .frame(width: 132, alignment: .leading)
@@ -179,15 +176,15 @@ struct Home: View {
                     VStack(spacing: 10) {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 38, weight: .regular))
-                            .foregroundStyle(.emphasis)
+                            .foregroundStyle(.brand)
                         Text(Localization.Home.addBook.string)
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.emphasis)
+                            .foregroundStyle(.brand)
                     }
                     .frame(width: 132, height: 230)
                     .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.emphasis.opacity(0.12))
+                        RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                            .fill(Color.brand.opacity(0.12))
                     )
                 }
             }

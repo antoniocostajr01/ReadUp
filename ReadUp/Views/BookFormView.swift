@@ -51,7 +51,7 @@ struct BookFormView: View {
                             if viewModel.details.isEmpty {
                                 Text(Localization.AddBook.detailsPlaceholder.string)
                                     .foregroundStyle(.secondary)
-                                    .padding(.top, 8)
+                                    .padding(.top, Spacing.sm)
                                     .padding(.leading, 5)
                                     .allowsHitTesting(false)
                             }
@@ -61,7 +61,7 @@ struct BookFormView: View {
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(.red)
-                        .font(.footnote)
+                        .font(.captionDefault)
                 }
             }
             .navigationTitle(Localization.AddBook.saveBook.string)
@@ -108,7 +108,7 @@ struct BookFormView: View {
                     BookCoverView(coverUrl: existingUrl, width: 120, height: 171, cornerRadius: 10)
                 } else {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(uiColor: .tertiarySystemFill))
+                        .fill(Color.surfaceFill)
                         .frame(width: 120, height: 171)
                         .overlay {
                             Image(systemName: "photo.badge.plus")
@@ -120,7 +120,7 @@ struct BookFormView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(6)
-                    .background(Circle().fill(Color.emphasis))
+                    .background(Circle().fill(Color.brand))
                     .offset(x: 4, y: 4)
             }
         }

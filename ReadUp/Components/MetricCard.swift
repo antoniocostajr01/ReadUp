@@ -7,26 +7,23 @@ struct MetricCard: View {
     let accentColor: Color
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
+                .font(.iconInline)
                 .foregroundStyle(accentColor)
                 .padding(10)
             
             Text(value)
-                .font(.system(size: 38, weight: .bold))
+                .font(.displayMetric)
                 .foregroundStyle(accentColor)
             
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.secundaryLabel)
+                .foregroundStyle(.inkMuted)
                 .tracking(1.2)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .cardSurface(radius: Radius.xl)
     }
 }

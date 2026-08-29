@@ -22,11 +22,11 @@ struct CreateAccountView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: Spacing.lg) {
                 Text(Localization.Auth.createAccount.string)
-                    .font(.system(size: 30, weight: .bold))
-                    .padding(.top, 24)
-                    .padding(.bottom, 12)
+                    .font(.titleScreen)
+                    .padding(.top, Spacing.xl)
+                    .padding(.bottom, Spacing.md)
 
                 AuthTextField(placeholder: Localization.Auth.name.string, text: $name,
                               textContentType: .givenName, autocapitalization: .words)
@@ -45,7 +45,7 @@ struct CreateAccountView: View {
 
                 if !confirmPassword.isEmpty && !passwordsMatch {
                     Text(Localization.Auth.passwordsMismatch.string)
-                        .font(.footnote)
+                        .font(.captionDefault)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -55,20 +55,20 @@ struct CreateAccountView: View {
                         showTerms = true
                     } label: {
                         Text(Localization.Auth.acceptTerms.string)
-                            .font(.subheadline)
-                            .foregroundStyle(Color(uiColor: .label))
+                            .font(.bodySupporting)
+                            .foregroundStyle(Color.ink)
                             .underline()
                     }
                     Spacer()
                     Toggle("", isOn: $acceptedTerms)
                         .labelsHidden()
-                        .tint(.emphasis)
+                        .tint(.brand)
                 }
-                .padding(.top, 4)
+                .padding(.top, Spacing.xs)
 
                 if let errorMessage = authManager.errorMessage {
                     Text(errorMessage)
-                        .font(.footnote)
+                        .font(.captionDefault)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -83,12 +83,12 @@ struct CreateAccountView: View {
                         .joined(separator: " ")
                     Task { await authManager.signUp(name: fullName, email: email, password: password) }
                 }
-                .padding(.top, 8)
+                .padding(.top, Spacing.sm)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.bottom, Spacing.xl)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.Auth.createAccount.string)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }
@@ -104,12 +104,12 @@ fileprivate struct TermsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: Spacing.lg) {
                     Text(Localization.Auth.termsTitle.string)
                         .font(.title2.bold())
                     
                     Text(Localization.Auth.termsBody.string)
-                        .font(.body)
+                        .font(.bodyDefault)
                         .foregroundStyle(.secondary)
                 }
                 .padding()

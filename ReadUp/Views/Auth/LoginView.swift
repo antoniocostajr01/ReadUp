@@ -14,15 +14,15 @@ struct LoginView: View {
     var body: some View {
         ZStack {
             // Garante que o fundo ocupe a tela toda, ignorando as margens seguras (notch/bateria)
-            Color.backgroundPrimary
+            Color.surface
                 .ignoresSafeArea()
 
             VStack {
                 VStack(spacing: 20) {
                     Text(Localization.Auth.loginTitle.string)
-                        .font(.system(size: 34, weight: .bold))
+                        .font(.titleScreenLarge)
                         .padding(.top, 40)
-                        .padding(.bottom, 12)
+                        .padding(.bottom, Spacing.md)
 
                     AuthTextField(
                         placeholder: Localization.Auth.email.string,
@@ -43,13 +43,13 @@ struct LoginView: View {
                         NavigationLink(Localization.Auth.forgotPassword.string) {
                             ForgotPasswordView()
                         }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.emphasis)
+                        .font(.bodySupportingStrong)
+                        .foregroundStyle(.brand)
                     }
 
                     if let errorMessage = authManager.errorMessage {
                         Text(errorMessage)
-                            .font(.footnote)
+                            .font(.captionDefault)
                             .foregroundStyle(.red)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -61,7 +61,7 @@ struct LoginView: View {
                     ) {
                         Task { await authManager.signIn(email: email, password: password) }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.sm)
 
                     SignInWithAppleButton(.continue) { request in
                         request.requestedScopes = [.fullName, .email]
@@ -72,31 +72,31 @@ struct LoginView: View {
                     }
                     .signInWithAppleButtonStyle(.black)
                     .frame(height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
                     
                     HStack {
-                        Rectangle().fill(.secundaryLabel.opacity(0.3)).frame(height: 1)
-                        Text(Localization.Generic.or.string).font(.subheadline).foregroundStyle(.secundaryLabel)
-                        Rectangle().fill(.secundaryLabel.opacity(0.3)).frame(height: 1)
+                        Rectangle().fill(.inkMuted.opacity(0.3)).frame(height: 1)
+                        Text(Localization.Generic.or.string).font(.bodySupporting).foregroundStyle(.inkMuted)
+                        Rectangle().fill(.inkMuted.opacity(0.3)).frame(height: 1)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, Spacing.xs)
 
                     NavigationLink {
                         CreateAccountView()
                     } label: {
                         Text(Localization.Auth.createAccount.string)
-                            .font(.system(.headline, weight: .semibold))
+                            .font(.headingRow)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
+                            .padding(.vertical, Spacing.lg)
                             .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
                                     .fill(Color.black)
                             )
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.bottom, Spacing.xl)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

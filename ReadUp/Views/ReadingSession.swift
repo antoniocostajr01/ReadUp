@@ -15,24 +15,24 @@ struct ReadingSession: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: Spacing.xl) {
             Spacer()
 
             coverView
 
-            VStack(spacing: 4) {
+            VStack(spacing: Spacing.xs) {
 
                 Text(selectedBook.title)
-                    .font(.system(.title, weight: .bold))
+                    .font(.titlePrimary)
                     .multilineTextAlignment(.center)
 
                 Text(selectedBook.author)
                     .font(.title3)
                     .italic()
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
                     .multilineTextAlignment(.center)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Spacing.lg)
 
             sessionCard
 
@@ -42,21 +42,21 @@ struct ReadingSession: View {
                 viewModel.isShowingAlertValue = true
             } label: {
                 Label(Localization.ReadingSession.finish.string, systemImage: "checkmark.circle")
-                    .font(.system(.title3, weight: .semibold))
+                    .font(.titleTertiary)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, Spacing.cardInset)
                     .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.emphasis)
+                        RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                            .fill(Color.brand)
                     )
             }
             .disabled(!viewModel.isSessionRunning)
             .opacity(viewModel.isSessionRunning ? 1 : 0.5)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.bottom, Spacing.lg)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.ReadingSession.title.string)
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
@@ -147,9 +147,9 @@ struct ReadingSession: View {
     private var sessionCard: some View {
         ZStack {
             // Estado: sessão rodando (timer + current page)
-            VStack(spacing: 14) {
+            VStack(spacing: Spacing.cardInset) {
                 Text(viewModel.timeString(from: viewModel.timeElapsed))
-                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .font(.displayTimer)
                     .monospacedDigit()
 
                 SmallMetricCard(title: Localization.ReadingSession.currentPage.string, value: "\(selectedBook.progress ?? 0)")
@@ -157,34 +157,31 @@ struct ReadingSession: View {
             .opacity(viewModel.isSessionRunning ? 1 : 0)
 
             // Estado: countdown (número + lock tip)
-            VStack(spacing: 14) {
+            VStack(spacing: Spacing.cardInset) {
                 Text("\(viewModel.countdown)")
-                    .font(.system(size: 52, weight: .bold, design: .rounded))
-                    .foregroundStyle(.emphasis)
+                    .font(.displayTimer)
+                    .foregroundStyle(.brand)
 
                 Image(systemName: isPhoneLocked ? "lock.iphone" : "lock.open.iphone")
                     .font(.system(size: 44, weight: .light))
-                    .foregroundStyle(.emphasis)
+                    .foregroundStyle(.brand)
                     .contentTransition(.symbolEffect(.replace))
                     .symbolEffect(.bounce, options: .nonRepeating, value: lockAnimationTrigger)
 
                 Text(Localization.ReadingSession.lockTip.string)
-                    .font(.system(.title3, weight: .semibold))
+                    .font(.titleTertiary)
                     .foregroundStyle(.primary)
 
                 Text(Localization.ReadingSession.lockSubtip.string)
-                    .font(.body)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodyDefault)
+                    .foregroundStyle(.inkMuted)
             }
             .opacity(viewModel.isSessionRunning ? 0 : 1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        .padding(.vertical, Spacing.xl)
         .padding(.horizontal, 20)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .cardSurface(radius: Radius.xl)
         .padding(.horizontal, 20)
         .animation(.easeInOut(duration: 0.4), value: viewModel.isSessionRunning)
         .onAppear {
@@ -202,7 +199,7 @@ struct ReadingSession: View {
     }
 
     private var coverView: some View {
-        BookCoverView(coverUrl: selectedBook.coverUrl, width: 120, height: 170, cornerRadius: 12)
+        BookCoverView(coverUrl: selectedBook.coverUrl, width: 120, height: 170, cornerRadius: Radius.md)
             .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 3)
     }
 }

@@ -11,14 +11,14 @@ struct LibraryCoverView: View {
                     .resizable()
                     .scaledToFill()
             default:
-                Color(uiColor: .tertiarySystemFill)
+                Color.surfaceFill
             }
         }
         .frame(width: 44, height: 62)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color(uiColor: .separator), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
+                .stroke(Color.divider, lineWidth: 0.5)
         )
     }
 }

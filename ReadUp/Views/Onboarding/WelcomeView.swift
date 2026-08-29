@@ -15,15 +15,15 @@ struct WelcomeView: View {
             HStack {
                 if currentPage > 0 {
                     Button(Localization.Generic.back.string) { withAnimation { currentPage -= 1 } }
-                        .foregroundStyle(.emphasis)
+                        .foregroundStyle(.brand)
                 }
                 Spacer()
                 Button(Localization.Generic.skip.string) { withAnimation { currentPage = pages.count - 1 } }
-                    .foregroundStyle(.emphasis)
+                    .foregroundStyle(.brand)
             }
             .font(.body.weight(.medium))
             .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.top, Spacing.sm)
             .opacity(currentPage == pages.count - 1 ? 0 : 1)
 
             TabView(selection: $currentPage) {
@@ -35,14 +35,14 @@ struct WelcomeView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
 
             // Dots
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 ForEach(0..<pages.count, id: \.self) { index in
                     Circle()
-                        .fill(index == currentPage ? Color.emphasis : Color.secundaryLabel.opacity(0.3))
+                        .fill(index == currentPage ? Color.brand : Color.inkMuted.opacity(0.3))
                         .frame(width: 8, height: 8)
                 }
             }
-            .padding(.bottom, 24)
+            .padding(.bottom, Spacing.xl)
 
             Button {
                 if !isLastPage {
@@ -51,35 +51,35 @@ struct WelcomeView: View {
                     authManager.enterGuestMode()
                 }
             } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: Spacing.sm) {
                     Text(isLastPage ? Localization.Onboarding.getStarted.string : Localization.Onboarding.next.string)
                     if !isLastPage {
                         Image(systemName: "arrow.right")
                     }
                 }
-                .font(.system(.headline, weight: .semibold))
+                .font(.headingRow)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
                 .background(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(Color.emphasis)
+                        .fill(Color.brand)
                 )
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Spacing.xl)
             .padding(.bottom, isLastPage ? 8 : 16)
 
             // Na última página, oferece o login pra quem já tem conta.
             Button(Localization.Onboarding.alreadyHaveAccount.string) {
                 navigateToLogin = true
             }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.emphasis)
-            .padding(.bottom, 16)
+            .font(.bodySupportingStrong)
+            .foregroundStyle(.brand)
+            .padding(.bottom, Spacing.lg)
             .opacity(isLastPage ? 1 : 0)
             .disabled(!isLastPage)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $navigateToLogin) {
             LoginView()
@@ -114,22 +114,22 @@ private struct OnboardingPageView: View {
     let page: OnboardingPage
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: Spacing.xl) {
             Spacer()
             illustration
-                .padding(.bottom, 24)
-            VStack(spacing: 12) {
+                .padding(.bottom, Spacing.xl)
+            VStack(spacing: Spacing.md) {
                 if !page.title.isEmpty {
                     Text(page.title)
-                        .font(.system(size: 34, weight: .bold))
+                        .font(.titleScreenLarge)
                         .multilineTextAlignment(.center)
                 }
                 Text(page.subtitle)
                     .font(.title3)
-                    .foregroundStyle(page.kind == .logo ? .secundaryLabel : Color(uiColor: .label))
+                    .foregroundStyle(page.kind == .logo ? .inkMuted : Color.ink)
                     .multilineTextAlignment(.center)
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, Spacing.xxl)
             Spacer()
         }
     }
@@ -155,7 +155,7 @@ private struct OnboardingPageView: View {
         case .assistant:
             Image(systemName: "sparkles")
                 .font(.system(size: 88, weight: .regular))
-                .foregroundStyle(.emphasis)
+                .foregroundStyle(.brand)
         }
     }
 }

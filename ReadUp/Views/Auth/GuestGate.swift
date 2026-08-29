@@ -39,35 +39,35 @@ struct SignInRequiredView: View {
         VStack(spacing: 18) {
             Image(systemName: icon)
                 .font(.system(size: 56, weight: .regular))
-                .foregroundStyle(.emphasis)
+                .foregroundStyle(.brand)
 
             Text(title)
-                .font(.system(.title2, weight: .bold))
+                .font(.titleSecondary)
                 .multilineTextAlignment(.center)
 
             Text(message)
-                .font(.body)
-                .foregroundStyle(.secundaryLabel)
+                .font(.bodyDefault)
+                .foregroundStyle(.inkMuted)
                 .multilineTextAlignment(.center)
 
             Button {
                 showAuth = true
             } label: {
                 Text(Localization.Auth.signInOrCreate.string)
-                    .font(.system(.headline, weight: .semibold))
+                    .font(.headingRow)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, Spacing.lg)
                     .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.emphasis)
+                        RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                            .fill(Color.brand)
                     )
             }
-            .padding(.top, 8)
+            .padding(.top, Spacing.sm)
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, Spacing.xxl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.backgroundPrimary)
+        .background(.surface)
         .sheet(isPresented: $showAuth) {
             AuthSheet()
         }

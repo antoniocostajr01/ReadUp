@@ -11,27 +11,24 @@ struct HistoryEmptyState: View {
     
     
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Spacing.cardInset) {
             Image(systemName: "clock.badge.questionmark")
                 .font(.system(size: 34, weight: .medium))
-                .foregroundStyle(Color(uiColor: .secondaryLabel))
+                .foregroundStyle(Color.inkMuted)
 
             Text(Localization.History.emptyTitle.string)
-                .font(.system(.title3, weight: .semibold))
-                .foregroundStyle(Color(uiColor: .label))
+                .font(.titleTertiary)
+                .foregroundStyle(Color.ink)
 
             Text(Localization.History.emptySubtitle.string)
-                .font(.subheadline)
-                .foregroundStyle(Color(uiColor: .secondaryLabel))
+                .font(.bodySupporting)
+                .foregroundStyle(Color.inkMuted)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
         .padding(.horizontal, 18)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .cardSurface(radius: Radius.xl)
     }
 }
 

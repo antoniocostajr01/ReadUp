@@ -13,7 +13,7 @@ struct AuthTextField: View {
         HStack(spacing: 10) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
             }
             TextField(placeholder, text: $text)
                 .keyboardType(keyboardType)
@@ -22,15 +22,12 @@ struct AuthTextField: View {
                 .autocorrectionDisabled()
             
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(.vertical, Spacing.lg)
+        .padding(.horizontal, Spacing.lg)
+        .cardSurface(radius: Radius.md)
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.secundaryLabel.opacity(0.3), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
+                .strokeBorder(Color.inkMuted.opacity(0.3), lineWidth: 0.5)
         )
     }
 }
@@ -46,7 +43,7 @@ struct AuthSecureField: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "lock")
-                .foregroundStyle(.secundaryLabel)
+                .foregroundStyle(.inkMuted)
             
             Group {
                 if isRevealed {
@@ -63,19 +60,16 @@ struct AuthSecureField: View {
                 isRevealed.toggle()
             } label: {
                 Image(systemName: isRevealed ? "eye.slash" : "eye")
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
             }
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(.vertical, Spacing.lg)
+        .padding(.horizontal, Spacing.lg)
+        .cardSurface(radius: Radius.md)
         // Adicionada a borda leve
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.secundaryLabel.opacity(0.3), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
+                .strokeBorder(Color.inkMuted.opacity(0.3), lineWidth: 0.5)
         )
     }
 }
@@ -95,15 +89,15 @@ struct AuthPrimaryButton: View {
                         .tint(.white)
                 } else {
                     Text(title)
-                        .font(.system(.headline, weight: .semibold))
+                        .font(.headingRow)
                         .foregroundStyle(.white)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, Spacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isEnabled ? Color.emphasis : Color.secundaryLabel)
+                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                    .fill(isEnabled ? Color.brand : Color.inkMuted)
             )
         }
         .disabled(!isEnabled || isLoading)

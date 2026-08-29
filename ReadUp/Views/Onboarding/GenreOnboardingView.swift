@@ -13,29 +13,29 @@ struct GenreOnboardingView: View {
     private let genres = GenreCatalog.all
 
     private let palette: [Color] = [
-        .emphasis, .indigo, .orange, .pink, .teal,
+        .brand, .indigo, .orange, .pink, .teal,
         .purple, .blue, .brown, .red, .mint, .cyan
     ]
     
     var body: some View {
         ZStack {
-            Color.backgroundPrimary.ignoresSafeArea()
+            Color.surface.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                VStack(spacing: 8) {
+                VStack(spacing: Spacing.sm) {
                     Text(Localization.Onboarding.genresTitle.string)
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
 
                     Text(Localization.Onboarding.genresSubtitle.string)
-                        .font(.subheadline)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.bodySupporting)
+                        .foregroundStyle(.inkMuted)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-                .padding(.bottom, 8)
-                .background(.backgroundPrimary)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.top, Spacing.xl)
+                .padding(.bottom, Spacing.sm)
+                .background(.surface)
                 .zIndex(1)
                 
                 // Área da física
@@ -55,12 +55,12 @@ struct GenreOnboardingView: View {
                 
                 VStack(spacing: 10) {
                     Text(selected.isEmpty ? Localization.Onboarding.selectAtLeast.string : String(format: Localization.Onboarding.selected.string, selected.count))
-                        .font(.footnote)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.captionDefault)
+                        .foregroundStyle(.inkMuted)
 
                     if let errorMessage = authManager.errorMessage {
                         Text(errorMessage)
-                            .font(.footnote)
+                            .font(.captionDefault)
                             .foregroundStyle(.red)
                     }
             
@@ -72,9 +72,9 @@ struct GenreOnboardingView: View {
                         Task { await authManager.completeOnboarding(with: selected) }
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 16)
-                .background(.backgroundPrimary)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.bottom, Spacing.lg)
+                .background(.surface)
                 .zIndex(1)
             }
         }
@@ -119,21 +119,21 @@ struct GenreOnboardingView: View {
     }
 
     private func chipView(genre: Genre, color: Color, selected: Bool) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.sm) {
             Image(systemName: genre.icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.iconLabel)
                 .foregroundStyle(selected ? .white : color)
             Text(genre.localizedTitle)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(selected ? .white : Color(uiColor: .label))
+                .font(.iconLabel)
+                .foregroundStyle(selected ? .white : Color.ink)
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 12)
+        .padding(.vertical, Spacing.md)
         .background(
-            Capsule().fill(selected ? Color.emphasis : Color(uiColor: .secondarySystemBackground))
+            Capsule().fill(selected ? Color.brand : Color.surfaceRaised)
         )
         .overlay(
-            Capsule().strokeBorder(selected ? Color.emphasis : color.opacity(0.55),
+            Capsule().strokeBorder(selected ? Color.brand : color.opacity(0.55),
                                    lineWidth: selected ? 2.5 : 1.2)
         )
     }

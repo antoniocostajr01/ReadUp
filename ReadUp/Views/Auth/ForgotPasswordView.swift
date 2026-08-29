@@ -10,12 +10,12 @@ struct ForgotPasswordView: View {
         ScrollView {
             VStack(spacing: 20) {
                 Text(Localization.Auth.forgotPasswordTitle.string)
-                    .font(.system(size: 30, weight: .bold))
-                    .padding(.top, 24)
+                    .font(.titleScreen)
+                    .padding(.top, Spacing.xl)
 
                 Text(Localization.Auth.forgotPasswordDescription.string)
-                    .font(.subheadline)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
                     .multilineTextAlignment(.center)
 
                 AuthTextField(
@@ -25,11 +25,11 @@ struct ForgotPasswordView: View {
                     keyboardType: .emailAddress,
                     textContentType: .emailAddress
                 )
-                .padding(.top, 8)
+                .padding(.top, Spacing.sm)
 
                 if let errorMessage = authManager.errorMessage {
                     Text(errorMessage)
-                        .font(.footnote)
+                        .font(.captionDefault)
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -45,11 +45,11 @@ struct ForgotPasswordView: View {
                         }
                     }
                 }
-                .padding(.top, 8)
+                .padding(.top, Spacing.sm)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Spacing.xl)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.Auth.forgotPasswordTitle.string)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { authManager.errorMessage = nil }

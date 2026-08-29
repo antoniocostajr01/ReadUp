@@ -12,7 +12,7 @@ struct Search: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.md) {
             searchField
 
             if viewModel.submittedQuery.isEmpty {
@@ -21,9 +21,9 @@ struct Search: View {
                 resultsView
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .background(.backgroundPrimary)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.top, Spacing.sm)
+        .background(.surface)
         .navigationTitle(Localization.Search.title.string)
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .search(book, viewModel.service))
@@ -50,10 +50,10 @@ struct Search: View {
         @Bindable var bindableViewModel = viewModel
         return HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color(uiColor: .secondaryLabel))
+                .foregroundStyle(Color.inkMuted)
 
             TextField(Localization.Search.placeholder.string, text: $bindableViewModel.searchText)
-                .foregroundStyle(Color(uiColor: .label))
+                .foregroundStyle(Color.ink)
                 .focused($isSearchFocused)
                 .submitLabel(.search)
                 .onSubmit {
@@ -66,7 +66,7 @@ struct Search: View {
                     viewModel.clearSearch()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                        .foregroundStyle(Color.inkFaint)
                 }
             }
 
@@ -76,19 +76,16 @@ struct Search: View {
             } label: {
                 Image(systemName: "arrow.right.circle.fill")
                     .font(.system(size: 20))
-                    .foregroundStyle(.emphasis)
+                    .foregroundStyle(.brand)
             }
             .disabled(viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines).count < 2)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(.horizontal, Spacing.cardInset)
+        .padding(.vertical, Spacing.md)
+        .cardSurface(radius: Radius.lg)
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(isSearchFocused ? Color.emphasis : Color(uiColor: .separator), lineWidth: isSearchFocused ? 1.4 : 1)
+            RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                .stroke(isSearchFocused ? Color.brand : Color.divider, lineWidth: isSearchFocused ? 1.4 : 1)
         )
     }
 
@@ -96,15 +93,15 @@ struct Search: View {
 
     private var recommendationsView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: Spacing.xl) {
                 
                 if !chosenGenres.isEmpty {
-                    LazyVStack(alignment: .leading, spacing: 24) {
+                    LazyVStack(alignment: .leading, spacing: Spacing.xl) {
                         ForEach(viewModel.genreSections) { section in
-                            VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: Spacing.md) {
                                 HStack {
                                     Text(section.genre.localizedTitle)
-                                        .font(.system(.title2, weight: .bold))
+                                        .font(.titleSecondary)
                                         
                                     Spacer()
                                     
@@ -113,7 +110,7 @@ struct Search: View {
                                         viewModel.searchText = section.genre.localizedTitle
                                         Task { await viewModel.runSearch(with: section.genre.query) }
                                     }
-                                    .foregroundStyle(.emphasis)
+                                    .foregroundStyle(.brand)
                                 }
 
                                 if section.books.isEmpty {
@@ -121,7 +118,7 @@ struct Search: View {
                                         .frame(maxWidth: .infinity, minHeight: 120)
                                 } else {
                                     ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 12) {
+                                        HStack(spacing: Spacing.md) {
                                             ForEach(section.books) { book in
                                                 bookCard(book)
                                             }
@@ -133,10 +130,10 @@ struct Search: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Spacing.md) {
                     HStack {
                         Text(Localization.Search.discover.string)
-                            .font(.system(.title2, weight: .bold))
+                            .font(.titleSecondary)
 
                         Spacer()
 
@@ -145,7 +142,7 @@ struct Search: View {
                             viewModel.searchText = "best books"
                             Task { await viewModel.runSearch(with: "best books") }
                         }
-                        .foregroundStyle(.emphasis)
+                        .foregroundStyle(.brand)
                     }
 
                     if viewModel.discoverBooks.isEmpty {
@@ -153,7 +150,7 @@ struct Search: View {
                             .frame(maxWidth: .infinity, minHeight: 120)
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
+                            HStack(spacing: Spacing.md) {
                                 ForEach(viewModel.discoverBooks) { book in
                                     bookCard(book)
                                 }
@@ -162,11 +159,11 @@ struct Search: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Spacing.md) {
                     Text(Localization.Search.browseByGenre.string)
-                        .font(.system(.title2, weight: .bold))
+                        .font(.titleSecondary)
 
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Spacing.md) {
                         ForEach(GenreCatalog.all) { genre in
                             Button {
                                 isSearchFocused = false
@@ -174,20 +171,20 @@ struct Search: View {
                                 Task { await viewModel.runSearch(with: genre.query) }
                             } label: {
                                 ZStack(alignment: .bottomLeading) {
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .fill(Color.emphasis.opacity(0.12))
+                                    RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                                        .fill(Color.brand.opacity(0.12))
 
                                     Image(systemName: genre.icon)
                                         .font(.system(size: 42, weight: .regular))
-                                        .foregroundStyle(Color.emphasis.opacity(0.18))
+                                        .foregroundStyle(Color.brand.opacity(0.18))
                                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                                        .padding(.top, 14)
-                                        .padding(.trailing, 12)
+                                        .padding(.top, Spacing.cardInset)
+                                        .padding(.trailing, Spacing.md)
 
                                     Text(genre.localizedTitle)
-                                        .font(.system(.title3, weight: .semibold))
-                                        .foregroundStyle(Color(uiColor: .label))
-                                        .padding(14)
+                                        .font(.titleTertiary)
+                                        .foregroundStyle(Color.ink)
+                                        .padding(Spacing.cardInset)
                                 }
                                 .frame(height: 126)
                             }
@@ -204,7 +201,7 @@ struct Search: View {
         Button {
             selectedBook = book
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
                 AsyncImage(url: book.thumbnailURL) { phase in
                     switch phase {
                     case .success(let image):
@@ -212,21 +209,21 @@ struct Search: View {
                             .resizable()
                             .scaledToFill()
                     default:
-                        Color(uiColor: .tertiarySystemFill)
+                        Color.surfaceFill
                     }
                 }
                 .frame(width: 146, height: 200)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
 
                 Text(book.title)
                     .font(.headline)
                     .lineLimit(1)
-                    .foregroundStyle(Color(uiColor: .label))
+                    .foregroundStyle(Color.ink)
 
                 Text(book.author)
-                    .font(.subheadline)
+                    .font(.bodySupporting)
                     .lineLimit(1)
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
             }
             .frame(width: 146, alignment: .leading)
         }
@@ -235,34 +232,34 @@ struct Search: View {
 
     /// Estado "não achou o livro": ícone, título e atalho para o cadastro manual.
     private func notFoundState(title: String) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             Image(systemName: "exclamationmark.magnifyingglass")
-                .font(.system(size: 52, weight: .regular))
-                .foregroundStyle(.secundaryLabel)
-                .padding(.bottom, 8)
+                .font(.iconEmptyState)
+                .foregroundStyle(.inkMuted)
+                .padding(.bottom, Spacing.sm)
 
             Text(title)
                 .font(.system(.subheadline, weight: .semibold))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(Color(uiColor: .label))
-                .padding(.bottom, 16)
+                .foregroundStyle(Color.ink)
+                .padding(.bottom, Spacing.lg)
 
             Text(Localization.Search.manualEntryHint.string)
                 .font(.system(.subheadline, weight: .semibold))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(Color(uiColor: .label))
+                .foregroundStyle(Color.ink)
 
             Text(Localization.Search.manualEntryDescription.string)
-                .font(.subheadline)
+                .font(.bodySupporting)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secundaryLabel)
-                .padding(.bottom, 24)
+                .foregroundStyle(.inkMuted)
+                .padding(.bottom, Spacing.xl)
 
             Button {
                 isSearchFocused = false
                 isShowingAddManually = true
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: Spacing.md) {
                     Text(Localization.Search.addManually.string)
                     Image(systemName: "square.and.pencil")
                 }
@@ -270,7 +267,7 @@ struct Search: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: 307, minHeight: 61)
                 .frame(maxWidth: .infinity)
-                .background(Capsule().fill(Color.emphasis))
+                .background(Capsule().fill(Color.brand))
             }
             .buttonStyle(.plain)
             .frame(maxWidth: 307)
@@ -296,7 +293,7 @@ struct Search: View {
                         Button {
                             selectedBook = book
                         } label: {
-                            HStack(spacing: 12) {
+                            HStack(spacing: Spacing.md) {
                                 AsyncImage(url: book.thumbnailURL) { phase in
                                     switch phase {
                                     case .success(let image):
@@ -304,24 +301,24 @@ struct Search: View {
                                             .resizable()
                                             .scaledToFill()
                                     default:
-                                        Color(uiColor: .tertiarySystemFill)
+                                        Color.surfaceFill
                                     }
                                 }
                                 .frame(width: 50, height: 74)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .clipShape(RoundedRectangle(cornerRadius: Radius.sm))
 
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: Spacing.xs) {
                                     Text(book.title)
-                                        .font(.system(.headline, weight: .semibold))
+                                        .font(.headingRow)
                                         .lineLimit(2)
 
                                     Text(book.author)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secundaryLabel)
+                                        .font(.bodySupporting)
+                                        .foregroundStyle(.inkMuted)
                                         .lineLimit(1)
                                 }
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, Spacing.xs)
                         }
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
@@ -334,7 +331,7 @@ struct Search: View {
                             Spacer()
                         }
                         .listRowBackground(Color.clear)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, Spacing.sm)
                         .onAppear {
                             Task {
                                 await viewModel.loadMore()
@@ -342,13 +339,13 @@ struct Search: View {
                         }
                     } else if !viewModel.results.isEmpty {
                         notFoundState(title: Localization.Search.noMoreResults.string)
-                            .padding(.vertical, 24)
+                            .padding(.vertical, Spacing.xl)
                         .listRowBackground(Color.clear)
                     }
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .background(.backgroundPrimary)
+                .background(.surface)
                 .scrollDismissesKeyboard(.interactively)
             }
         }

@@ -7,18 +7,15 @@ struct SmallMetricCard: View {
     var body: some View {
         VStack(spacing: 6) {
             Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secundaryLabel)
+                .font(.captionStrong)
+                .foregroundStyle(.inkMuted)
                 .tracking(1)
             Text(value)
-                .font(.system(.title2, weight: .bold))
-                .foregroundStyle(.emphasis)
+                .font(.titleSecondary)
+                .foregroundStyle(.brand)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground))
-        )
+        .padding(.vertical, Spacing.cardInset)
+        .cardSurface(radius: Radius.md)
     }
 }

@@ -19,14 +19,14 @@ struct BookDetailsSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: Spacing.xl) {
                     coverView
 
                     TitleAndAuthorBook(bookAuthor: authorText, bookTitle: titleText)
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
                         Text(cleanedDescription)
-                            .font(.body)
+                            .font(.bodyDefault)
                             .lineSpacing(2)
                             .lineLimit(viewModel.isShowingFullDescription ? nil : 5)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -37,12 +37,12 @@ struct BookDetailsSheet: View {
                                     viewModel.isShowingFullDescription.toggle()
                                 }
                             }
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.emphasis)
+                            .font(.bodySupportingStrong)
+                            .foregroundStyle(.brand)
                         }
                     }
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.sm) {
                         Image(systemName: "book.pages.fill")
                         Text("\(pagesText)")
                     }
@@ -51,13 +51,13 @@ struct BookDetailsSheet: View {
                     case .library(let book):
                         HStack {
                             Text(book.status.displayName)
-                                .foregroundStyle(.mainText)
-                                .font(.system(.title3, weight: .semibold))
+                                .foregroundStyle(.ink)
+                                .font(.titleTertiary)
                         }
                         .frame(width: 297, height: 61)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(.emphasis, lineWidth: 2)
+                            RoundedRectangle(cornerRadius: Radius.md)
+                                .stroke(.brand, lineWidth: 2)
                         )
 
                     case .search:
@@ -69,8 +69,8 @@ struct BookDetailsSheet: View {
                         .pickerStyle(.menu)
                         .frame(width: 297, height: 61)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(.emphasis, lineWidth: 2)
+                            RoundedRectangle(cornerRadius: Radius.md)
+                                .stroke(.brand, lineWidth: 2)
                         )
 
                         Button {
@@ -81,27 +81,27 @@ struct BookDetailsSheet: View {
                             }
                         } label: {
                             Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
-                                .font(.system(.title3, weight: .semibold))
+                                .font(.titleTertiary)
                                 .foregroundStyle(.white)
                                 .frame(width: 361, height: 61)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 50)
-                                        .foregroundStyle(viewModel.alreadyExists ? .secundaryLabel : .emphasis)
+                                    RoundedRectangle(cornerRadius: Radius.pill)
+                                        .foregroundStyle(viewModel.alreadyExists ? .inkMuted : .brand)
                                 )
                         }
                         .disabled(viewModel.alreadyExists || viewModel.isSaving)
 
                         if let saveMessage = viewModel.saveMessage {
                             Text(saveMessage)
-                                .font(.footnote)
-                                .foregroundStyle(.secundaryLabel)
+                                .font(.captionDefault)
+                                .foregroundStyle(.inkMuted)
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, Spacing.xl)
                 .padding(.vertical, 20)
             }
-            .background(.backgroundPrimary)
+            .background(.surface)
             .navigationTitle(Localization.BookDetails.title.string)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -206,7 +206,7 @@ struct BookDetailsSheet: View {
     private var coverView: some View {
         switch source {
         case .library(let book):
-            BookCoverView(coverUrl: book.coverUrl, width: 148, height: 211, cornerRadius: 12)
+            BookCoverView(coverUrl: book.coverUrl, width: 148, height: 211, cornerRadius: Radius.md)
         case .search(let book, _):
             AsyncImage(url: book.thumbnailURL) { phase in
                 switch phase {
@@ -215,11 +215,11 @@ struct BookDetailsSheet: View {
                         .resizable()
                         .scaledToFill()
                 default:
-                    Color.tabBarBackground
+                    Color.surfaceChrome
                 }
             }
             .frame(width: 148, height: 211)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.md))
         }
     }
 

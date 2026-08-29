@@ -11,21 +11,21 @@ struct SessionDetails: View {
     let session: LiterarySession
     
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: Spacing.cardInset) {
             
-            BookCoverView(coverUrl: session.book.coverUrl, width: 62, height: 88, cornerRadius: 12)
+            BookCoverView(coverUrl: session.book.coverUrl, width: 62, height: 88, cornerRadius: Radius.md)
             
             VStack{
                 Text(session.book.title)
                     .lineLimit(1)
-                    .font(.system(.title2, weight: .bold))
-                    .foregroundStyle(.mainText)
+                    .font(.titleSecondary)
+                    .foregroundStyle(.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 
                 Text(session.book.author)
-                    .font(.system(size: 17, weight: .regular))
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodyDefault)
+                    .foregroundStyle(.inkMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(width: 159)
@@ -40,11 +40,11 @@ struct SessionDetails: View {
         }//Final da Hstack
         .frame(width: 361, height: 120)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(.emphasis, lineWidth: 1)
-                .foregroundStyle(.componentBackground)
-                .background(RoundedRectangle(cornerRadius: 12)
-                    .foregroundStyle(.componentBackground)
+            RoundedRectangle(cornerRadius: Radius.md)
+                .stroke(.brand, lineWidth: 1)
+                .foregroundStyle(.inkInverse)
+                .background(RoundedRectangle(cornerRadius: Radius.md)
+                    .foregroundStyle(.inkInverse)
                            )
         )
         

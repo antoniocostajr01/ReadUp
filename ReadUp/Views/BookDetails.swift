@@ -21,15 +21,15 @@ struct BookDetails: View {
     }
 
     var body: some View {
-        VStack(spacing: 24){
-            BookCoverView(coverUrl: currentBook.coverUrl, width: 148, height: 211, cornerRadius: 12)
+        VStack(spacing: Spacing.xl){
+            BookCoverView(coverUrl: currentBook.coverUrl, width: 148, height: 211, cornerRadius: Radius.md)
 
             TitleAndAuthorBook(bookAuthor: currentBook.author, bookTitle: currentBook.title)
 
             Text("\(currentBook.details)")
                 .frame(maxWidth: .infinity)
 
-            HStack(spacing: 8){
+            HStack(spacing: Spacing.sm){
                 Image(systemName: "book.pages.fill")
 
                 Text("\(currentBook.numberOfPages)")
@@ -38,15 +38,15 @@ struct BookDetails: View {
 
             HStack{
                 Text(currentBook.status.displayName)
-                    .foregroundStyle(.mainText)
-                    .font(.system(.title3, weight: .semibold))
+                    .foregroundStyle(.ink)
+                    .font(.titleTertiary)
             }
             .frame(width: 297, height: 61)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(.emphasis, lineWidth: 2)
+                RoundedRectangle(cornerRadius: Radius.md)
+                    .stroke(.brand, lineWidth: 2)
             )
-            .padding(.top, 24)
+            .padding(.top, Spacing.xl)
         }
         .frame(maxHeight: .infinity)
         .toolbar {
@@ -70,7 +70,7 @@ struct BookDetails: View {
                 }
             }
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
         .toolbar(.hidden, for: .tabBar)
         .ignoresSafeArea()
         .confirmationDialog(Localization.BookDetails.selectStatus.string, isPresented: $viewModel.isShowingStatusDialog){

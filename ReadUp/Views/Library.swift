@@ -92,17 +92,17 @@ struct Library: View {
         .sheet(isPresented: $isShowingAddManually) {
             BookFormView(mode: .create)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
     }
 
     // MARK: - Modal de adicionar livro
 
     private var addOptionsSheet: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.md) {
             Text(Localization.BookDetails.addToLibrary.string)
-                .font(.system(.title2, weight: .bold))
+                .font(.titleSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, 4)
+                .padding(.bottom, Spacing.xs)
 
             addOptionRow(Localization.Library.scan.string, icon: "barcode.viewfinder", option: .scan)
             addOptionRow(Localization.Library.searchOption.string, icon: "magnifyingglass", option: .search)
@@ -110,7 +110,7 @@ struct Library: View {
 
             Spacer()
         }
-        .padding(24)
+        .padding(Spacing.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
         // Sem cor de fundo opaca: o vidro do sistema deixa a biblioteca aparecer atrás,
         // que é o que dá a leitura de "camada por cima" em vez de tela preta nova.
@@ -124,22 +124,22 @@ struct Library: View {
             pendingOption = option
             isShowingAddOptions = false
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: Spacing.cardInset) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundStyle(.emphasis)
+                    .foregroundStyle(.brand)
                     .frame(width: 28)
 
                 Text(title)
                     .font(.system(.body, weight: .semibold))
-                    .foregroundStyle(Color(uiColor: .label))
+                    .foregroundStyle(Color.ink)
 
                 Spacer()
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Spacing.lg)
             .padding(.vertical, 18)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
         }
@@ -180,7 +180,7 @@ struct Library: View {
         } description: {
             Text(Localization.Library.noResultsSubtitle.string)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
     }
 
     private var libraryList: some View {
@@ -191,28 +191,28 @@ struct Library: View {
                         Button {
                             selectedBook = book
                         } label: {
-                            HStack(spacing: 12) {
+                            HStack(spacing: Spacing.md) {
                                 LibraryCoverView(book: book)
                                 
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: Spacing.xs) {
                                     Text(book.title)
                                         .font(.headline)
-                                        .foregroundStyle(Color(uiColor: .label))
+                                        .foregroundStyle(Color.ink)
                                         .lineLimit(2)
                                     
                                     Text(book.author)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secundaryLabel)
+                                        .font(.bodySupporting)
+                                        .foregroundStyle(.inkMuted)
                                         .lineLimit(1)
                                 }
                                 
                                 Spacer()
                                 
                                 Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                                    .font(.captionStrong)
+                                    .foregroundStyle(Color.inkFaint)
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, Spacing.xs)
                         }
                         .buttonStyle(.plain)
                     }
@@ -221,29 +221,29 @@ struct Library: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(.backgroundPrimary)
+        .background(.surface)
     }
     
     private var emptyState: some View {
         ScrollView {
-            VStack(spacing: 14) {
+            VStack(spacing: Spacing.cardInset) {
                 Spacer(minLength: 88)
                 
                 Image(systemName: "books.vertical")
-                    .font(.system(size: 38, weight: .medium))
-                    .foregroundStyle(.emphasis)
+                    .font(.iconSection)
+                    .foregroundStyle(.brand)
                 
                 Text(Localization.Library.emptyTitle.string)
-                    .font(.system(.title2, weight: .bold))
+                    .font(.titleSecondary)
                 
                 Text(Localization.Library.emptySubtitle.string)
-                    .font(.body)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodyDefault)
+                    .foregroundStyle(.inkMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, Spacing.xl)
             }
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 24)
+            .padding(.bottom, Spacing.xl)
         }
     }
     

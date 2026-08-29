@@ -33,7 +33,7 @@ struct History: View {
             
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.History.title.string)
         .navigationDestination(item: $selectedSession) { session in
             SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, previousProgress: max(0, session.pagesRead - session.pagesRead), sessionToEdit: session)

@@ -10,12 +10,12 @@ struct SessionSummaryShareCard: View {
     let userAvatar: UIImage?
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(Color(uiColor: .secondarySystemBackground).opacity(0.7))
+        RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+            .fill(Color.surfaceRaised.opacity(0.7))
     }
     
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Spacing.cardInset) {
             headerCard
             
             totalProgressCard
@@ -27,13 +27,13 @@ struct SessionSummaryShareCard: View {
             
             footerCard
         }
-        .padding(24)
+        .padding(Spacing.xl)
         .background(Color.clear)
         .frame(width: 380)
     }
     
     private var headerCard: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: Spacing.cardInset) {
             if let coverImage {
                 Image(uiImage: coverImage)
                     .resizable()
@@ -45,25 +45,25 @@ struct SessionSummaryShareCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 // Título completo: sem lineLimit, o card cresce se precisar.
                 Text(currentBook.title)
-                    .font(.system(.title2, weight: .bold))
+                    .font(.titleSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .foregroundStyle(Color(uiColor: .label))
+                    .foregroundStyle(Color.ink)
 
                 Text(currentBook.author)
                     .font(.title3)
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(Spacing.cardInset)
         .background(cardBackground)
     }
 
     /// Assinatura do leitor: foto e nome do perfil.
     private var footerCard: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.md) {
             if let userAvatar {
                 Image(uiImage: userAvatar)
                     .resizable()
@@ -73,7 +73,7 @@ struct SessionSummaryShareCard: View {
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .font(.system(size: 36))
-                    .foregroundStyle(.emphasis)
+                    .foregroundStyle(.brand)
                     .frame(width: 40, height: 40)
             }
 
@@ -81,36 +81,36 @@ struct SessionSummaryShareCard: View {
                 Text(userName)
                     .font(.system(.headline, weight: .bold))
                     .lineLimit(1)
-                    .foregroundStyle(Color(uiColor: .label))
+                    .foregroundStyle(Color.ink)
 
                 Text("ReadUp")
-                    .font(.subheadline)
-                    .foregroundStyle(.secundaryLabel)
+                    .font(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
             }
 
             Spacer(minLength: 0)
         }
-        .padding(14)
+        .padding(Spacing.cardInset)
         .background(cardBackground)
     }
 
     private var totalProgressCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Label("Total Progress", systemImage: "book")
-                .font(.subheadline)
-                .foregroundStyle(.secundaryLabel)
+                .font(.bodySupporting)
+                .foregroundStyle(.inkMuted)
             
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
                 Text("\(totalProgress)")
                     .font(.system(.largeTitle, weight: .bold))
-                    .foregroundStyle(.emphasis)
+                    .foregroundStyle(.brand)
                 Text("/ \(currentBook.numberOfPages) pages")
                     .font(.title3)
-                    .foregroundStyle(.secundaryLabel)
+                    .foregroundStyle(.inkMuted)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(Spacing.cardInset)
         .background(cardBackground)
     }
 }
@@ -121,20 +121,20 @@ fileprivate struct ShareStatCard: View {
     let value: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Label(title, systemImage: icon)
-                .font(.subheadline)
-                .foregroundStyle(.secundaryLabel)
+                .font(.bodySupporting)
+                .foregroundStyle(.inkMuted)
 
             Text(value)
-                .font(.system(.title, weight: .bold))
-                .foregroundStyle(.emphasis)
+                .font(.titlePrimary)
+                .foregroundStyle(.brand)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
+        .padding(Spacing.cardInset)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemBackground).opacity(0.7))
+            RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                .fill(Color.surfaceRaised.opacity(0.7))
         )
     }
 }

@@ -11,7 +11,7 @@ struct SearchBookDetails: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: Spacing.xl) {
                 AsyncImage(url: book.thumbnailURL) { phase in
                     switch phase {
                     case .success(let image):
@@ -19,17 +19,17 @@ struct SearchBookDetails: View {
                             .resizable()
                             .scaledToFill()
                     default:
-                        Color.tabBarBackground
+                        Color.surfaceChrome
                     }
                 }
                 .frame(width: 148, height: 211)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.md))
 
                 TitleAndAuthorBook(bookAuthor: book.author, bookTitle: book.title)
 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text(cleanedDescription)
-                        .font(.body)
+                        .font(.bodyDefault)
                         .lineSpacing(2)
                         .lineLimit(viewModel.isShowingFullDescription ? nil : 5)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -40,12 +40,12 @@ struct SearchBookDetails: View {
                                 viewModel.isShowingFullDescription.toggle()
                             }
                         }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.emphasis)
+                        .font(.bodySupportingStrong)
+                        .foregroundStyle(.brand)
                     }
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: Spacing.sm) {
                     Image(systemName: "book.pages.fill")
                     Text("\(book.numberOfPages)")
                 }
@@ -58,34 +58,34 @@ struct SearchBookDetails: View {
                 .pickerStyle(.menu)
                 .frame(width: 297, height: 61)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(.emphasis, lineWidth: 2)
+                    RoundedRectangle(cornerRadius: Radius.md)
+                        .stroke(.brand, lineWidth: 2)
                 )
 
                 Button {
                     Task { await viewModel.saveBookToLibrary(book: book, store: store, onDismiss: { dismiss() }) }
                 } label: {
                     Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
-                        .font(.system(.title3, weight: .semibold))
-                        .foregroundStyle(.componentBackground)
+                        .font(.titleTertiary)
+                        .foregroundStyle(.inkInverse)
                         .frame(width: 361, height: 61)
                         .background(
-                            RoundedRectangle(cornerRadius: 50)
-                                .foregroundStyle(viewModel.alreadyExists ? .secundaryLabel : .emphasis)
+                            RoundedRectangle(cornerRadius: Radius.pill)
+                                .foregroundStyle(viewModel.alreadyExists ? .inkMuted : .brand)
                         )
                 }
                 .disabled(viewModel.alreadyExists || viewModel.isSaving)
 
                 if let saveMessage = viewModel.saveMessage {
                     Text(saveMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.secundaryLabel)
+                        .font(.captionDefault)
+                        .foregroundStyle(.inkMuted)
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Spacing.xl)
             .padding(.vertical, 20)
         }
-        .background(.backgroundPrimary)
+        .background(.surface)
         .navigationTitle(Localization.BookDetails.title.string)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
