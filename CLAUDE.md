@@ -213,9 +213,15 @@ some other way. Figma covers are typeset placeholders until they do.
   with italic serif reserved for author names.
 - **The tab bar is the one component deliberately not built from Figma.** The
   `Chrome/Tab bar` pill (`16:46`, specimens `37:311`/`37:323`/`37:335`) is
-  reference-only: the app uses the **native iOS tab bar**, tinted ink, with the three
-  tabs the component defines — Home, Library, Profile. Unselected items keep the system
-  colour, the single sanctioned exception to "never a grey".
+  reference-only: the app uses the **native iOS tab bar**, in the system colour, with
+  the three tabs the component defines — Home, Library, Profile. It carries no
+  `.tint()`: on iOS 26 a tint bleeds into the whole Liquid Glass capsule rather than
+  colouring just the selection, which turned the bar a muddy olive. The bar is the
+  single sanctioned exception to "never a grey".
+
+  **Gotcha:** on iOS 26 the *native* tab bar is itself a floating translucent capsule,
+  so it looks almost exactly like the custom pill that was removed. The tell is the
+  filled selection indicator behind the active tab — the custom bar never drew one.
 
 `DesignSystem/` in the app already routed every screen through semantic tokens, so
 adopting the palette was an edit to `Palette` in `Theme+Color.swift` plus the colorsets

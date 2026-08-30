@@ -7,11 +7,14 @@
 
 import SwiftUI
 
-/// As três abas do app: a barra é a nativa do iOS, tingida de ink.
+/// As três abas do app, na barra nativa do iOS.
 ///
 /// O Figma tem um componente `Chrome/Tab bar` (pílula flutuante), mas ele é
 /// referência apenas — a barra nativa venceu. O que veio do Figma é o conjunto de
-/// abas (Home, Library, Profile) e a cor de seleção.
+/// abas (Home, Library, Profile).
+///
+/// Sem `.tint()`: no iOS 26 o tint vaza pro vidro inteiro da cápsula e a barra fica
+/// num verde-oliva sujo, em vez de tingir só a seleção. A barra fica na cor do sistema.
 struct TabBar: View {
     @Environment(AuthManager.self) private var authManager
     @State private var selection: AppTab = .home
@@ -38,7 +41,6 @@ struct TabBar: View {
                 }
             }
         }
-        .tint(.ink)
     }
 
     /// Mostra a tela se autenticado, ou a parede de login se convidado.
