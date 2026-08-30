@@ -13,6 +13,7 @@ public extension Localization {
         case metricDayStreak
         case metricAverageTime
         case recentActivity
+        case seeAll
         case alertNoBooksTitle
         case alertNoBooksMessage
         case emptyTitle
@@ -27,6 +28,7 @@ public extension Localization {
             case .metricDayStreak: "home.metric.dayStreak"
             case .metricAverageTime: "home.metric.averageTime"
             case .recentActivity: "home.recentActivity"
+            case .seeAll: "home.seeAll"
             case .alertNoBooksTitle: "home.alert.noBooksTitle"
             case .alertNoBooksMessage: "home.alert.noBooksMessage"
             case .emptyTitle: "home.empty.title"

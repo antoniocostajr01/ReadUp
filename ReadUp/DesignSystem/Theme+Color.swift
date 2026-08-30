@@ -102,6 +102,11 @@ enum Palette {
     /// Deliberately the same value as `ink`; the app's old green is retired.
     static let brand = ink
 
+    /// `scrim/top` and `scrim/bottom` — the wash over a hero cover, so the title
+    /// stays legible whatever the artwork is. Only ever used behind text on art.
+    static let scrimTop = Color(hex: 0x26221C)
+    static let scrimBottom = Color(hex: 0x14100A)
+
     /// `accent/progress` — amber. The **only** chromatic colour in the system, and
     /// it appears only on progress fills and week bars. Nowhere else.
     static let accentProgress = Color(hex: 0xF3B54A)
