@@ -42,6 +42,13 @@ enum Spacing {
     static let progressBarHeight: CGFloat = 3
     /// 52 — the circular icon button beside a primary action.
     static let controlCircle: CGFloat = 52
+    /// 72×104 — the cover on a Library shelf.
+    static let coverShelfWidth: CGFloat = 72
+    static let coverShelfHeight: CGFloat = 104
+    /// 78 — the profile avatar.
+    static let avatar: CGFloat = 78
+    /// 38 — the circular add button in a screen header.
+    static let addCircle: CGFloat = 38
     /// 36×52 — the thumbnail cover in a session row.
     static let coverRowWidth: CGFloat = 36
     static let coverRowHeight: CGFloat = 52

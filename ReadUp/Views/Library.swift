@@ -35,7 +35,9 @@ struct Library: View {
 
     private var booksByStatus: [(status: BookStatus, items: [Book])] {
         let source = filteredBooks
-        let orderedStatuses = BookStatus.allCases.filter { status in
+        // Ordem do Figma, não a do enum: Lendo primeiro, abandonados por último.
+        let shelfOrder: [BookStatus] = [.reading, .iWantToRead, .read, .rereading, .abandoned]
+        let orderedStatuses = shelfOrder.filter { status in
             source.contains(where: { $0.status == status })
         }
 
@@ -48,19 +50,27 @@ struct Library: View {
     }
 
     var body: some View {
-        content
-        .navigationTitle(Localization.Library.title.string)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    isShowingAddOptions = true
-                } label: {
-                    Image(systemName: "plus")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                header
+                searchField
+
+                if books.isEmpty {
+                    emptyState
+                } else if booksByStatus.isEmpty {
+                    noResultsState
+                } else {
+                    ForEach(booksByStatus, id: \.status) { shelf in
+                        shelfView(shelf.status, books: shelf.items)
+                    }
                 }
-                // O modal cresce a partir do próprio "+", em vez de subir do rodapé.
-                .matchedTransitionSource(id: "addBook", in: addButtonNamespace)
             }
+            .padding(.horizontal, Spacing.gutterList)
+            .padding(.top, Spacing.cardInset)
+            .padding(.bottom, Spacing.xxl)
         }
+        .background(Palette.surface)
+        .toolbar(.hidden, for: .navigationBar)
         // A tela escolhida abre no onDismiss, não no toque: apresentar uma sheet enquanto
         // outra ainda está saindo faz o SwiftUI engolir a segunda.
         .sheet(isPresented: $isShowingAddOptions, onDismiss: openPendingOption) {
@@ -92,7 +102,107 @@ struct Library: View {
         .sheet(isPresented: $isShowingAddManually) {
             BookFormView(mode: .create)
         }
-        .background(.surface)
+    }
+
+    // MARK: - Cabeçalho e busca
+
+    /// Título e o "+" em ink. Figma `41:1019`.
+    private var header: some View {
+        HStack {
+            Text(Localization.Library.title.string)
+                .textStyle(.titleScreenLarge)
+                .foregroundStyle(Palette.ink)
+
+            Spacer()
+
+            Button {
+                isShowingAddOptions = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.iconLabel)
+                    .foregroundStyle(Palette.onBrand)
+                    .frame(width: Spacing.addCircle, height: Spacing.addCircle)
+                    .background(Circle().fill(Palette.brand))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Localization.BookDetails.addToLibrary.string)
+            // O modal cresce a partir do próprio "+", em vez de subir do rodapé.
+            .matchedTransitionSource(id: "addBook", in: addButtonNamespace)
+        }
+    }
+
+    /// Pílula de busca do design, no lugar do `.searchable` do sistema. Figma `41:1023`.
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.iconLabel)
+                .foregroundStyle(Palette.inkFaint)
+
+            TextField(
+                "",
+                text: $searchText,
+                prompt: Text(Localization.Library.searchPrompt.string)
+                    .foregroundColor(Palette.inkFaint)
+            )
+            .textStyle(.bodySupporting)
+            .foregroundStyle(Palette.ink)
+            .submitLabel(.search)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 13)
+        .background(Capsule().fill(Palette.surfaceRaised))
+    }
+
+    // MARK: - Prateleiras
+
+    /// Uma prateleira: cabeça com nome, contagem e chevron, e as capas em linha.
+    /// Figma `41:1026`.
+    private func shelfView(_ status: BookStatus, books shelfBooks: [Book]) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+                Text(status.displayName)
+                    .textStyle(.titleTertiary)
+                    .foregroundStyle(Palette.ink)
+
+                Text(Localization.Library.bookCount(shelfBooks.count))
+                    .textStyle(.captionFine)
+                    .foregroundStyle(Palette.inkFaint)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.iconLabel)
+                    .foregroundStyle(Palette.inkMeta)
+            }
+            .padding(.bottom, Spacing.sm)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Palette.divider).frame(height: 1)
+            }
+
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: Spacing.md) {
+                    ForEach(shelfBooks) { book in
+                        Button {
+                            selectedBook = book
+                        } label: {
+                            ShelfCover(
+                                book: book,
+                                progress: status == .reading ? progressValue(for: book) : nil
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                // A sombra das capas é cortada pelo ScrollView sem esta folga.
+                .padding(.vertical, Spacing.sm)
+            }
+            .scrollIndicators(.never)
+        }
+    }
+
+    private func progressValue(for book: Book) -> Double {
+        guard book.numberOfPages > 0 else { return 0 }
+        return min(1, max(0, Double(book.progress ?? 0) / Double(book.numberOfPages)))
     }
 
     // MARK: - Modal de adicionar livro
@@ -156,95 +266,38 @@ struct Library: View {
         pendingOption = nil
     }
 
-    /// Livraria vazia mostra o empty state; com livros, habilita a busca e mostra
-    /// a lista (ou o estado "nada encontrado" quando a busca não retorna nada).
-    @ViewBuilder
-    private var content: some View {
-        if books.isEmpty {
-            emptyState
-        } else {
-            Group {
-                if booksByStatus.isEmpty {
-                    noResultsState
-                } else {
-                    libraryList
-                }
-            }
-            .searchable(text: $searchText, prompt: Localization.Library.searchPrompt.string)
-        }
-    }
-
     private var noResultsState: some View {
-        ContentUnavailableView {
-            Label(Localization.Library.noResultsTitle.string, systemImage: "magnifyingglass")
-        } description: {
+        VStack(spacing: Spacing.cardInset) {
+            Text(Localization.Library.noResultsTitle.string)
+                .textStyle(.titleSecondary)
+                .foregroundStyle(Palette.ink)
+
             Text(Localization.Library.noResultsSubtitle.string)
+                .textStyle(.bodySupporting)
+                .foregroundStyle(Palette.inkMuted)
+                .multilineTextAlignment(.center)
         }
-        .background(.surface)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxl)
     }
 
-    private var libraryList: some View {
-        List {
-            ForEach(booksByStatus, id: \.status) { section in
-                Section(section.status.displayName) {
-                    ForEach(section.items) { book in
-                        Button {
-                            selectedBook = book
-                        } label: {
-                            HStack(spacing: Spacing.md) {
-                                LibraryCoverView(book: book)
-                                
-                                VStack(alignment: .leading, spacing: Spacing.xs) {
-                                    Text(book.title)
-                                        .font(.headline)
-                                        .foregroundStyle(Color.ink)
-                                        .lineLimit(2)
-                                    
-                                    Text(book.author)
-                                        .font(.bodySupporting)
-                                        .foregroundStyle(.inkMuted)
-                                        .lineLimit(1)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.captionStrong)
-                                    .foregroundStyle(Color.inkFaint)
-                            }
-                            .padding(.vertical, Spacing.xs)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(.surface)
-    }
-    
     private var emptyState: some View {
-        ScrollView {
-            VStack(spacing: Spacing.cardInset) {
-                Spacer(minLength: 88)
-                
-                Image(systemName: "books.vertical")
-                    .font(.iconSection)
-                    .foregroundStyle(.brand)
-                
-                Text(Localization.Library.emptyTitle.string)
-                    .font(.titleSecondary)
-                
-                Text(Localization.Library.emptySubtitle.string)
-                    .font(.bodyDefault)
-                    .foregroundStyle(.inkMuted)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, Spacing.xl)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, Spacing.xl)
+        VStack(spacing: Spacing.cardInset) {
+            Image(systemName: "books.vertical")
+                .font(.iconSection)
+                .foregroundStyle(Palette.inkFainter)
+
+            Text(Localization.Library.emptyTitle.string)
+                .textStyle(.titleSecondary)
+                .foregroundStyle(Palette.ink)
+
+            Text(Localization.Library.emptySubtitle.string)
+                .textStyle(.bodySupporting)
+                .foregroundStyle(Palette.inkMuted)
+                .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxl)
     }
     
 }
