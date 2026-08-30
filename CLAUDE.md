@@ -132,6 +132,20 @@ backend commit by short SHA.
   generated SQL, then `prisma migrate deploy` to apply — never `migrate dev` without
   `--create-only`, and never `migrate reset` or `db push`.
 - Commits on this project carry no AI-assistant attribution trailers.
+- **Test account.** `dev@readup.test` exists on the production backend purely so debug
+  builds don't land in guest mode. Its credentials live in `ReadUp/Secrets.xcconfig`
+  (gitignored) as `DEV_EMAIL` / `DEV_PASSWORD`, reach the app through `Info.plist` →
+  `AppConfig.devCredentials`, and are consumed by a `#if DEBUG` branch in
+  `AuthManager.init()` that signs in whenever there is no Keychain token. Both keys are
+  blanked with `[config=Release]` in the xcconfig, so the password is **not** baked into
+  a release `Info.plist` — verified by extracting both keys from the built Release app.
+  A fresh clone with no `DEV_*` keys simply gets the old behaviour (`devCredentials`
+  returns `nil`), so nothing breaks.
+
+  This exists because reinstalling the app — which Xcode does on every run — wipes
+  `UserDefaults`, and the `hasLaunchedBefore` guard in `AuthManager.init()` reacts to
+  that by deleting the Keychain token. Auto-login was working; the reinstall was
+  undoing it.
 
 ## Design — Editorial Cream
 
