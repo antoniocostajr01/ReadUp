@@ -33,15 +33,6 @@ enum Spacing {
     static let gutterDetail: CGFloat = 24
     /// 28 — auth and onboarding. The widest in the system.
     static let gutterAuth: CGFloat = 28
-
-    // MARK: Chrome
-
-    /// 62 — the floating tab bar pill.
-    static let tabBarHeight: CGFloat = 62
-    /// 20 — how far the tab bar is inset from each side.
-    static let tabBarInset: CGFloat = 20
-    /// 110 — bottom padding content needs to clear the floating tab bar.
-    static let contentBottomWithTabBar: CGFloat = 110
 }
 
 /// Corner radii. Covers stay nearly square — a book is a book. Chrome goes fully round.

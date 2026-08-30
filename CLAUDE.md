@@ -21,8 +21,8 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   (work-level search, so a query returns the actual books people mean, not every
   loose edition and derivative) with Google Books as a fallback.
   See `.claude/specs/2026-08-05-book-search-and-entry-design.md` for why.
-  Search is not a tab: it is reached from Library's `+` (Scan / Search / Add manually),
-  and only guests still see a Search tab.
+  Search is not a tab for anyone: it is reached from Library's `+`
+  (Scan / Search / Add manually).
 - **Barcode scanning.** `ISBNScanView` scans book barcodes in batch (VisionKit
   `DataScannerViewController`) and resolves each ISBN through `GET /books/lookup`, which
   uses Open Library's edition record (`/isbn/{isbn}.json` — exact, unlike a text search
@@ -211,6 +211,11 @@ some other way. Figma covers are typeset placeholders until they do.
 - **Never a grey.** Anything that reads grey is ink at 9–22% alpha, or a cream step.
 - Type is Instrument Serif (content, and every number) + Instrument Sans (interface),
   with italic serif reserved for author names.
+- **The tab bar is the one component deliberately not built from Figma.** The
+  `Chrome/Tab bar` pill (`16:46`, specimens `37:311`/`37:323`/`37:335`) is
+  reference-only: the app uses the **native iOS tab bar**, tinted ink, with the three
+  tabs the component defines — Home, Library, Profile. Unselected items keep the system
+  colour, the single sanctioned exception to "never a grey".
 
 `DesignSystem/` in the app already routed every screen through semantic tokens, so
 adopting the palette was an edit to `Palette` in `Theme+Color.swift` plus the colorsets
