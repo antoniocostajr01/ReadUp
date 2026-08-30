@@ -13,7 +13,8 @@ import SwiftUI
 /// referência apenas — a barra nativa venceu. O que veio do Figma é o conjunto de
 /// abas (Home, Library, Profile).
 ///
-/// A cor da barra é montada uma vez em `ReadUpApp.init()`, não aqui — ver o porquê lá.
+/// Sem `.tint()`: no iOS 26 o tint vaza pro vidro inteiro da cápsula e a barra fica
+/// num verde-oliva sujo, em vez de tingir só a seleção. A barra fica na cor do sistema.
 struct TabBar: View {
     @Environment(AuthManager.self) private var authManager
     @State private var selection: AppTab = .home

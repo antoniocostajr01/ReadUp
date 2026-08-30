@@ -223,25 +223,27 @@ some other way. Figma covers are typeset placeholders until they do.
   so it looks almost exactly like the custom pill that was removed. The tell is the
   filled selection indicator behind the active tab — the custom bar never drew one.
 
-  **The bar is ink because the app opts out of Liquid Glass.** `Info.plist` carries
-  `UIDesignRequiresCompatibility`, and the colours are set once in `ReadUpApp.init()`
-  through `UITabBarAppearance` — ink background, cream items, white when selected.
-  Measured, in this order, because each step looked plausible and was wrong:
+  **An ink bar was built and then reverted** (`688282e`, reverted). Its colouring is
+  still an open question, deliberately parked. What was measured, so it isn't
+  re-derived — each of these looks plausible and is wrong:
 
   - `.tint(.ink)` on the `TabView` tints the whole glass capsule, not just the
-    selection — the bar came out a muddy `#6e695e` olive.
+    selection: the bar comes out a muddy `#6e695e` olive.
   - `.toolbarBackground(_:for: .tabBar)` is silently ignored by the iOS 26 bar.
   - `UITabBarAppearance` applies its *item* colours but not its `backgroundColor`
     while Liquid Glass is on. `backgroundEffect = nil` changes nothing — the two
     screenshots were byte-identical.
-  - Setting the appearance proxy in `TabBar.init()` is a race: `UITabBar.appearance()`
+  - Setting the appearance proxy in `TabBar.init()` is a **race**: `UITabBar.appearance()`
     only affects bars created afterwards, and SwiftUI re-inits View structs freely, so
     the same build rendered ink on one launch and glass on the next. It belongs in
     `ReadUpApp.init()`, which runs once before any UI exists.
+  - The only thing that produced a true ink `#171512` background was
+    `UIDesignRequiresCompatibility` in `Info.plist` — which opts the **whole app** out
+    of Liquid Glass, and is a temporary Apple escape hatch that dies against a future
+    SDK. That cost is why it was reverted.
 
-  `UIDesignRequiresCompatibility` is Apple's temporary escape hatch and will stop
-  working against a future SDK. When it does, either the bar becomes glass and the ink
-  background is lost, or the Figma pill comes back as a custom view after all.
+  Note the app's `AccentColor` is still the retired brand green `#2E7D32`, so with no
+  `.tint()` the selected tab reads green. That is a separate, unmade decision.
 
 `DesignSystem/` in the app already routed every screen through semantic tokens, so
 adopting the palette was an edit to `Palette` in `Theme+Color.swift` plus the colorsets
