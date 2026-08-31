@@ -12,10 +12,13 @@ struct BookFormView: View {
 
     @State private var viewModel: BookFormViewModel
     @State private var addedBook: Book?
+    /// ISBN já lido pelo scanner: entra no formulário quando o catálogo não tem o livro.
+    let prefilledISBN: String?
     let onSaved: () -> Void
 
-    init(mode: BookFormViewModel.Mode, onSaved: @escaping () -> Void = {}) {
+    init(mode: BookFormViewModel.Mode, prefilledISBN: String? = nil, onSaved: @escaping () -> Void = {}) {
         _viewModel = State(initialValue: BookFormViewModel(mode: mode))
+        self.prefilledISBN = prefilledISBN
         self.onSaved = onSaved
     }
 
@@ -67,6 +70,9 @@ struct BookFormView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.surface)
         .toolbar(.hidden, for: .navigationBar)
+        .onAppear {
+            if let prefilledISBN, viewModel.isbn.isEmpty { viewModel.isbn = prefilledISBN }
+        }
         .onChange(of: viewModel.selectedPhoto) { _, item in
             Task { await viewModel.handlePhotoSelection(item) }
         }

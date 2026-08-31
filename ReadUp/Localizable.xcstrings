@@ -3332,6 +3332,38 @@
         }
       }
     },
+    "scan.barcodeRead": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Barcode read"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código lido"
+          }
+        }
+      }
+    },
+    "scan.bookFound": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Book found"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Livro encontrado"
+          }
+        }
+      }
+    },
     "scan.cameraUnavailable.message": {
       "localizations": {
         "en": {
@@ -3360,6 +3392,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Câmera Indisponível"
+          }
+        }
+      }
+    },
+    "scan.catalogNote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details come from the book catalog but you can edit any of them after adding."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os dados vêm do catálogo, mas você pode editar qualquer um deles depois de adicionar."
           }
         }
       }
@@ -3396,6 +3444,22 @@
         }
       }
     },
+    "scan.enterManually": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the book manually"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cadastrar o livro manualmente"
+          }
+        }
+      }
+    },
     "scan.instructions": {
       "localizations": {
         "en": {
@@ -3428,6 +3492,38 @@
         }
       }
     },
+    "scan.notInCatalog.message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The scan worked but this barcode isn't in the catalog."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A leitura funcionou, mas este código não está no catálogo."
+          }
+        }
+      }
+    },
+    "scan.notInCatalog.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't find this book"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não encontramos este livro"
+          }
+        }
+      }
+    },
     "scan.resolving": {
       "localizations": {
         "en": {
@@ -3440,6 +3536,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Buscando…"
+          }
+        }
+      }
+    },
+    "scan.scannedTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanned"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escaneados"
+          }
+        }
+      }
+    },
+    "scan.searchByTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the book by title"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar o livro pelo título"
           }
         }
       }
