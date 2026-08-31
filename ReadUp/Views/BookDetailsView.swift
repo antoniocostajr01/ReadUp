@@ -7,9 +7,12 @@ import SwiftUI
 /// status e vê "Add to Library".
 ///
 /// **Não é um modal.** É a tela inteira, trocada na camada de baixo de um `ZStack` por
-/// quem a apresenta (`Library`, `Search`). A capa vive na camada da frente e voa da
-/// prateleira até aqui por `matchedGeometryEffect` — é a única coisa que se move, todo o
-/// resto faz cross-fade. Anotação do Figma `47:1906`.
+/// quem a apresenta (`Library`, `Search`).
+///
+/// A capa herói aqui é só um **vazio que reserva o lugar**: a capa de verdade é desenhada
+/// pela camada da frente de quem apresenta, e nunca sai de tela durante a troca. Esta view
+/// publica onde o vazio ficou (`onHeroPlacement`) e a capa vai atrás. Anotação do Figma
+/// `47:1906`.
 struct BookDetailsView: View {
     enum Source {
         case library(Book)
@@ -20,8 +23,9 @@ struct BookDetailsView: View {
     @Environment(AuthManager.self) private var authManager
 
     let source: Source
-    /// O namespace da capa que voou até aqui, e o id dela.
-    var heroNamespace: Namespace.ID? = nil
+    /// Onde o lugar reservado da capa ficou. Sem isto, esta tela desenha a própria capa —
+    /// é o que mantém a view utilizável fora do `ZStack` (previews, por exemplo).
+    var onHeroPlacement: ((HeroPlacement) -> Void)? = nil
     /// Voltar: quem apresenta é que desfaz a troca, com animação.
     let onClose: () -> Void
 
@@ -30,14 +34,18 @@ struct BookDetailsView: View {
     @State private var isShowingEditForm = false
     @State private var addedBook: Book?
     @State private var activeReadingBook: Book?
-    /// Quanto o conteúdo já rolou. Encolhe e apaga a capa herói conforme sobe.
+    /// Quanto o conteúdo já rolou. Apaga a capa herói conforme sobe.
     @State private var scrollOffset: CGFloat = 0
+    /// Onde o lugar reservado da capa está, no espaço de coordenadas do herói.
+    @State private var heroFrame: CGRect = .zero
 
     /// Capa herói: 224×320 no Figma `47:1822`.
     private let coverWidth: CGFloat = 224
     private let coverHeight: CGFloat = 320
-    /// A capa desaparece por completo depois deste tanto de rolagem.
-    private let collapseDistance: CGFloat = 220
+    /// A capa desaparece por completo depois deste tanto de rolagem. Curto de propósito:
+    /// ela é desenhada na camada da frente, acima do chrome desta tela, então tem de
+    /// apagar-se antes de chegar aos chips do topo.
+    private let collapseDistance: CGFloat = 150
 
     var body: some View {
         VStack(spacing: 0) {
@@ -58,6 +66,7 @@ struct BookDetailsView: View {
                 geometry.contentOffset.y + geometry.contentInsets.top
             } action: { _, offset in
                 scrollOffset = max(0, offset)
+                reportHero()
             }
 
             actions
@@ -159,21 +168,36 @@ struct BookDetailsView: View {
     /// Fração de 0 a 1 do quanto a capa já recolheu.
     private var collapse: CGFloat { min(1, scrollOffset / collapseDistance) }
 
+    /// O lugar reservado da capa. Quem desenha é a camada da frente.
     private var cover: some View {
-        BookCoverView(
-            coverUrl: coverURLString,
-            width: coverWidth,
-            height: coverHeight,
-            cornerRadius: Radius.coverLg,
-            title: titleText,
-            author: authorText
-        )
-        .coverShadow(.coverHero)
-        .hero(heroNamespace, id: heroID)
-        .scaleEffect(1 - collapse * 0.25, anchor: .top)
-        .opacity(1 - collapse)
-        // Sem isto a capa encolhida deixa um buraco: o layout continua a reservar 320pt.
-        .frame(height: coverHeight * (1 - collapse * 0.25))
+        Color.clear
+            .frame(width: coverWidth, height: coverHeight)
+            .overlay {
+                // Sem a camada da frente (preview, uso solto), a tela desenha a própria capa.
+                if onHeroPlacement == nil {
+                    BookCoverView(
+                        coverUrl: coverURLString,
+                        width: coverWidth,
+                        height: coverHeight,
+                        cornerRadius: Radius.coverLg,
+                        title: titleText,
+                        author: authorText
+                    )
+                    .coverShadow(.coverHero)
+                    .opacity(1 - collapse)
+                }
+            }
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .named(HeroSpace.name))
+            } action: { frame in
+                heroFrame = frame
+                reportHero()
+            }
+    }
+
+    /// A capa some ao rolar, mas o lugar continua lá: sem isso o conteúdo saltaria.
+    private func reportHero() {
+        onHeroPlacement?(HeroPlacement(frame: heroFrame, opacity: 1 - collapse))
     }
 
     private var titles: some View {

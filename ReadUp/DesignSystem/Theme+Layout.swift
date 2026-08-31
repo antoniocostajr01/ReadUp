@@ -104,6 +104,10 @@ enum Motion {
     /// 0.42 — hero cover transition.
     static let slow = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.42)
 
+    /// A capa a voar da prateleira até o herói do detalhe. Mola, não curva: o peso é
+    /// o que faz o voo parecer um objeto a ser levantado e não um fade caro.
+    static let heroFlight = Animation.spring(response: 0.45, dampingFraction: 0.82)
+
     /// Tapped pills and cards shrink slightly.
     static let pressScale: CGFloat = 0.97
     /// Tapped text buttons dim.

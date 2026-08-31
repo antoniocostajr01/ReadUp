@@ -16,8 +16,11 @@ struct Search: View {
     @State private var addedBook: Book?
     @State private var addingBookID: String?
     @FocusState private var isSearchFocused: Bool
-    /// A capa tocada voa da linha até o herói do detalhe. Anotação do Figma `47:1906`.
-    @Namespace private var coverNamespace
+    // Mesma camada da frente da Library: a capa tocada é promovida e não sai de tela.
+    @State private var frameStore = CoverFrameStore()
+    @State private var flyingBook: SearchBook?
+    @State private var heroPlacement = HeroPlacement()
+    @State private var isFlying = false
 
     private var chosenGenres: [Genre] {
         GenreCatalog.genres(for: authManager.genres)
@@ -28,18 +31,30 @@ struct Search: View {
     var body: some View {
         // Mesma troca da Library: a camada de baixo muda, a capa tocada voa por cima.
         ZStack {
-            if let book = selectedBook {
-                BookDetailsView(
-                    source: .search(book, viewModel.service),
-                    heroNamespace: coverNamespace,
-                    onClose: { select(nil) }
-                )
-                .transition(.opacity)
-            } else {
-                searchScreen
+            Group {
+                if let book = selectedBook {
+                    BookDetailsView(
+                        source: .search(book, viewModel.service),
+                        onHeroPlacement: place,
+                        onClose: { select(nil) }
+                    )
                     .transition(.opacity)
+                } else {
+                    searchScreen
+                        .transition(.opacity)
+                }
+            }
+
+            if let flyingBook, heroPlacement.isPlaced {
+                FlyingCover(
+                    coverUrl: flyingBook.thumbnailURL?.absoluteString,
+                    title: flyingBook.title,
+                    author: flyingBook.author,
+                    placement: heroPlacement
+                )
             }
         }
+        .coordinateSpace(.named(HeroSpace.name))
         .background(Palette.surface)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $isShowingAddManually) {
@@ -54,10 +69,42 @@ struct Search: View {
         }
     }
 
-    /// Abre ou fecha o detalhe, com a mesma mola da Library.
+    /// Abre ou fecha o detalhe, promovendo a capa tocada à camada da frente.
     private func select(_ book: SearchBook?) {
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
-            selectedBook = book
+        if let book {
+            flyingBook = book
+            // Sem frame de origem (capa nunca medida) não há de onde voar: a capa
+            // aparece já no lugar quando o detalhe disser onde é. Nunca fica sem capa.
+            if let origin = frameStore.frame(for: book.id) {
+                heroPlacement = HeroPlacement(frame: origin)
+                isFlying = true
+            } else {
+                heroPlacement = HeroPlacement()
+                isFlying = false
+            }
+            withAnimation(Motion.heroFlight) { selectedBook = book }
+        } else {
+            isFlying = true
+            let origin = flyingBook.flatMap { frameStore.frame(for: $0.id) }
+            withAnimation(Motion.heroFlight) {
+                selectedBook = nil
+                if let origin { heroPlacement = HeroPlacement(frame: origin) }
+            } completion: {
+                flyingBook = nil
+                isFlying = false
+            }
+        }
+    }
+
+    private func place(_ placement: HeroPlacement) {
+        guard isFlying else {
+            heroPlacement = placement
+            return
+        }
+        withAnimation(Motion.heroFlight) {
+            heroPlacement = placement
+        } completion: {
+            isFlying = false
         }
     }
 
@@ -226,7 +273,8 @@ struct Search: View {
             } label: {
                 HStack(spacing: Spacing.cardInset) {
                     resultCover(book)
-                        .hero(coverNamespace, id: book.id)
+                        .opacity(flyingBook?.id == book.id ? 0 : 1)
+                        .recordsCoverFrame(frameStore, id: book.id)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(book.title)
@@ -429,7 +477,8 @@ struct Search: View {
                     author: book.author
                 )
                 .coverShadow(.coverSm)
-                .hero(coverNamespace, id: book.id)
+                .opacity(flyingBook?.id == book.id ? 0 : 1)
+                .recordsCoverFrame(frameStore, id: book.id)
 
                 Text(book.title)
                     .textStyle(.captionDefault)

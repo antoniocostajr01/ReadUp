@@ -60,11 +60,23 @@ superseded full-screen detail with no call sites.
   rest cross-fades. That is `matchedGeometryEffect`, and it only works inside a single
   view hierarchy — hence the `ZStack` with `if selectedBook != nil` swapping the lower
   layer, which is what the user proposed.
-- **The matched effect sits on the cover image, never on the button around it.** On the
-  button the flying object is the whole row — cover plus progress bar plus caption — and
-  the aspect ratio shears mid-flight. `ShelfCover` takes an optional namespace and
-  applies `.hero(_:id:)` to the cover box alone; `View.hero(_:id:)` in
-  `Components/BookCoverView.swift` is a no-op when the namespace is nil.
+- **`matchedGeometryEffect` was then replaced by a genuinely persistent layer.** The
+  effect does not move a view: there are two covers and SwiftUI interpolates the frame
+  while the contents cross-fade, so a cover that has loaded in one and not the other pops
+  mid-flight. `Components/HeroCover.swift` now holds the alternative — covers publish
+  their frames into a `CoverFrameStore` (a plain class, so writing to it during a scroll
+  invalidates nothing), and on tap the tapped cover is promoted into `FlyingCover`, a
+  single view in the front layer of the `ZStack` that never leaves the screen. The cover
+  in the list hides while its book is in flight. The hero in `BookDetailsView` is now
+  just a reserved empty space that reports where it landed.
+- **The flight animates, the scroll does not.** The same `onHeroPlacement` callback fires
+  for both, so the host tracks an `isFlying` flag: during the flight the placement change
+  is wrapped in `Motion.heroFlight`, and afterwards it is assigned straight through.
+  Springing on scroll would leave the cover dragging behind the finger.
+- **The scroll fade shortened to 150pt.** The flying cover lives above the detail's own
+  chrome and is not clipped by its `ScrollView`, so it has to be gone before it reaches
+  the nav chips. This is the weak seam in the approach — a cover in a front layer has no
+  z-order relationship with the screen underneath it.
 - **The tab bar is hidden by `.toolbar(selectedBook == nil ? .visible : .hidden, for: .tabBar)`.**
   The detail is full-bleed; a floating iOS 26 tab bar over its primary action would be
   wrong. Reactive toolbar visibility without a navigation push is the part of this change

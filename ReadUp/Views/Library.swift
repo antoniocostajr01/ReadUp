@@ -19,8 +19,15 @@ struct Library: View {
     @State private var isShowingAddOptions = false
     @State private var pendingOption: AddOption?
     @Namespace private var addButtonNamespace
-    /// A capa tocada voa da prateleira até o herói do detalhe. Anotação do Figma `47:1906`.
-    @Namespace private var coverNamespace
+    // A capa tocada é promovida à camada da frente e voa da prateleira até o herói do
+    // detalhe, sem nunca sair de tela. Anotação do Figma `47:1906`.
+    @State private var frameStore = CoverFrameStore()
+    /// O livro cuja capa está na camada da frente. Sobrevive ao fecho: só sai quando o
+    /// voo de volta termina, senão a capa reapareceria na prateleira a meio caminho.
+    @State private var flyingBook: Book?
+    @State private var heroPlacement = HeroPlacement()
+    /// `true` durante o voo. Fora dele o `placement` muda por scroll, e mola nenhuma.
+    @State private var isFlying = false
     @State private var isShowingScanner = false
     @State private var isShowingSearch = false
     @State private var isShowingAddManually = false
@@ -55,18 +62,32 @@ struct Library: View {
         // A camada de baixo troca; a capa tocada, na da frente, é a única que se move.
         // O detalhe não é uma sheet: é esta tela, substituída no lugar.
         ZStack {
-            if let book = selectedBook {
-                BookDetailsView(
-                    source: .library(book),
-                    heroNamespace: coverNamespace,
-                    onClose: { select(nil) }
-                )
-                .transition(.opacity)
-            } else {
-                shelvesScreen
+            // Camada de baixo: troca.
+            Group {
+                if let book = selectedBook {
+                    BookDetailsView(
+                        source: .library(book),
+                        onHeroPlacement: place,
+                        onClose: { select(nil) }
+                    )
                     .transition(.opacity)
+                } else {
+                    shelvesScreen
+                        .transition(.opacity)
+                }
+            }
+
+            // Camada da frente: a capa, que fica.
+            if let flyingBook, heroPlacement.isPlaced {
+                FlyingCover(
+                    coverUrl: flyingBook.coverUrl,
+                    title: flyingBook.title,
+                    author: flyingBook.author,
+                    placement: heroPlacement
+                )
             }
         }
+        .coordinateSpace(.named(HeroSpace.name))
         // A tab bar sai de cena junto: o detalhe é tela cheia, não uma folha por cima.
         .toolbar(selectedBook == nil ? .visible : .hidden, for: .tabBar)
         .background(Palette.surface)
@@ -90,10 +111,46 @@ struct Library: View {
     }
 
 
-    /// Abre ou fecha o detalhe. A mola é o que dá o peso da capa a voar.
+    /// Abre ou fecha o detalhe, promovendo a capa tocada à camada da frente.
     private func select(_ book: Book?) {
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
-            selectedBook = book
+        if let book {
+            // A capa arranca de onde está na prateleira, sem animação: só depois o
+            // detalhe se compõe e diz para onde ela vai.
+            flyingBook = book
+            // Sem frame de origem (capa nunca medida) não há de onde voar: a capa
+            // aparece já no lugar quando o detalhe disser onde é. Nunca fica sem capa.
+            if let origin = frameStore.frame(for: book.id) {
+                heroPlacement = HeroPlacement(frame: origin)
+                isFlying = true
+            } else {
+                heroPlacement = HeroPlacement()
+                isFlying = false
+            }
+            withAnimation(Motion.heroFlight) { selectedBook = book }
+        } else {
+            isFlying = true
+            let origin = flyingBook.flatMap { frameStore.frame(for: $0.id) }
+            withAnimation(Motion.heroFlight) {
+                selectedBook = nil
+                if let origin { heroPlacement = HeroPlacement(frame: origin) }
+            } completion: {
+                flyingBook = nil
+                isFlying = false
+            }
+        }
+    }
+
+    /// O detalhe diz onde reservou o lugar da capa. Durante o voo isso vale uma mola;
+    /// depois dele são só os pixels do scroll, e animar aí deixaria a capa a arrastar-se.
+    private func place(_ placement: HeroPlacement) {
+        guard isFlying else {
+            heroPlacement = placement
+            return
+        }
+        withAnimation(Motion.heroFlight) {
+            heroPlacement = placement
+        } completion: {
+            isFlying = false
         }
     }
 
@@ -204,7 +261,8 @@ struct Library: View {
                             ShelfCover(
                                 book: book,
                                 progress: status == .reading ? progressValue(for: book) : nil,
-                                heroNamespace: coverNamespace
+                                frameStore: frameStore,
+                                isFlying: flyingBook?.id == book.id
                             )
                         }
                         .buttonStyle(.plain)
