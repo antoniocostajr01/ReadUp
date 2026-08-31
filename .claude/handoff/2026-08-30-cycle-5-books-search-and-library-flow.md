@@ -95,13 +95,21 @@ grep -rn 'Color(uiColor:' ReadUp --include='*.swift' | grep -v 'DesignSystem/'
 grep -rn '\.secundaryLabel\|\.emphasis\b\|\.mainText\|\.backgroundPrimary' ReadUp --include='*.swift' | grep -v 'DesignSystem/'
 ```
 
-**Not verified:** nothing was run on a simulator or device. The build is a compile check
-only — the zoom transition, the celebration spring, the scanner camera path and the
-pt-BR pass have not been seen running.
+The app was installed and launched on the "Iphone iOS 18.4" simulator
+(`72FA731D`, iOS 26.5): it boots, auto-signs in as `dev@readup.test`, and renders Home
+with a real library. No crash on launch.
+
+**Not verified:** none of the new screens was actually walked. This machine has no way
+to drive the simulator's UI from the command line — `idb` and `cliclick` are not
+installed and `osascript` has no assistive access — so Library, Search, the details
+screen, the celebration and the scanner sheets have been compiled and reached the same
+binary, but never seen on screen. The zoom transition, the celebration spring and the
+pt-BR pass are all unconfirmed.
 
 ## Open items
 
-- Walk the flow on the simulator against `dev@readup.test`, in both languages. In
+- **Walk the flow by hand** on the simulator against `dev@readup.test`, in both
+  languages — this is the one thing the cycle could not do for itself. In
   particular the scanner needs a device: `DataScannerViewController` is unavailable in
   the simulator, so the 08 / 08b / 08c sheets have never been rendered with real data.
 - `47:1714`'s dashed placeholder is drawn at 104×138; the frame's exact size was read
