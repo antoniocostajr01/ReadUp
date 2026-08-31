@@ -266,6 +266,38 @@
         }
       }
     },
+    "addBook.coverOptional": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cover optional"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capa opcional"
+          }
+        }
+      }
+    },
+    "addBook.descriptionLabel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description · optional"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descrição · opcional"
+          }
+        }
+      }
+    },
     "addBook.detailsPlaceholder": {
       "localizations": {
         "en": {
@@ -282,6 +314,22 @@
         }
       }
     },
+    "addBook.isbnLabel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ISBN"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ISBN"
+          }
+        }
+      }
+    },
     "addBook.isbnPlaceholder": {
       "localizations": {
         "en": {
@@ -294,6 +342,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "ISBN (opcional)"
+          }
+        }
+      }
+    },
+    "addBook.manualEntry": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual entry"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cadastro manual"
+          }
+        }
+      }
+    },
+    "addBook.pageCountNote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page count is what progress and session stats are calculated from. Check the last numbered page of your copy."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A contagem de páginas é a base do progresso e das estatísticas de sessão. Confira a última página numerada do seu exemplar."
           }
         }
       }
@@ -330,6 +410,22 @@
         }
       }
     },
+    "addBook.screenTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your own entry"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu próprio cadastro"
+          }
+        }
+      }
+    },
     "addBook.selectStatus": {
       "localizations": {
         "en": {
@@ -342,6 +438,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Selecionar Status"
+          }
+        }
+      }
+    },
+    "addBook.startingPageLabel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting page"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Página inicial"
           }
         }
       }

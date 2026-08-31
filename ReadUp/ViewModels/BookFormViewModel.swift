@@ -21,6 +21,8 @@ final class BookFormViewModel {
     var author: String
     var pagesText: String
     var isbn: String
+    /// Página em que o leitor está começando. 1 = do início. Figma `47:1783`.
+    var startingPageText: String
     var details: String
     var status: BookStatus
     var coverImage: UIImage?
@@ -39,9 +41,15 @@ final class BookFormViewModel {
         author = book?.author ?? ""
         pagesText = book.map { $0.numberOfPages > 0 ? String($0.numberOfPages) : "" } ?? ""
         isbn = book?.isbn ?? ""
+        startingPageText = book.flatMap { $0.progress.map(String.init) } ?? "1"
         details = book?.details ?? ""
         status = book?.status ?? .iWantToRead
         coverImage = nil
+    }
+
+    /// A página inicial nunca passa do total nem cai abaixo de 1.
+    var startingPage: Int {
+        min(max(Int(startingPageText) ?? 1, 1), max(Int(pagesText) ?? 1, 1))
     }
 
     var isSaveEnabled: Bool {
@@ -84,6 +92,12 @@ final class BookFormViewModel {
             )
             createdBook = await store.createManualBook(payload)
             success = createdBook != nil
+            // `CreateBookPayload` não carrega progresso: quem começa no meio do livro
+            // é registado num segundo passo, e só quando não começa da página 1.
+            if let created = createdBook, startingPage > 1 {
+                await store.updateBook(created, with: UpdateBookPayload(progress: startingPage))
+                createdBook = store.books.first { $0.id == created.id } ?? created
+            }
         case .edit(let book):
             let payload = UpdateBookPayload(
                 title: trimmedTitle,
@@ -91,6 +105,7 @@ final class BookFormViewModel {
                 totalPages: pages,
                 details: details.isEmpty ? nil : details,
                 status: status.rawValue,
+                progress: startingPage,
                 isbn: trimmedIsbn.isEmpty ? nil : trimmedIsbn,
                 coverImage: newCoverBase64
             )

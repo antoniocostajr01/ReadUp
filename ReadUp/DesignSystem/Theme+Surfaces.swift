@@ -133,6 +133,8 @@ struct UnderlinedField: View {
     let label: String
     @Binding var text: String
     var placeholder: String = ""
+    /// Marca o campo com o asterisco em âmbar do design (`47:1771`).
+    var isRequired: Bool = false
     var isSecure: Bool = false
     var keyboardType: UIKeyboardType = .default
     var textContentType: UITextContentType? = nil
@@ -143,9 +145,15 @@ struct UnderlinedField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(label.uppercased())
-                .textStyle(.overline)
-                .foregroundStyle(.inkFaint)
+            Group {
+                if isRequired {
+                    Text(label.uppercased()) + Text(verbatim: " *").foregroundColor(Palette.warning)
+                } else {
+                    Text(label.uppercased())
+                }
+            }
+            .textStyle(.overline)
+            .foregroundStyle(.inkFaint)
 
             HStack(spacing: Spacing.sm) {
                 field

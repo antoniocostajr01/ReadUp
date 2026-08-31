@@ -15,6 +15,13 @@ public extension Localization {
         case isbnPlaceholder
         case selectStatus
         case saveBook
+        case manualEntry
+        case screenTitle
+        case coverOptional
+        case startingPageLabel
+        case isbnLabel
+        case descriptionLabel
+        case pageCountNote
 
         public var key: String.LocalizationValue {
             switch self {
@@ -26,6 +33,13 @@ public extension Localization {
             case .isbnPlaceholder: "addBook.isbnPlaceholder"
             case .selectStatus: "addBook.selectStatus"
             case .saveBook: "addBook.saveBook"
+            case .manualEntry: "addBook.manualEntry"
+            case .screenTitle: "addBook.screenTitle"
+            case .coverOptional: "addBook.coverOptional"
+            case .startingPageLabel: "addBook.startingPageLabel"
+            case .isbnLabel: "addBook.isbnLabel"
+            case .descriptionLabel: "addBook.descriptionLabel"
+            case .pageCountNote: "addBook.pageCountNote"
             }
         }
     }
