@@ -19,7 +19,7 @@ struct Library: View {
     @State private var isShowingAddOptions = false
     @State private var pendingOption: AddOption?
     @Namespace private var addButtonNamespace
-    /// A capa tocada é a origem do zoom para o detalhe. Anotação do Figma `47:1906`.
+    /// A capa tocada voa da prateleira até o herói do detalhe. Anotação do Figma `47:1906`.
     @Namespace private var coverNamespace
     @State private var isShowingScanner = false
     @State private var isShowingSearch = false
@@ -52,6 +52,52 @@ struct Library: View {
     }
 
     var body: some View {
+        // A camada de baixo troca; a capa tocada, na da frente, é a única que se move.
+        // O detalhe não é uma sheet: é esta tela, substituída no lugar.
+        ZStack {
+            if let book = selectedBook {
+                BookDetailsView(
+                    source: .library(book),
+                    heroNamespace: coverNamespace,
+                    onClose: { select(nil) }
+                )
+                .transition(.opacity)
+            } else {
+                shelvesScreen
+                    .transition(.opacity)
+            }
+        }
+        // A tab bar sai de cena junto: o detalhe é tela cheia, não uma folha por cima.
+        .toolbar(selectedBook == nil ? .visible : .hidden, for: .tabBar)
+        .background(Palette.surface)
+        .toolbar(.hidden, for: .navigationBar)
+        // A tela escolhida abre no onDismiss, não no toque: apresentar uma sheet enquanto
+        // outra ainda está saindo faz o SwiftUI engolir a segunda.
+        .sheet(isPresented: $isShowingAddOptions, onDismiss: openPendingOption) {
+            addOptionsSheet
+                .navigationTransition(.zoom(sourceID: "addBook", in: addButtonNamespace))
+        }
+        .fullScreenCover(isPresented: $isShowingScanner) {
+            ISBNScanView()
+        }
+        // Sem NavigationStack: a Search desenha o próprio chip de voltar (Figma `47:1669`).
+        .sheet(isPresented: $isShowingSearch) {
+            Search()
+        }
+        .sheet(isPresented: $isShowingAddManually) {
+            BookFormView(mode: .create)
+        }
+    }
+
+
+    /// Abre ou fecha o detalhe. A mola é o que dá o peso da capa a voar.
+    private func select(_ book: Book?) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+            selectedBook = book
+        }
+    }
+
+    private var shelvesScreen: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
@@ -72,30 +118,6 @@ struct Library: View {
             .padding(.bottom, Spacing.xxl)
         }
         .background(Palette.surface)
-        .toolbar(.hidden, for: .navigationBar)
-        // A tela escolhida abre no onDismiss, não no toque: apresentar uma sheet enquanto
-        // outra ainda está saindo faz o SwiftUI engolir a segunda.
-        .sheet(isPresented: $isShowingAddOptions, onDismiss: openPendingOption) {
-            addOptionsSheet
-                .navigationTransition(.zoom(sourceID: "addBook", in: addButtonNamespace))
-        }
-        // O detalhe *cresce* a partir da capa tocada, em vez do push nativo — é o
-        // comportamento pedido na anotação `47:1906` do Figma.
-        .sheet(item: $selectedBook) { book in
-            BookDetailsSheet(source: .library(book))
-                .presentationDetents([.large])
-                .navigationTransition(.zoom(sourceID: book.id, in: coverNamespace))
-        }
-        .fullScreenCover(isPresented: $isShowingScanner) {
-            ISBNScanView()
-        }
-        // Sem NavigationStack: a Search desenha o próprio chip de voltar (Figma `47:1669`).
-        .sheet(isPresented: $isShowingSearch) {
-            Search()
-        }
-        .sheet(isPresented: $isShowingAddManually) {
-            BookFormView(mode: .create)
-        }
     }
 
     // MARK: - Cabeçalho e busca
@@ -177,15 +199,15 @@ struct Library: View {
                 HStack(alignment: .top, spacing: Spacing.md) {
                     ForEach(shelfBooks) { book in
                         Button {
-                            selectedBook = book
+                            select(book)
                         } label: {
                             ShelfCover(
                                 book: book,
-                                progress: status == .reading ? progressValue(for: book) : nil
+                                progress: status == .reading ? progressValue(for: book) : nil,
+                                heroNamespace: coverNamespace
                             )
                         }
                         .buttonStyle(.plain)
-                        .matchedTransitionSource(id: book.id, in: coverNamespace)
                     }
                 }
                 // A sombra das capas é cortada pelo ScrollView sem esta folga.

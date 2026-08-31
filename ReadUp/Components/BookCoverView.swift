@@ -1,5 +1,23 @@
 import SwiftUI
 
+extension View {
+
+    /// Liga esta capa ao voo entre a prateleira/linha e o herói do detalhe.
+    ///
+    /// Fica na **capa em si**, nunca no botão que a envolve: com o botão inteiro
+    /// marcado, o que voa é a caixa com barra de progresso e legenda junto, e a
+    /// proporção muda no meio do caminho. Sem namespace não faz nada — a mesma view
+    /// serve telas que não vieram de uma capa.
+    @ViewBuilder
+    func hero(_ namespace: Namespace.ID?, id: String) -> some View {
+        if let namespace {
+            matchedGeometryEffect(id: id, in: namespace)
+        } else {
+            self
+        }
+    }
+}
+
 /// Capa de livro carregada por URL (backend devolve `coverUrl`).
 ///
 /// Sem capa, desenha o **placeholder tipográfico** do design: título serifado no

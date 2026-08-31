@@ -16,7 +16,7 @@ struct Search: View {
     @State private var addedBook: Book?
     @State private var addingBookID: String?
     @FocusState private var isSearchFocused: Bool
-    /// A capa tocada é a origem do zoom para o detalhe. Anotação do Figma `47:1906`.
+    /// A capa tocada voa da linha até o herói do detalhe. Anotação do Figma `47:1906`.
     @Namespace private var coverNamespace
 
     private var chosenGenres: [Genre] {
@@ -26,6 +26,42 @@ struct Search: View {
     private var isShowingResults: Bool { !viewModel.submittedQuery.isEmpty }
 
     var body: some View {
+        // Mesma troca da Library: a camada de baixo muda, a capa tocada voa por cima.
+        ZStack {
+            if let book = selectedBook {
+                BookDetailsView(
+                    source: .search(book, viewModel.service),
+                    heroNamespace: coverNamespace,
+                    onClose: { select(nil) }
+                )
+                .transition(.opacity)
+            } else {
+                searchScreen
+                    .transition(.opacity)
+            }
+        }
+        .background(Palette.surface)
+        .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $isShowingAddManually) {
+            BookFormView(mode: .create)
+        }
+        .fullScreenCover(item: $addedBook) { book in
+            BookAddedView(book: book) { dismiss() }
+        }
+        .task { await reloadRecommendations() }
+        .onChange(of: authManager.genres) {
+            Task { await reloadRecommendations() }
+        }
+    }
+
+    /// Abre ou fecha o detalhe, com a mesma mola da Library.
+    private func select(_ book: SearchBook?) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+            selectedBook = book
+        }
+    }
+
+    private var searchScreen: some View {
         VStack(spacing: Spacing.lg) {
             searchBar
 
@@ -39,24 +75,7 @@ struct Search: View {
         .padding(.top, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Palette.surface)
-        .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .bottom) { bottomInset }
-        // O detalhe *cresce* a partir da capa tocada — anotação `47:1906`.
-        .sheet(item: $selectedBook) { book in
-            BookDetailsSheet(source: .search(book, viewModel.service))
-                .presentationDetents([.large])
-                .navigationTransition(.zoom(sourceID: book.id, in: coverNamespace))
-        }
-        .sheet(isPresented: $isShowingAddManually) {
-            BookFormView(mode: .create)
-        }
-        .fullScreenCover(item: $addedBook) { book in
-            BookAddedView(book: book) { dismiss() }
-        }
-        .task { await reloadRecommendations() }
-        .onChange(of: authManager.genres) {
-            Task { await reloadRecommendations() }
-        }
     }
 
     private func reloadRecommendations() async {
@@ -203,11 +222,11 @@ struct Search: View {
     private func resultRow(_ book: SearchBook) -> some View {
         HStack(spacing: Spacing.cardInset) {
             Button {
-                selectedBook = book
+                select(book)
             } label: {
                 HStack(spacing: Spacing.cardInset) {
                     resultCover(book)
-                        .matchedTransitionSource(id: book.id, in: coverNamespace)
+                        .hero(coverNamespace, id: book.id)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(book.title)
@@ -398,7 +417,7 @@ struct Search: View {
 
     private func bookCard(_ book: SearchBook) -> some View {
         Button {
-            selectedBook = book
+            select(book)
         } label: {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 BookCoverView(
@@ -410,6 +429,7 @@ struct Search: View {
                     author: book.author
                 )
                 .coverShadow(.coverSm)
+                .hero(coverNamespace, id: book.id)
 
                 Text(book.title)
                     .textStyle(.captionDefault)
@@ -420,7 +440,6 @@ struct Search: View {
             .frame(width: Spacing.coverShelfWidth, alignment: .leading)
         }
         .buttonStyle(.plain)
-        .matchedTransitionSource(id: book.id, in: coverNamespace)
     }
 
     private var genreGrid: some View {

@@ -8,6 +8,8 @@ struct ShelfCover: View {
     let book: Book
     /// Progresso de 0 a 1. `nil` esconde a barra — só a prateleira "Lendo" a mostra.
     var progress: Double? = nil
+    /// Presente quando esta capa pode voar até o detalhe.
+    var heroNamespace: Namespace.ID? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
@@ -21,6 +23,7 @@ struct ShelfCover: View {
             .frame(width: Spacing.coverShelfWidth, height: Spacing.coverShelfHeight)
             .clipShape(RoundedRectangle(cornerRadius: Radius.cover, style: .continuous))
             .coverShadow(.coverSm)
+            .hero(heroNamespace, id: book.id)
 
             if let progress {
                 ZStack(alignment: .leading) {

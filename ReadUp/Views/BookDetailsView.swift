@@ -6,9 +6,11 @@ import SwiftUI
 /// na biblioteca vê o status atual e "Continue reading"; quem veio da busca escolhe um
 /// status e vê "Add to Library".
 ///
-/// Abre com a transição de zoom do iOS: a capa tocada *cresce* até virar a herói, em vez
-/// do push nativo. Quem apresenta esta view carrega o `matchedTransitionSource`.
-struct BookDetailsSheet: View {
+/// **Não é um modal.** É a tela inteira, trocada na camada de baixo de um `ZStack` por
+/// quem a apresenta (`Library`, `Search`). A capa vive na camada da frente e voa da
+/// prateleira até aqui por `matchedGeometryEffect` — é a única coisa que se move, todo o
+/// resto faz cross-fade. Anotação do Figma `47:1906`.
+struct BookDetailsView: View {
     enum Source {
         case library(Book)
         case search(SearchBook, GoogleBooksService)
@@ -16,11 +18,14 @@ struct BookDetailsSheet: View {
 
     @Environment(LibraryStore.self) private var store
     @Environment(AuthManager.self) private var authManager
-    @Environment(\.dismiss) private var dismiss
 
     let source: Source
+    /// O namespace da capa que voou até aqui, e o id dela.
+    var heroNamespace: Namespace.ID? = nil
+    /// Voltar: quem apresenta é que desfaz a troca, com animação.
+    let onClose: () -> Void
 
-    @State private var viewModel = BookDetailsSheetViewModel()
+    @State private var viewModel = BookDetailsViewModel()
     @State private var showAuth = false
     @State private var isShowingEditForm = false
     @State private var addedBook: Book?
@@ -68,7 +73,6 @@ struct BookDetailsSheet: View {
                     Button(enumStatus.displayName) {
                         Task {
                             await store.updateStatus(book, to: enumStatus)
-                            dismiss()
                         }
                     }
                 }
@@ -79,7 +83,7 @@ struct BookDetailsSheet: View {
                 if case .library(let book) = source {
                     Task {
                         await store.deleteBook(book)
-                        dismiss()
+                        onClose()
                     }
                 }
             }
@@ -98,11 +102,11 @@ struct BookDetailsSheet: View {
         .sheet(isPresented: $showAuth) { AuthSheet() }
         .sheet(isPresented: $isShowingEditForm) {
             if case .library(let book) = source {
-                BookFormView(mode: .edit(book)) { dismiss() }
+                BookFormView(mode: .edit(book))
             }
         }
         .fullScreenCover(item: $addedBook) { book in
-            BookAddedView(book: book) { dismiss() }
+            BookAddedView(book: book, onClose: onClose)
         }
         .fullScreenCover(item: $activeReadingBook) { book in
             NavigationStack {
@@ -115,7 +119,7 @@ struct BookDetailsSheet: View {
 
     private var nav: some View {
         HStack {
-            ChromeChip(systemImage: "chevron.left") { dismiss() }
+            ChromeChip(systemImage: "chevron.left", action: onClose)
 
             Spacer()
 
@@ -165,6 +169,7 @@ struct BookDetailsSheet: View {
             author: authorText
         )
         .coverShadow(.coverHero)
+        .hero(heroNamespace, id: heroID)
         .scaleEffect(1 - collapse * 0.25, anchor: .top)
         .opacity(1 - collapse)
         // Sem isto a capa encolhida deixa um buraco: o layout continua a reservar 320pt.
@@ -232,9 +237,11 @@ struct BookDetailsSheet: View {
             StatusPill(status: statusBinding)
 
             switch source {
-            case .library(let book):
-                ReadUpButton(title: continueReadingTitle(for: book)) {
-                    activeReadingBook = book
+            case .library:
+                if let book = libraryBook {
+                    ReadUpButton(title: continueReadingTitle(for: book)) {
+                        activeReadingBook = book
+                    }
                 }
 
             case .search:
@@ -279,7 +286,7 @@ struct BookDetailsSheet: View {
         switch source {
         case .library(let book):
             Binding(
-                get: { store.books.first { $0.id == book.id }?.status ?? book.status },
+                get: { libraryBook?.status },
                 set: { new in
                     guard let new else { return }
                     Task { await store.updateStatus(book, to: new) }
@@ -295,37 +302,56 @@ struct BookDetailsSheet: View {
 
     // MARK: - Dados das duas origens
 
+    /// O livro da biblioteca relido do store a cada render.
+    ///
+    /// A `Source` guarda uma cópia do momento do toque. Enquanto isto era uma sheet,
+    /// editar fechava a tela e a cópia velha morria junto; agora a tela fica aberta por
+    /// baixo do formulário, e sem reler o store o título e as páginas voltariam com os
+    /// valores antigos assim que o formulário saísse.
+    private var libraryBook: Book? {
+        guard case .library(let book) = source else { return nil }
+        return store.books.first { $0.id == book.id } ?? book
+    }
+
+    /// O id do herói é o do livro, o mesmo que a capa de origem carrega.
+    private var heroID: String {
+        switch source {
+        case .library(let book): book.id
+        case .search(let book, _): book.id
+        }
+    }
+
     private var titleText: String {
         switch source {
-        case .library(let book): book.title
+        case .library: libraryBook?.title ?? ""
         case .search(let book, _): book.title
         }
     }
 
     private var authorText: String {
         switch source {
-        case .library(let book): book.author
+        case .library: libraryBook?.author ?? ""
         case .search(let book, _): book.author
         }
     }
 
     private var coverURLString: String? {
         switch source {
-        case .library(let book): book.coverUrl
+        case .library: libraryBook?.coverUrl
         case .search(let book, _): book.thumbnailURL?.absoluteString
         }
     }
 
     private var numberOfPages: Int {
         switch source {
-        case .library(let book): book.numberOfPages
+        case .library: libraryBook?.numberOfPages ?? 0
         case .search(let book, _): book.numberOfPages
         }
     }
 
     private var currentPage: Int {
         switch source {
-        case .library(let book): book.progress ?? 0
+        case .library: libraryBook?.progress ?? 0
         case .search: 0
         }
     }
@@ -341,7 +367,7 @@ struct BookDetailsSheet: View {
 
     private var detailsText: String {
         switch source {
-        case .library(let book): book.details
+        case .library: libraryBook?.details ?? ""
         case .search(let book, _): book.details
         }
     }
@@ -362,3 +388,4 @@ struct BookDetailsSheet: View {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
+

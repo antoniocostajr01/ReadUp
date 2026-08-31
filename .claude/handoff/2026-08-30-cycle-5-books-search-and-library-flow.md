@@ -50,14 +50,30 @@ superseded full-screen detail with no call sites.
 
 ## Decisions made during implementation
 
-- **The grow transition is the native iOS 26 zoom, not a custom one.** The reference
-  recording the user supplied shows the tapped cover scaling from its grid slot into the
-  hero while the grid cross-fades out — which is exactly what
-  `.matchedTransitionSource` + `.navigationTransition(.zoom(…))` produces. `Library.swift`
-  was already using that pair for the `+` button, so the flow gained one namespace and
-  two modifiers per call site rather than a hand-written transition.
-- **The detail sheet presents at `.large`.** The zoom reads wrong landing on a partial
-  detent — the cover grows and then stops halfway up a card.
+- **The detail is a screen swapped inside a `ZStack`, not a sheet, and the cover flies
+  by `matchedGeometryEffect`.** This replaced a first attempt that presented the detail
+  as a `.sheet` with `.navigationTransition(.zoom(…))`; the user rejected it on both
+  counts — it read as a modal, and the zoom expands the tapped cover into the *whole*
+  destination rather than moving it to the hero slot, which is not what the reference
+  recording shows. Frame 02 of that recording has the cover already at hero size and
+  position while the grid behind is still visible and fading: one element moves, the
+  rest cross-fades. That is `matchedGeometryEffect`, and it only works inside a single
+  view hierarchy — hence the `ZStack` with `if selectedBook != nil` swapping the lower
+  layer, which is what the user proposed.
+- **The matched effect sits on the cover image, never on the button around it.** On the
+  button the flying object is the whole row — cover plus progress bar plus caption — and
+  the aspect ratio shears mid-flight. `ShelfCover` takes an optional namespace and
+  applies `.hero(_:id:)` to the cover box alone; `View.hero(_:id:)` in
+  `Components/BookCoverView.swift` is a no-op when the namespace is nil.
+- **The tab bar is hidden by `.toolbar(selectedBook == nil ? .visible : .hidden, for: .tabBar)`.**
+  The detail is full-bleed; a floating iOS 26 tab bar over its primary action would be
+  wrong. Reactive toolbar visibility without a navigation push is the part of this change
+  least certain to behave, and it has not been seen running.
+- **`BookDetailsView` reads the library book back out of the store on every render.**
+  `Source` carries a copy taken at tap time. While the detail was a sheet, editing
+  dismissed it and the stale copy died with it; now the screen stays mounted underneath
+  the edit form, so without the re-read the title and page count would revert the moment
+  the form closed.
 - **Scroll collapse is scale + opacity on the hero, not a pinned header.** Driven off
   `.onScrollGeometryChange`; the frame is shrunk in step so the layout does not leave a
   320pt hole where the cover was.
