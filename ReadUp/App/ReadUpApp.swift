@@ -21,6 +21,10 @@ struct ReadUpApp: App {
                 .environment(searchViewModel)
                 .environment(libraryStore)
                 .background(.surface)
+                // Editorial Cream não tem modo escuro. Sem isto, no aparelho em dark
+                // mode todo `Text` sem `foregroundStyle` resolve pra branco e some no
+                // creme — o ink dos tokens só vale onde a cor foi escrita à mão.
+                .preferredColorScheme(.light)
         }
     }
 }

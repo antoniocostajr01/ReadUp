@@ -54,6 +54,21 @@ final class AuthManager {
             UserDefaults.standard.set(true, forKey: hasLaunchedKey)
         }
 
+        #if DEBUG
+        // Reinstalar o app zera o UserDefaults, o que dispara a limpeza acima e apaga
+        // o token — sem isto, todo build voltaria pro Welcome/convidado. Com a conta
+        // de teste no Secrets.xcconfig, o debug refaz o login sozinho.
+        if token == nil, let dev = AppConfig.devCredentials {
+            phase = .loading
+            Task {
+                await signIn(email: dev.email, password: dev.password)
+                // Credenciais ruins ou backend fora do ar → cai no fluxo normal.
+                if token == nil { phase = .unauthenticated }
+            }
+            return
+        }
+        #endif
+
         if token != nil {
             // Auto-login: há token salvo → carrega o perfil.
             phase = .loading

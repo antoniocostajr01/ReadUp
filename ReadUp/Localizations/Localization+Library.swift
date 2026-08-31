@@ -17,6 +17,12 @@ public extension Localization {
         case addManually
         case scan
 
+        /// "1 book" / "2 books" — plural resolvido pelo xcstrings, por isso é uma
+        /// função com interpolação e não um `case` (a contagem tem que entrar na chave).
+        public static func bookCount(_ count: Int) -> String {
+            String(localized: "library.shelfCount \(count)", bundle: .main)
+        }
+
         public var key: String.LocalizationValue {
             switch self {
             case .title: "library.title"

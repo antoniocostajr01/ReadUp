@@ -3,6 +3,8 @@ import PhotosUI
 
 struct Profile: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(LibraryStore.self) private var store
+    @State private var viewModel = HomeViewModel()
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAccountConfirmation = false
     @State private var showDeleteAccountError = false
@@ -21,6 +23,12 @@ struct Profile: View {
         return UIImage(data: data)
     }
 
+    /// Iniciais do nome — o avatar do Figma é tipográfico quando não há foto.
+    private var initials: String {
+        let parts = displayName.split(separator: " ").prefix(2)
+        return parts.compactMap { $0.first.map(String.init) }.joined().uppercased()
+    }
+
     private var email: String {
         authManager.currentUser?.email ?? ""
     }
@@ -35,89 +43,19 @@ struct Profile: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.xl) {
-                // Cabeçalho do usuário
-                VStack(spacing: Spacing.sm) {
-                    PhotosPicker(selection: $selectedPhoto, matching: .images, photoLibrary: .shared()) {
-                        ZStack(alignment: .bottomTrailing) {
-                            avatarView
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(7)
-                                .background(Circle().fill(Color.brand))
-                                .overlay(Circle().stroke(.surface, lineWidth: 2))
-                        }
-                    }
-                    .disabled(authManager.isLoading)
-
-                    HStack(spacing: 6) {
-                        Text(displayName)
-                            .font(.title2.weight(.bold))
-                        Button {
-                            draftName = authManager.currentUser?.name ?? ""
-                            showEditName = true
-                        } label: {
-                            Image(systemName: "pencil")
-                                .font(.bodySupportingStrong)
-                                .foregroundStyle(.brand)
-                        }
-                        .disabled(authManager.isLoading)
-                    }
-
-                    if !email.isEmpty {
-                        Text(email)
-                            .font(.bodySupporting)
-                            .foregroundStyle(.inkMuted)
-                    }
-
-                    if avatarImage != nil {
-                        Button(Localization.Profile.removePhoto.string) {
-                            Task { await authManager.removeAvatar() }
-                        }
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(.red)
-                        .disabled(authManager.isLoading)
-                    }
-                }
-                .padding(.top, Spacing.lg)
-
+            VStack(alignment: .leading, spacing: 22) {
+                identity
+                stats
                 genresSection
-
-                Button(role: .destructive) {
-                    showSignOutConfirmation = true
-                } label: {
-                    Text(Localization.Profile.signOut.string)
-                        .font(.headingRow)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, Spacing.lg)
-                        .cardSurface(radius: Radius.lg)
-                }
-                .padding(.top, Spacing.sm)
-
-                Button(role: .destructive) {
-                    showDeleteAccountConfirmation = true
-                } label: {
-                    HStack(spacing: Spacing.sm) {
-                        if authManager.isLoading {
-                            ProgressView()
-                        }
-                        Text(Localization.Profile.deleteAccount.string)
-                            .font(.system(.subheadline, weight: .semibold))
-                    }
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.cardInset)
-                }
-                .disabled(authManager.isLoading)
+                settings
             }
-            .padding(.horizontal, Spacing.xl)
-            .padding(.bottom, Spacing.xl)
+            .padding(.horizontal, Spacing.gutterList)
+            .padding(.top, Spacing.lg)
+            .padding(.bottom, Spacing.xxl)
         }
+        .toolbar(.hidden, for: .navigationBar)
         .frame(maxWidth: .infinity)
-        .background(.surface)
-        .navigationTitle(Localization.Profile.title.string)
+        .background(Palette.surface)
         .confirmationDialog(Localization.Profile.signOutConfirmTitle.string, isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
             Button(Localization.Profile.signOut.string, role: .destructive) {
                 authManager.signOut()
@@ -161,28 +99,159 @@ struct Profile: View {
         }
     }
 
-    /// Avatar: foto do usuário (se houver) ou o ícone padrão.
+    // MARK: - Identidade
+
+    /// Avatar, nome e "editar perfil" numa linha. Figma `41:1089`.
+    private var identity: some View {
+        HStack(spacing: Spacing.lg) {
+            PhotosPicker(selection: $selectedPhoto, matching: .images, photoLibrary: .shared()) {
+                avatarView
+            }
+            .disabled(authManager.isLoading)
+
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(displayName)
+                    .textStyle(.titleBook)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(2)
+
+                Button {
+                    draftName = authManager.currentUser?.name ?? ""
+                    showEditName = true
+                } label: {
+                    Text(Localization.Profile.editProfile.string)
+                        .textStyle(.captionDefault)
+                        .foregroundStyle(Palette.ink)
+                }
+                .buttonStyle(.plain)
+                .disabled(authManager.isLoading)
+
+                if avatarImage != nil {
+                    Button(Localization.Profile.removePhoto.string) {
+                        Task { await authManager.removeAvatar() }
+                    }
+                    .textStyle(.captionDefault)
+                    .foregroundStyle(Palette.danger)
+                    .disabled(authManager.isLoading)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Avatar: foto do usuário (se houver) ou as iniciais em serifada.
     @ViewBuilder
     private var avatarView: some View {
         if let image = avatarImage {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 96, height: 96)
+                .frame(width: Spacing.avatar, height: Spacing.avatar)
                 .clipShape(Circle())
         } else {
-            Image(systemName: "person.crop.circle.fill")
-                .font(.system(size: 84))
-                .foregroundStyle(.brand)
-                .frame(width: 96, height: 96)
+            Text(initials)
+                .textStyle(.titleBook)
+                .foregroundStyle(Palette.inkStrongMuted)
+                .frame(width: Spacing.avatar, height: Spacing.avatar)
+                .background(Circle().fill(Palette.surfaceSunken))
         }
+    }
+
+    // MARK: - Métricas
+
+    /// Livros, sessões e sequência. Figma `41:1095`.
+    private var stats: some View {
+        HStack(spacing: 10) {
+            statTile(Localization.Profile.statBooks.string, "\(store.books.count)")
+            statTile(Localization.Profile.statSessions.string, "\(store.sessions.count)")
+            statTile(
+                Localization.Profile.statStreak.string,
+                "\(viewModel.currentSessionStreak(from: store.sessions))"
+            )
+        }
+    }
+
+    private func statTile(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(label.uppercased())
+                .textStyle(.overline)
+                .foregroundStyle(Palette.inkFaint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(value)
+                .textStyle(.displayMetric)
+                .foregroundStyle(Palette.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.cardInset)
+        .cardSurface(radius: Radius.cardSm)
+    }
+
+    // MARK: - Ajustes
+
+    /// Linhas separadas por régua, sem card. Figma `41:1125`.
+    private var settings: some View {
+        VStack(spacing: 0) {
+            settingsRow(Localization.Profile.notifications.string) {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+
+            settingsRow(Localization.Profile.signOut.string) {
+                showSignOutConfirmation = true
+            }
+
+            Button {
+                showDeleteAccountConfirmation = true
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    if authManager.isLoading { ProgressView() }
+                    Text(Localization.Profile.deleteAccount.string)
+                        .textStyle(.bodyDefault)
+                        .foregroundStyle(Palette.danger)
+                    Spacer()
+                }
+                .padding(.vertical, Spacing.cardInset)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Palette.divider).frame(height: 1)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(authManager.isLoading)
+        }
+    }
+
+    private func settingsRow(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                    .textStyle(.bodyDefault)
+                    .foregroundStyle(Palette.ink)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.iconLabel)
+                    .foregroundStyle(Palette.inkDisclosure)
+            }
+            .contentShape(.rect)
+            .padding(.vertical, Spacing.cardInset)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Palette.divider).frame(height: 1)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private var genresSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Text(Localization.Profile.yourGenres.string)
-                    .font(.system(.title3, weight: .bold))
+                    .textStyle(.titleSecondary)
+                    .foregroundStyle(Palette.ink)
                 Spacer()
                 if !availableToAdd.isEmpty {
                     Menu {
@@ -194,9 +263,9 @@ struct Profile: View {
                             }
                         }
                     } label: {
-                        Label(Localization.Generic.add.string, systemImage: "plus")
-                            .font(.bodySupportingStrong)
-                            .foregroundStyle(.brand)
+                        Text(Localization.Generic.add.string)
+                            .textStyle(.label)
+                            .foregroundStyle(Palette.ink)
                     }
                     .disabled(authManager.isLoading)
                 }
@@ -204,8 +273,8 @@ struct Profile: View {
 
             if chosenGenres.isEmpty {
                 Text(Localization.Profile.noGenres.string)
-                    .font(.bodySupporting)
-                    .foregroundStyle(.inkMuted)
+                    .textStyle(.bodySupporting)
+                    .foregroundStyle(Palette.inkMuted)
             } else {
                 FlowLayout(spacing: Spacing.sm) {
                     ForEach(chosenGenres) { genre in
@@ -215,31 +284,29 @@ struct Profile: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.lg)
-        .cardSurface(radius: Radius.xl)
     }
 
+    /// Chip com o "✕" removendo o gênero. Figma `41:1110`.
     private func chip(for genre: Genre) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: genre.icon)
-                .font(.caption)
+        HStack(spacing: 7) {
             Text(genre.localizedTitle)
-                .font(.subheadline.weight(.medium))
+                .textStyle(.label)
                 .lineLimit(1)
                 .fixedSize()
+
             Button {
                 remove(genre)
             } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.inkMuted)
+                Image(systemName: "xmark")
+                    .font(.captionDefault)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(genre.localizedTitle)
         }
-        .padding(.vertical, Spacing.sm)
-        .padding(.horizontal, Spacing.md)
-        .foregroundStyle(.brand)
-        .background(
-            Capsule().fill(Color.brand.opacity(0.14))
-        )
+        .foregroundStyle(Palette.ink)
+        .padding(.horizontal, 15)
+        .padding(.vertical, 9)
+        .background(Capsule().fill(Palette.surfaceFill))
     }
 
     // MARK: - Ações

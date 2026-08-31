@@ -7,81 +7,60 @@
 
 import SwiftUI
 
+/// A aba Home. Figma `13:2` (seção "Tabs").
+///
+/// A saudação é conteúdo, não `navigationTitle`: no Figma ela é serifada de 34pt,
+/// alinhada à esquerda, e rola junto com a página.
 struct Home: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(LibraryStore.self) private var store
     @State private var viewModel = HomeViewModel()
-    @State private var isShowingAlert = false
     @State private var activeReadingBook: Book?
     @State private var selectedSession: LiterarySession?
-    @State private var selectedUpNextBook: Book?
+    @State private var isShowingAddBook = false
 
     private var books: [Book] { store.books }
     private var sessions: [LiterarySession] { store.sessions }
+    private var readingBooks: [Book] { books.filter { $0.status == .reading } }
 
-    private var sessionsCount: Int {
-        sessions.count
-    }
-    
-    private var readingBooks: [Book]{
-        books.filter {
-            $0.status == .reading
-        }
-    }
-    
-    private var upNextBooks: [Book] {
-        books.filter { $0.status == .iWantToRead || $0.status == .rereading }
-    }
+    /// O livro do herói: o que está sendo lido agora. Com mais de um, o primeiro.
+    private var heroBook: Book? { readingBooks.first }
 
     /// Capa em cache para um livro (se já baixada pela `LibraryStore`).
     private func coverData(for book: Book) -> Data? {
         guard let url = book.coverUrl else { return nil }
         return store.coverCache[url]
     }
-    
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                
-                currentlyReadingSection
-                    .padding(.top, Spacing.sm)
-                
-                HStack(spacing: Spacing.md) {
-                    MetricCard(value: "\(viewModel.currentSessionStreak(from: sessions))", title: Localization.Home.metricDayStreak.string, icon: "flame.fill", accentColor: .orange)
-                    MetricCard(value: viewModel.averageTimePerDayFormatted(from: sessions), title: Localization.Home.metricAverageTime.string, icon: "clock.fill", accentColor: .indigo)
-                }
-                
-        
-                
-                Text(Localization.Home.recentActivity.string)
-                    .font(.titleSecondary)
-                
-                if sessions.isEmpty {
-                    HistoryEmptyState()
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                Text(viewModel.greetingText(name: authManager.currentUser?.name))
+                    .textStyle(.titleScreen)
+                    .foregroundStyle(Palette.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let heroBook {
+                    CurrentlyReadingCard(
+                        book: heroBook,
+                        progressValue: viewModel.progressValue(for: heroBook),
+                        coverData: coverData(for: heroBook)
+                    )
+                    actions(for: heroBook)
                 } else {
-                    VStack(spacing: 0) {
-                        ForEach(Array(sessions.prefix(4).enumerated()), id: \.element.id) { index, session in
-                            RecentActivityRow(session: session, formattedDate: viewModel.activityDate(session.timesTamp))
-                                .onTapGesture {
-                                    selectedSession = session
-                                }
-                            
-                            if index < min(sessions.count, 4) - 1 {
-                                Divider()
-                                    .padding(.leading, 66)
-                            }
-                        }
-                    }
-                    .cardSurface(radius: Radius.lg)
+                    emptyHero
                 }
+
+                stats
+                recentActivity
             }
-            .padding(.horizontal, Spacing.lg)
-            .padding(.top, Spacing.sm)
-            .padding(.bottom, Spacing.xl)
+            .padding(.horizontal, Spacing.gutterList)
+            .padding(.top, Spacing.cardInset)
+            .padding(.bottom, Spacing.xxl)
         }
-        .navigationTitle(viewModel.greetingText(name: authManager.currentUser?.name))
+        .background(Palette.surface)
         .navigationBarTitleDisplayMode(.inline)
-        .background(.surface)
+        .toolbar(.hidden, for: .navigationBar)
         // A chave inclui a coverUrl: trocando a capa de um livro que já estava aqui, a
         // lista de ids não muda e a task não reexecutava — a capa antiga ficava na tela.
         .task(id: readingBooks.map { "\($0.id):\($0.coverUrl ?? "")" }) {
@@ -91,107 +70,153 @@ struct Home: View {
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
         }
         .navigationDestination(item: $selectedSession) { session in
-            SessionSummary(readingTime: session.timeRead, currentBook: session.book, pagesRead: session.pagesRead, previousProgress: 0, sessionToEdit: session)
+            SessionSummary(
+                readingTime: session.timeRead,
+                currentBook: session.book,
+                pagesRead: session.pagesRead,
+                previousProgress: 0,
+                sessionToEdit: session
+            )
         }
-        .navigationDestination(item: $selectedUpNextBook) { book in
-            BookDetails(book: book)
-        }
-        .alert(Localization.Home.alertNoBooksTitle.string, isPresented: $isShowingAlert) {
-            Button(Localization.Generic.ok.string) {}
-        } message: {
-            Text(Localization.Home.alertNoBooksMessage.string)
+        .navigationDestination(isPresented: $isShowingAddBook) { Search() }
+    }
+
+    // MARK: - Ações
+
+    /// Botão primário + o círculo de adicionar. Figma `14:2`.
+    private func actions(for book: Book) -> some View {
+        HStack(spacing: Spacing.sm + 2) {
+            ReadUpButton(
+                title: (book.progress ?? 0) == 0
+                    ? Localization.Components.startReading.string
+                    : Localization.Components.continueReading.string
+            ) {
+                activeReadingBook = book
+            }
+
+            Button {
+                isShowingAddBook = true
+            } label: {
+                Text(verbatim: "+")
+                    .textStyle(.titleCard)
+                    .foregroundStyle(Palette.ink)
+                    .frame(width: Spacing.controlCircle, height: Spacing.controlCircle)
+                    .background(Circle().fill(Palette.surfaceControl))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Localization.Home.addBook.string)
         }
     }
-    
-    private var currentlyReadingSection: some View {
-        Group {
-            if readingBooks.isEmpty {
-                VStack(spacing: Spacing.cardInset) {
-                    Image(systemName: "book.closed")
+
+    /// Sem nada em andamento o herói não existe — no lugar dele, o convite.
+    private var emptyHero: some View {
+        VStack(spacing: Spacing.cardInset) {
+            Image(systemName: "book.closed")
+                .font(.iconSection)
+                .foregroundStyle(Palette.inkFainter)
+
+            Text(Localization.Home.emptyTitle.string)
+                .textStyle(.titleSecondary)
+                .foregroundStyle(Palette.ink)
+
+            Text(Localization.Home.emptySubtitle.string)
+                .textStyle(.bodySupporting)
+                .foregroundStyle(Palette.inkMuted)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxl)
+    }
+
+    // MARK: - Métricas
+
+    /// Sequência e média diária. Figma `14:7`.
+    private var stats: some View {
+        HStack(spacing: Spacing.md) {
+            StatTile(label: Localization.Home.metricDayStreak.string) {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "flame.fill")
                         .font(.iconSection)
-                        .foregroundStyle(.brand)
-                    
-                    Text(Localization.Home.emptyTitle.string)
-                        .font(.titleSecondary)
-                    
-                    Text(Localization.Home.emptySubtitle.string)
-                        .font(.bodyDefault)
-                        .foregroundStyle(.inkMuted)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, Spacing.xl)
+                        .foregroundStyle(Palette.ink)
+                    Text("\(viewModel.currentSessionStreak(from: sessions))")
+                        .textStyle(.displayMetricXL)
+                        .foregroundStyle(Palette.ink)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.xxl)
-                
-            } else if readingBooks.count == 1 {
-                HStack(spacing: Spacing.md) {
-                    Spacer()
-                    ForEach(readingBooks) { book in
-                        CurrentlyReadingCard(book: book, progressValue: viewModel.progressValue(for: book), coverData: coverData(for: book), onStartReading: {
-                            activeReadingBook = book
-                        })
-                            .frame(width: 320)
+            }
+
+            StatTile(label: Localization.Home.metricAverageTime.string) {
+                Text(viewModel.averageTimePerDayFormatted(from: sessions))
+                    .textStyle(.titleXL)
+                    .foregroundStyle(Palette.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Atividade recente
+
+    private var recentActivity: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(Localization.Home.recentActivity.string)
+                    .textStyle(.titleSecondary)
+                    .foregroundStyle(Palette.ink)
+
+                Spacer()
+
+                if !sessions.isEmpty {
+                    NavigationLink {
+                        History()
+                    } label: {
+                        Text(Localization.Home.seeAll.string)
+                            .textStyle(.label)
+                            .foregroundStyle(Palette.inkMeta)
                     }
-                    Spacer()
                 }
+            }
+
+            if sessions.isEmpty {
+                HistoryEmptyState()
             } else {
-                ScrollView(.horizontal) {
-                    HStack{
-                        ForEach(readingBooks) { book in
-                            CurrentlyReadingCard(book: book, progressValue: viewModel.progressValue(for: book), coverData: coverData(for: book), onStartReading: {
-                                activeReadingBook = book
-                            })
-                                .frame(width: 320)
-                        }
-                    }
-                }
-                .scrollIndicators(.never)
-            }
-        }
-    }
-    
+                VStack(spacing: 0) {
+                    ForEach(sessions.prefix(4)) { session in
+                        RecentActivityRow(
+                            session: session,
+                            formattedDate: viewModel.activityDate(session.timesTamp)
+                        )
+                        .contentShape(.rect)
+                        .onTapGesture { selectedSession = session }
 
-
-    private var upNextSection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.md) {
-                ForEach(upNextBooks.prefix(8)) { book in
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        BookCoverView(coverUrl: book.coverUrl, width: 120, height: 172)
-                        Text(book.title)
-                            .font(.headline)
-                            .lineLimit(1)
-                        Text(book.author)
-                            .font(.bodySupporting)
-                            .foregroundStyle(.inkMuted)
-                            .lineLimit(1)
+                        Divider().overlay(Palette.divider)
                     }
-                    .frame(width: 132, alignment: .leading)
-                    .onTapGesture {
-                        selectedUpNextBook = book
-                    }
-                }
-                
-                NavigationLink(destination: Library()) {
-                    VStack(spacing: 10) {
-                        Image(systemName: "plus.circle")
-                            .font(.system(size: 38, weight: .regular))
-                            .foregroundStyle(.brand)
-                        Text(Localization.Home.addBook.string)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.brand)
-                    }
-                    .frame(width: 132, height: 230)
-                    .background(
-                        RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                            .fill(Color.brand.opacity(0.12))
-                    )
                 }
             }
         }
     }
-    
+}
 
+// MARK: - Stat tile
+
+/// Um quadro de métrica: overline em caixa alta e o valor em serifada. Figma `14:8`.
+private struct StatTile<Value: View>: View {
+    let label: String
+    @ViewBuilder let value: Value
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm - 2) {
+            Text(label.uppercased())
+                .textStyle(.overline)
+                .foregroundStyle(Palette.inkFaint)
+
+            value
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.lg)
+        .cardSurface(radius: Radius.card)
+    }
 }
 
 #Preview {

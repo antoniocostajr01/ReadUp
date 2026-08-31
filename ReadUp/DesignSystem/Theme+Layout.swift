@@ -34,14 +34,24 @@ enum Spacing {
     /// 28 — auth and onboarding. The widest in the system.
     static let gutterAuth: CGFloat = 28
 
-    // MARK: Chrome
+    // MARK: Component sizes
 
-    /// 62 — the floating tab bar pill.
-    static let tabBarHeight: CGFloat = 62
-    /// 20 — how far the tab bar is inset from each side.
-    static let tabBarInset: CGFloat = 20
-    /// 110 — bottom padding content needs to clear the floating tab bar.
-    static let contentBottomWithTabBar: CGFloat = 110
+    /// 246 — the Home hero cover card.
+    static let heroHeight: CGFloat = 246
+    /// 3 — progress bar over cover art. Deliberately hair-thin.
+    static let progressBarHeight: CGFloat = 3
+    /// 52 — the circular icon button beside a primary action.
+    static let controlCircle: CGFloat = 52
+    /// 72×104 — the cover on a Library shelf.
+    static let coverShelfWidth: CGFloat = 72
+    static let coverShelfHeight: CGFloat = 104
+    /// 78 — the profile avatar.
+    static let avatar: CGFloat = 78
+    /// 38 — the circular add button in a screen header.
+    static let addCircle: CGFloat = 38
+    /// 36×52 — the thumbnail cover in a session row.
+    static let coverRowWidth: CGFloat = 36
+    static let coverRowHeight: CGFloat = 52
 }
 
 /// Corner radii. Covers stay nearly square — a book is a book. Chrome goes fully round.

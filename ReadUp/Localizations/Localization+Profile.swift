@@ -8,6 +8,11 @@ import Foundation
 public extension Localization {
     enum Profile: LocalizationProtocol {
         case title
+        case editProfile
+        case notifications
+        case statBooks
+        case statSessions
+        case statStreak
         case defaultName
         case changePhoto
         case removePhoto
@@ -25,6 +30,11 @@ public extension Localization {
         public var key: String.LocalizationValue {
             switch self {
             case .title: "profile.title"
+            case .editProfile: "profile.editProfile"
+            case .notifications: "profile.notifications"
+            case .statBooks: "profile.stat.books"
+            case .statSessions: "profile.stat.sessions"
+            case .statStreak: "profile.stat.streak"
             case .defaultName: "profile.defaultName"
             case .changePhoto: "profile.changePhoto"
             case .removePhoto: "profile.removePhoto"

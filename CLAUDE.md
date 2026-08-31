@@ -21,8 +21,8 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   (work-level search, so a query returns the actual books people mean, not every
   loose edition and derivative) with Google Books as a fallback.
   See `.claude/specs/2026-08-05-book-search-and-entry-design.md` for why.
-  Search is not a tab: it is reached from Library's `+` (Scan / Search / Add manually),
-  and only guests still see a Search tab.
+  Search is not a tab for anyone: it is reached from Library's `+`
+  (Scan / Search / Add manually).
 - **Barcode scanning.** `ISBNScanView` scans book barcodes in batch (VisionKit
   `DataScannerViewController`) and resolves each ISBN through `GET /books/lookup`, which
   uses Open Library's edition record (`/isbn/{isbn}.json` — exact, unlike a text search
@@ -132,6 +132,20 @@ backend commit by short SHA.
   generated SQL, then `prisma migrate deploy` to apply — never `migrate dev` without
   `--create-only`, and never `migrate reset` or `db push`.
 - Commits on this project carry no AI-assistant attribution trailers.
+- **Test account.** `dev@readup.test` exists on the production backend purely so debug
+  builds don't land in guest mode. Its credentials live in `ReadUp/Secrets.xcconfig`
+  (gitignored) as `DEV_EMAIL` / `DEV_PASSWORD`, reach the app through `Info.plist` →
+  `AppConfig.devCredentials`, and are consumed by a `#if DEBUG` branch in
+  `AuthManager.init()` that signs in whenever there is no Keychain token. Both keys are
+  blanked with `[config=Release]` in the xcconfig, so the password is **not** baked into
+  a release `Info.plist` — verified by extracting both keys from the built Release app.
+  A fresh clone with no `DEV_*` keys simply gets the old behaviour (`devCredentials`
+  returns `nil`), so nothing breaks.
+
+  This exists because reinstalling the app — which Xcode does on every run — wipes
+  `UserDefaults`, and the `hasLaunchedBefore` guard in `AuthManager.init()` reacts to
+  that by deleting the Keychain token. Auto-login was working; the reinstall was
+  undoing it.
 
 ## Design — Editorial Cream
 
@@ -197,6 +211,39 @@ some other way. Figma covers are typeset placeholders until they do.
 - **Never a grey.** Anything that reads grey is ink at 9–22% alpha, or a cream step.
 - Type is Instrument Serif (content, and every number) + Instrument Sans (interface),
   with italic serif reserved for author names.
+- **The tab bar is the one component deliberately not built from Figma.** The
+  `Chrome/Tab bar` pill (`16:46`, specimens `37:311`/`37:323`/`37:335`) is
+  reference-only: the app uses the **native iOS tab bar**, in the system colour, with
+  the three tabs the component defines — Home, Library, Profile. It carries no
+  `.tint()`: on iOS 26 a tint bleeds into the whole Liquid Glass capsule rather than
+  colouring just the selection, which turned the bar a muddy olive. The bar is the
+  single sanctioned exception to "never a grey".
+
+  **Gotcha:** on iOS 26 the *native* tab bar is itself a floating translucent capsule,
+  so it looks almost exactly like the custom pill that was removed. The tell is the
+  filled selection indicator behind the active tab — the custom bar never drew one.
+
+  **An ink bar was built and then reverted** (`688282e`, reverted). Its colouring is
+  still an open question, deliberately parked. What was measured, so it isn't
+  re-derived — each of these looks plausible and is wrong:
+
+  - `.tint(.ink)` on the `TabView` tints the whole glass capsule, not just the
+    selection: the bar comes out a muddy `#6e695e` olive.
+  - `.toolbarBackground(_:for: .tabBar)` is silently ignored by the iOS 26 bar.
+  - `UITabBarAppearance` applies its *item* colours but not its `backgroundColor`
+    while Liquid Glass is on. `backgroundEffect = nil` changes nothing — the two
+    screenshots were byte-identical.
+  - Setting the appearance proxy in `TabBar.init()` is a **race**: `UITabBar.appearance()`
+    only affects bars created afterwards, and SwiftUI re-inits View structs freely, so
+    the same build rendered ink on one launch and glass on the next. It belongs in
+    `ReadUpApp.init()`, which runs once before any UI exists.
+  - The only thing that produced a true ink `#171512` background was
+    `UIDesignRequiresCompatibility` in `Info.plist` — which opts the **whole app** out
+    of Liquid Glass, and is a temporary Apple escape hatch that dies against a future
+    SDK. That cost is why it was reverted.
+
+  Note the app's `AccentColor` is still the retired brand green `#2E7D32`, so with no
+  `.tint()` the selected tab reads green. That is a separate, unmade decision.
 
 `DesignSystem/` in the app already routed every screen through semantic tokens, so
 adopting the palette was an edit to `Palette` in `Theme+Color.swift` plus the colorsets
