@@ -97,8 +97,8 @@ final class LibraryStore {
 
     /// Adiciona um livro vindo da busca (Google Books) à biblioteca do usuário.
     @discardableResult
-    func addBook(from searchBook: SearchBook, status: BookStatus, isbn: String? = nil) async -> Bool {
-        guard let token else { return false }
+    func addBook(from searchBook: SearchBook, status: BookStatus, isbn: String? = nil) async -> Book? {
+        guard let token else { return nil }
         let payload = CreateBookPayload(
             title: searchBook.title,
             author: searchBook.author,
@@ -111,24 +111,24 @@ final class LibraryStore {
         do {
             let book = try await bookService.createBook(payload, token: token)
             books.append(book)
-            return true
+            return book
         } catch {
             errorMessage = error.localizedDescription
-            return false
+            return nil
         }
     }
 
     /// Cria um livro cadastrado manualmente (sem passar pela busca).
     @discardableResult
-    func createManualBook(_ payload: CreateBookPayload) async -> Bool {
-        guard let token else { return false }
+    func createManualBook(_ payload: CreateBookPayload) async -> Book? {
+        guard let token else { return nil }
         do {
             let book = try await bookService.createBook(payload, token: token)
             books.append(book)
-            return true
+            return book
         } catch {
             errorMessage = error.localizedDescription
-            return false
+            return nil
         }
     }
 

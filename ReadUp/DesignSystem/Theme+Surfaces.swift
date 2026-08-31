@@ -192,6 +192,28 @@ struct UnderlinedField: View {
     }
 }
 
+// MARK: - Chrome chip
+
+/// O botão circular do topo das telas: ‹, ×, •••, ✓. Figma `47:1817`.
+///
+/// 34pt em `surface/control`. É chrome, não ação primária — nunca leva o ink sólido.
+struct ChromeChip: View {
+    let systemImage: String
+    var isFilled: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.iconLabel)
+                .foregroundStyle(isFilled ? Palette.onBrand : Palette.ink)
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(isFilled ? Palette.brand : Palette.surfaceControl))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Chip
 
 /// A selectable pill. Figma specimens `37:243`.

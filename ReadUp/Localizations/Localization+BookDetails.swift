@@ -21,6 +21,14 @@ public extension Localization {
         case addToLibrary
         case saveSuccess
         case saveError
+        case statusLabel
+        case continueReading
+        case startReading
+        case addedToLibrary
+        case addAnotherBook
+        case pagesLabel
+        case currentLabel
+        case doneLabel
 
         public var key: String.LocalizationValue {
             switch self {
@@ -38,6 +46,14 @@ public extension Localization {
             case .addToLibrary: "bookDetails.addToLibrary"
             case .saveSuccess: "bookDetails.saveSuccess"
             case .saveError: "bookDetails.saveError"
+            case .statusLabel: "bookDetails.statusLabel"
+            case .continueReading: "bookDetails.continueReading"
+            case .startReading: "bookDetails.startReading"
+            case .addedToLibrary: "bookDetails.addedToLibrary"
+            case .addAnotherBook: "bookDetails.addAnotherBook"
+            case .pagesLabel: "bookDetails.pagesLabel"
+            case .currentLabel: "bookDetails.currentLabel"
+            case .doneLabel: "bookDetails.doneLabel"
             }
         }
     }

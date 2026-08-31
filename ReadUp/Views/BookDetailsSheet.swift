@@ -1,5 +1,13 @@
 import SwiftUI
 
+/// O detalhe do livro. Figma `47:1813` (na biblioteca) e `47:1849` (antes de adicionar).
+///
+/// Uma tela, duas origens: o layout é o mesmo, só o terço de baixo muda — quem já está
+/// na biblioteca vê o status atual e "Continue reading"; quem veio da busca escolhe um
+/// status e vê "Add to Library".
+///
+/// Abre com a transição de zoom do iOS: a capa tocada *cresce* até virar a herói, em vez
+/// do push nativo. Quem apresenta esta view carrega o `matchedTransitionSource`.
 struct BookDetailsSheet: View {
     enum Source {
         case library(Book)
@@ -15,211 +23,326 @@ struct BookDetailsSheet: View {
     @State private var viewModel = BookDetailsSheetViewModel()
     @State private var showAuth = false
     @State private var isShowingEditForm = false
+    @State private var addedBook: Book?
+    @State private var activeReadingBook: Book?
+    /// Quanto o conteúdo já rolou. Encolhe e apaga a capa herói conforme sobe.
+    @State private var scrollOffset: CGFloat = 0
+
+    /// Capa herói: 224×320 no Figma `47:1822`.
+    private let coverWidth: CGFloat = 224
+    private let coverHeight: CGFloat = 320
+    /// A capa desaparece por completo depois deste tanto de rolagem.
+    private let collapseDistance: CGFloat = 220
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            nav
+
             ScrollView {
-                VStack(spacing: Spacing.xl) {
-                    coverView
-
-                    TitleAndAuthorBook(bookAuthor: authorText, bookTitle: titleText)
-
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        Text(cleanedDescription)
-                            .font(.bodyDefault)
-                            .lineSpacing(2)
-                            .lineLimit(viewModel.isShowingFullDescription ? nil : 5)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        if shouldShowReadMore {
-                            Button(viewModel.isShowingFullDescription ? Localization.BookDetails.readLess.string : Localization.BookDetails.readMore.string) {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    viewModel.isShowingFullDescription.toggle()
-                                }
-                            }
-                            .font(.bodySupportingStrong)
-                            .foregroundStyle(.brand)
-                        }
-                    }
-
-                    HStack(spacing: Spacing.sm) {
-                        Image(systemName: "book.pages.fill")
-                        Text("\(pagesText)")
-                    }
-
-                    switch source {
-                    case .library(let book):
-                        HStack {
-                            Text(book.status.displayName)
-                                .foregroundStyle(.ink)
-                                .font(.titleTertiary)
-                        }
-                        .frame(width: 297, height: 61)
-                        .background(
-                            RoundedRectangle(cornerRadius: Radius.md)
-                                .stroke(.brand, lineWidth: 2)
-                        )
-
-                    case .search:
-                        Picker("Status", selection: $viewModel.selectedStatus) {
-                            ForEach(BookStatus.allCases, id: \.self) { status in
-                                Text(status.displayName).tag(status)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .frame(width: 297, height: 61)
-                        .background(
-                            RoundedRectangle(cornerRadius: Radius.md)
-                                .stroke(.brand, lineWidth: 2)
-                        )
-
-                        Button {
-                            if authManager.isGuest {
-                                showAuth = true
-                            } else {
-                                Task { await viewModel.saveBookToLibrary(source: source, store: store, onDismiss: { dismiss() }) }
-                            }
-                        } label: {
-                            Text(viewModel.alreadyExists ? Localization.BookDetails.alreadyInLibrary.string : (viewModel.isSaving ? Localization.BookDetails.saving.string : Localization.BookDetails.addToLibrary.string))
-                                .font(.titleTertiary)
-                                .foregroundStyle(.white)
-                                .frame(width: 361, height: 61)
-                                .background(
-                                    RoundedRectangle(cornerRadius: Radius.pill)
-                                        .foregroundStyle(viewModel.alreadyExists ? .inkMuted : .brand)
-                                )
-                        }
-                        .disabled(viewModel.alreadyExists || viewModel.isSaving)
-
-                        if let saveMessage = viewModel.saveMessage {
-                            Text(saveMessage)
-                                .font(.captionDefault)
-                                .foregroundStyle(.inkMuted)
-                        }
-                    }
+                VStack(spacing: 18) {
+                    cover
+                    titles
+                    stats
+                    description
                 }
-                .padding(.horizontal, Spacing.xl)
-                .padding(.vertical, 20)
+                .padding(.top, Spacing.md)
+                .padding(.bottom, Spacing.xl)
             }
-            .background(.surface)
-            .navigationTitle(Localization.BookDetails.title.string)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if case .library = source {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Button(role: .destructive) {
-                                viewModel.isShowingDeleteAlert = true
-                            } label: {
-                                Label(Localization.BookDetails.deleteBook.string, systemImage: "trash.fill")
-                            }
+            .scrollIndicators(.never)
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+            } action: { _, offset in
+                scrollOffset = max(0, offset)
+            }
 
-                            Button {
-                                isShowingEditForm = true
-                            } label: {
-                                Label(Localization.BookDetails.editBook.string, systemImage: "pencil")
-                            }
-
-                            Button {
-                                viewModel.isShowingStatusDialog = true
-                            } label: {
-                                Label(Localization.BookDetails.changeStatus.string, systemImage: "arrow.trianglehead.2.clockwise")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                        }
-                    }
-                }
-            }
-            .confirmationDialog(Localization.BookDetails.selectStatus.string, isPresented: $viewModel.isShowingStatusDialog) {
-                if case .library(let book) = source {
-                    ForEach(BookStatus.allCases, id: \.self) { enumStatus in
-                        Button(enumStatus.displayName) {
-                            Task {
-                                await store.updateStatus(book, to: enumStatus)
-                                dismiss()
-                            }
-                        }
-                    }
-                }
-            }
-            .alert(Localization.BookDetails.deleteConfirmTitle.string, isPresented: $viewModel.isShowingDeleteAlert) {
-                Button(Localization.Generic.delete.string, role: .destructive) {
-                    if case .library(let book) = source {
+            actions
+        }
+        .padding(.horizontal, Spacing.gutterDetail)
+        .padding(.bottom, 30)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.surface)
+        .toolbar(.hidden, for: .navigationBar)
+        .confirmationDialog(Localization.BookDetails.selectStatus.string, isPresented: $viewModel.isShowingStatusDialog) {
+            if case .library(let book) = source {
+                ForEach(BookStatus.allCases, id: \.self) { enumStatus in
+                    Button(enumStatus.displayName) {
                         Task {
-                            await store.deleteBook(book)
+                            await store.updateStatus(book, to: enumStatus)
                             dismiss()
                         }
                     }
                 }
-                Button(Localization.Generic.cancel.string, role: .cancel) {}
-            } message: {
-                Text(Localization.BookDetails.deleteConfirmMessage.string)
             }
-            .onAppear {
-                if case .search(let searchBook, _) = source {
-                    viewModel.alreadyExists = store.contains(searchBook)
-                }
-            }
-            .sheet(isPresented: $showAuth) {
-                AuthSheet()
-            }
-            .sheet(isPresented: $isShowingEditForm) {
+        }
+        .alert(Localization.BookDetails.deleteConfirmTitle.string, isPresented: $viewModel.isShowingDeleteAlert) {
+            Button(Localization.Generic.delete.string, role: .destructive) {
                 if case .library(let book) = source {
-                    BookFormView(mode: .edit(book)) {
+                    Task {
+                        await store.deleteBook(book)
                         dismiss()
                     }
+                }
+            }
+            Button(Localization.Generic.cancel.string, role: .cancel) {}
+        } message: {
+            Text(Localization.BookDetails.deleteConfirmMessage.string)
+        }
+        .onAppear {
+            switch source {
+            case .library(let book):
+                viewModel.selectedStatus = book.status
+            case .search(let searchBook, _):
+                viewModel.alreadyExists = store.contains(searchBook)
+            }
+        }
+        .sheet(isPresented: $showAuth) { AuthSheet() }
+        .sheet(isPresented: $isShowingEditForm) {
+            if case .library(let book) = source {
+                BookFormView(mode: .edit(book)) { dismiss() }
+            }
+        }
+        .fullScreenCover(item: $addedBook) { book in
+            BookAddedView(book: book) { dismiss() }
+        }
+        .fullScreenCover(item: $activeReadingBook) { book in
+            NavigationStack {
+                ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
+            }
+        }
+    }
+
+    // MARK: - Topo
+
+    private var nav: some View {
+        HStack {
+            ChromeChip(systemImage: "chevron.left") { dismiss() }
+
+            Spacer()
+
+            if case .library = source {
+                Menu {
+                    Button(role: .destructive) {
+                        viewModel.isShowingDeleteAlert = true
+                    } label: {
+                        Label(Localization.BookDetails.deleteBook.string, systemImage: "trash")
+                    }
+
+                    Button {
+                        isShowingEditForm = true
+                    } label: {
+                        Label(Localization.BookDetails.editBook.string, systemImage: "pencil")
+                    }
+
+                    Button {
+                        viewModel.isShowingStatusDialog = true
+                    } label: {
+                        Label(Localization.BookDetails.changeStatus.string, systemImage: "arrow.trianglehead.2.clockwise")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.iconLabel)
+                        .foregroundStyle(Palette.ink)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(Palette.surfaceControl))
+                }
+            }
+        }
+        .frame(height: 44)
+    }
+
+    // MARK: - Herói
+
+    /// Fração de 0 a 1 do quanto a capa já recolheu.
+    private var collapse: CGFloat { min(1, scrollOffset / collapseDistance) }
+
+    private var cover: some View {
+        BookCoverView(
+            coverUrl: coverURLString,
+            width: coverWidth,
+            height: coverHeight,
+            cornerRadius: Radius.coverLg,
+            title: titleText,
+            author: authorText
+        )
+        .coverShadow(.coverHero)
+        .scaleEffect(1 - collapse * 0.25, anchor: .top)
+        .opacity(1 - collapse)
+        // Sem isto a capa encolhida deixa um buraco: o layout continua a reservar 320pt.
+        .frame(height: coverHeight * (1 - collapse * 0.25))
+    }
+
+    private var titles: some View {
+        VStack(spacing: 6) {
+            Text(titleText)
+                .textStyle(.titleBook)
+                .foregroundStyle(Palette.ink)
+                .multilineTextAlignment(.center)
+
+            Text(authorText)
+                .textStyle(.authorRow)
+                .foregroundStyle(Palette.inkSoft)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var stats: some View {
+        HStack(spacing: 22) {
+            statColumn(pagesText, Localization.BookDetails.pagesLabel.string)
+            statRule
+            statColumn(currentPageText, Localization.BookDetails.currentLabel.string)
+            statRule
+            statColumn(percentDoneText, Localization.BookDetails.doneLabel.string)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func statColumn(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .textStyle(.titleTertiary)
+                .foregroundStyle(Palette.ink)
+
+            Text(label.uppercased())
+                .textStyle(.overline)
+                .foregroundStyle(Palette.inkFaint)
+        }
+    }
+
+    private var statRule: some View {
+        Rectangle()
+            .fill(Palette.rule)
+            .frame(width: 1, height: 26)
+    }
+
+    @ViewBuilder
+    private var description: some View {
+        if !cleanedDescription.isEmpty {
+            Text(cleanedDescription)
+                .textStyle(.bodySupporting)
+                .foregroundStyle(Palette.inkMuted)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: - Ações
+
+    private var actions: some View {
+        VStack(spacing: Spacing.md) {
+            StatusPill(status: statusBinding)
+
+            switch source {
+            case .library(let book):
+                ReadUpButton(title: continueReadingTitle(for: book)) {
+                    activeReadingBook = book
+                }
+
+            case .search:
+                ReadUpButton(
+                    title: addButtonTitle,
+                    isLoading: viewModel.isSaving,
+                    isEnabled: !viewModel.alreadyExists
+                ) {
+                    if authManager.isGuest {
+                        showAuth = true
+                    } else {
+                        Task { addedBook = await viewModel.saveBookToLibrary(source: source, store: store) }
+                    }
+                }
+
+                if let saveMessage = viewModel.saveMessage {
+                    Text(saveMessage)
+                        .textStyle(.captionFine)
+                        .foregroundStyle(Palette.danger)
+                        .multilineTextAlignment(.center)
                 }
             }
         }
     }
 
+    private var addButtonTitle: String {
+        viewModel.alreadyExists
+            ? Localization.BookDetails.alreadyInLibrary.string
+            : Localization.BookDetails.addToLibrary.string
+    }
+
+    private func continueReadingTitle(for book: Book) -> String {
+        switch book.status {
+        case .reading, .rereading: Localization.BookDetails.continueReading.string
+        default: Localization.BookDetails.startReading.string
+        }
+    }
+
+    /// Na biblioteca a mudança de status vai direto ao backend; na busca fica em memória
+    /// até o livro ser adicionado.
+    private var statusBinding: Binding<BookStatus?> {
+        switch source {
+        case .library(let book):
+            Binding(
+                get: { store.books.first { $0.id == book.id }?.status ?? book.status },
+                set: { new in
+                    guard let new else { return }
+                    Task { await store.updateStatus(book, to: new) }
+                }
+            )
+        case .search:
+            Binding(
+                get: { viewModel.selectedStatus },
+                set: { viewModel.selectedStatus = $0 ?? .iWantToRead }
+            )
+        }
+    }
+
+    // MARK: - Dados das duas origens
+
     private var titleText: String {
         switch source {
-        case .library(let book): return book.title
-        case .search(let book, _): return book.title
+        case .library(let book): book.title
+        case .search(let book, _): book.title
         }
     }
 
     private var authorText: String {
         switch source {
-        case .library(let book): return book.author
-        case .search(let book, _): return book.author
+        case .library(let book): book.author
+        case .search(let book, _): book.author
         }
     }
 
-    private var pagesText: Int {
+    private var coverURLString: String? {
         switch source {
-        case .library(let book): return book.numberOfPages
-        case .search(let book, _): return book.numberOfPages
+        case .library(let book): book.coverUrl
+        case .search(let book, _): book.thumbnailURL?.absoluteString
         }
+    }
+
+    private var numberOfPages: Int {
+        switch source {
+        case .library(let book): book.numberOfPages
+        case .search(let book, _): book.numberOfPages
+        }
+    }
+
+    private var currentPage: Int {
+        switch source {
+        case .library(let book): book.progress ?? 0
+        case .search: 0
+        }
+    }
+
+    private var pagesText: String { numberOfPages > 0 ? "\(numberOfPages)" : "—" }
+
+    private var currentPageText: String { numberOfPages > 0 ? "\(currentPage)" : "—" }
+
+    private var percentDoneText: String {
+        guard numberOfPages > 0 else { return "—" }
+        return "\(Int((Double(currentPage) / Double(numberOfPages) * 100).rounded()))%"
     }
 
     private var detailsText: String {
         switch source {
-        case .library(let book): return book.details
-        case .search(let book, _): return book.details
-        }
-    }
-
-    @ViewBuilder
-    private var coverView: some View {
-        switch source {
-        case .library(let book):
-            BookCoverView(coverUrl: book.coverUrl, width: 148, height: 211, cornerRadius: Radius.md)
-        case .search(let book, _):
-            AsyncImage(url: book.thumbnailURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                default:
-                    Color.surfaceChrome
-                }
-            }
-            .frame(width: 148, height: 211)
-            .clipShape(RoundedRectangle(cornerRadius: Radius.md))
+        case .library(let book): book.details
+        case .search(let book, _): book.details
         }
     }
 
@@ -237,9 +360,5 @@ struct BookDetailsSheet: View {
         return decodedEntities
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var shouldShowReadMore: Bool {
-        cleanedDescription.count > 260
     }
 }

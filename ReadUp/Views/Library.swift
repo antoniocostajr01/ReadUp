@@ -19,6 +19,8 @@ struct Library: View {
     @State private var isShowingAddOptions = false
     @State private var pendingOption: AddOption?
     @Namespace private var addButtonNamespace
+    /// A capa tocada é a origem do zoom para o detalhe. Anotação do Figma `47:1906`.
+    @Namespace private var coverNamespace
     @State private var isShowingScanner = false
     @State private var isShowingSearch = false
     @State private var isShowingAddManually = false
@@ -77,9 +79,12 @@ struct Library: View {
             addOptionsSheet
                 .navigationTransition(.zoom(sourceID: "addBook", in: addButtonNamespace))
         }
+        // O detalhe *cresce* a partir da capa tocada, em vez do push nativo — é o
+        // comportamento pedido na anotação `47:1906` do Figma.
         .sheet(item: $selectedBook) { book in
             BookDetailsSheet(source: .library(book))
-                .presentationDragIndicator(.visible)
+                .presentationDetents([.large])
+                .navigationTransition(.zoom(sourceID: book.id, in: coverNamespace))
         }
         .fullScreenCover(isPresented: $isShowingScanner) {
             ISBNScanView()
@@ -191,6 +196,7 @@ struct Library: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .matchedTransitionSource(id: book.id, in: coverNamespace)
                     }
                 }
                 // A sombra das capas é cortada pelo ScrollView sem esta folga.

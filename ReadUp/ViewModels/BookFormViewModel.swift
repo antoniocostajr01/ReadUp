@@ -55,6 +55,9 @@ final class BookFormViewModel {
         newCoverBase64 = image.compressedBase64()
     }
 
+    /// O livro recém-criado no modo `.create` — é ele que a tela de conquista exibe.
+    var createdBook: Book?
+
     @discardableResult
     func save(store: LibraryStore) async -> Bool {
         guard isSaveEnabled else { return false }
@@ -79,7 +82,8 @@ final class BookFormViewModel {
                 isbn: trimmedIsbn.isEmpty ? nil : trimmedIsbn,
                 coverImage: newCoverBase64
             )
-            success = await store.createManualBook(payload)
+            createdBook = await store.createManualBook(payload)
+            success = createdBook != nil
         case .edit(let book):
             let payload = UpdateBookPayload(
                 title: trimmedTitle,
@@ -94,7 +98,7 @@ final class BookFormViewModel {
         }
 
         if !success {
-            errorMessage = store.errorMessage ?? "Could not save this book."
+            errorMessage = store.errorMessage ?? Localization.BookDetails.saveError.string
         }
         return success
     }

@@ -53,14 +53,14 @@ final class ISBNScannerViewModel {
         scanned.removeAll { $0.id == book.id }
     }
 
-    /// Adiciona todos os livros resolvidos (`.found`) à biblioteca. Retorna quantos
-    /// deram certo — usado pra feedback ("N livros adicionados").
-    func addAll(to store: LibraryStore) async -> Int {
-        var added = 0
+    /// Adiciona todos os livros resolvidos (`.found`) à biblioteca. Devolve os livros
+    /// criados — a tela de conquista exibe o primeiro deles.
+    func addAll(to store: LibraryStore) async -> [Book] {
+        var added: [Book] = []
         for row in scanned {
             guard case .found(let book) = row.state else { continue }
-            if await store.addBook(from: book, status: row.status, isbn: row.isbn) {
-                added += 1
+            if let created = await store.addBook(from: book, status: row.status, isbn: row.isbn) {
+                added.append(created)
             }
         }
         return added

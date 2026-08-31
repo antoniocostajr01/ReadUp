@@ -12,19 +12,18 @@ final class BookDetailsSheetViewModel {
     var isShowingFullDescription = false
 
     /// Salva um livro vindo da busca na biblioteca do usuário (via backend).
-    func saveBookToLibrary(source: BookDetailsSheet.Source, store: LibraryStore, onDismiss: @escaping () -> Void) async {
-        guard case .search(let book, _) = source else { return }
+    /// Devolve o livro criado — é ele que a tela de conquista exibe.
+    func saveBookToLibrary(source: BookDetailsSheet.Source, store: LibraryStore) async -> Book? {
+        guard case .search(let book, _) = source else { return nil }
 
         isSaving = true
         defer { isSaving = false }
 
-        let success = await store.addBook(from: book, status: selectedStatus)
-        if success {
-            saveMessage = "Book added successfully."
-            alreadyExists = true
-            onDismiss()
-        } else {
-            saveMessage = store.errorMessage ?? "Could not save this book."
+        guard let created = await store.addBook(from: book, status: selectedStatus) else {
+            saveMessage = store.errorMessage ?? Localization.BookDetails.saveError.string
+            return nil
         }
+        alreadyExists = true
+        return created
     }
 }
