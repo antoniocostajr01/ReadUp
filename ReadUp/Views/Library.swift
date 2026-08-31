@@ -205,7 +205,8 @@ struct Library: View {
     private var addOptionsSheet: some View {
         VStack(spacing: Spacing.md) {
             Text(Localization.BookDetails.addToLibrary.string)
-                .font(.titleSecondary)
+                .textStyle(.titleSecondary)
+                .foregroundStyle(Palette.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, Spacing.xs)
 
@@ -221,6 +222,7 @@ struct Library: View {
         // que é o que dá a leitura de "camada por cima" em vez de tela preta nova.
         .presentationBackground(.regularMaterial)
         .presentationDetents([.height(340)])
+        .presentationCornerRadius(Radius.sheet)
         .presentationDragIndicator(.visible)
     }
 
@@ -231,20 +233,20 @@ struct Library: View {
         } label: {
             HStack(spacing: Spacing.cardInset) {
                 Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.brand)
+                    .font(.iconInline)
+                    .foregroundStyle(Palette.ink)
                     .frame(width: 28)
 
                 Text(title)
-                    .font(.system(.body, weight: .semibold))
-                    .foregroundStyle(Color.ink)
+                    .textStyle(.field)
+                    .foregroundStyle(Palette.ink)
 
                 Spacer()
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, 18)
             .background(
-                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
         }
