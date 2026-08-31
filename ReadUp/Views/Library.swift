@@ -89,20 +89,9 @@ struct Library: View {
         .fullScreenCover(isPresented: $isShowingScanner) {
             ISBNScanView()
         }
+        // Sem NavigationStack: a Search desenha o próprio chip de voltar (Figma `47:1669`).
         .sheet(isPresented: $isShowingSearch) {
-            NavigationStack {
-                Search()
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                isShowingSearch = false
-                            } label: {
-                                Image(systemName: "checkmark")
-                            }
-                            .accessibilityLabel(Localization.Generic.done.string)
-                        }
-                    }
-            }
+            Search()
         }
         .sheet(isPresented: $isShowingAddManually) {
             BookFormView(mode: .create)

@@ -21,6 +21,17 @@ public extension Localization {
         case manualEntryHint
         case manualEntryDescription
         case addManually
+        case addThisBookManually
+        case catalogCaveat
+        case noCover
+        case pageCountMissing
+        case noMatchTitle
+        case noMatchSubtitle
+
+        /// "443 p." — a unidade depende do idioma, por isso interpola em vez de concatenar.
+        public static func pageCount(_ count: Int) -> String {
+            String(localized: "search.pageCount \(count)", bundle: .main)
+        }
 
         public var key: String.LocalizationValue {
             switch self {
@@ -38,6 +49,12 @@ public extension Localization {
             case .manualEntryHint: "search.manualEntryHint"
             case .manualEntryDescription: "search.manualEntryDescription"
             case .addManually: "search.addManually"
+            case .addThisBookManually: "search.addThisBookManually"
+            case .catalogCaveat: "search.catalogCaveat"
+            case .noCover: "search.noCover"
+            case .pageCountMissing: "search.pageCountMissing"
+            case .noMatchTitle: "search.noMatchTitle"
+            case .noMatchSubtitle: "search.noMatchSubtitle"
             }
         }
     }

@@ -3364,6 +3364,22 @@
         }
       }
     },
+    "search.addThisBookManually": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add this book manually"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar este livro manualmente"
+          }
+        }
+      }
+    },
     "search.browseByGenre": {
       "localizations": {
         "en": {
@@ -3376,6 +3392,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Explorar por Gênero"
+          }
+        }
+      }
+    },
+    "search.catalogCaveat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not the right edition? Catalog data can be incomplete or out of date."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não é esta edição? Os dados do catálogo podem estar incompletos ou desatualizados."
           }
         }
       }
@@ -3460,6 +3492,54 @@
         }
       }
     },
+    "search.noCover": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no cover"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sem capa"
+          }
+        }
+      }
+    },
+    "search.noMatchSubtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We searched the whole catalog and we can't find it."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Procuramos no catálogo inteiro e não achamos."
+          }
+        }
+      }
+    },
+    "search.noMatchTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No match for that search"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada encontrado para essa busca"
+          }
+        }
+      }
+    },
     "search.noMoreResults": {
       "localizations": {
         "en": {
@@ -3488,6 +3568,62 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nenhum livro encontrado"
+          }
+        }
+      }
+    },
+    "search.pageCount %lld": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld p."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld p."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld p."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld p."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "search.pageCountMissing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page count missing — you'll add it"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contagem de páginas ausente — você adiciona depois"
           }
         }
       }
