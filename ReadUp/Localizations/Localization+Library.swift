@@ -16,6 +16,7 @@ public extension Localization {
         case searchOption
         case addManually
         case scan
+        case filterAll
 
         /// "1 book" / "2 books" — plural resolvido pelo xcstrings, por isso é uma
         /// função com interpolação e não um `case` (a contagem tem que entrar na chave).
@@ -34,6 +35,7 @@ public extension Localization {
             case .searchOption: "library.addMenu.search"
             case .addManually: "library.addMenu.addManually"
             case .scan: "library.addMenu.scan"
+            case .filterAll: "library.filter.all"
             }
         }
     }

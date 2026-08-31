@@ -67,8 +67,13 @@ struct RootView: View {
     }
 }
 
+// O mesmo ambiente que o `ReadUpApp` monta: sem os três, a `RootView` rebenta ao
+// resolver um `@Environment` que não existe — faltava aqui o `LibraryStore`.
 #Preview {
     RootView()
         .environment(AuthManager())
         .environment(SearchViewModel())
+        .environment(LibraryStore())
+        .background(.surface)
+        .preferredColorScheme(.light)
 }

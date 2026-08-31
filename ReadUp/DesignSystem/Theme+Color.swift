@@ -130,6 +130,24 @@ enum Palette {
     /// system does not have.
     static let danger = Color(hex: 0xA8503F)
 
+    // MARK: Status de leitura
+    //
+    // Exceção consciente à regra "âmbar é a única cor cromática": o filtro da
+    // biblioteca tem de distinguir cinco prateleiras de relance, e cinco tons de ink
+    // não se distinguem. Dessaturados de propósito, para assentarem no creme — não são
+    // as cores saturadas da PoC. Só aparecem no ponto do chip e no badge da capa.
+
+    /// `status/reading` — verde-oliva.
+    static let statusReading = Color(hex: 0x6B5A8A)
+    /// `status/rereading` — azul-ardósia.
+    static let statusRereading = Color(hex: 0x4A6B8A)
+    /// `status/want-to-read` — âmbar, o mesmo do progresso.
+    static let statusWantToRead = accentProgress
+    /// `status/read` — ameixa.
+    static let statusRead = Color(hex: 0x4F7A52)
+    /// `status/abandoned` — sem cor: livro desistido não brilha.
+    static let statusAbandoned = inkFaint
+
     // MARK: Lines
     //
     // Always ink at low alpha, never a grey. Expressed as opacities of `ink` rather
@@ -259,4 +277,35 @@ extension ShapeStyle where Self == Color {
     static var borderStrong: Color { Palette.borderStrong }
     static var fieldLine: Color { Palette.fieldLine }
     static var fieldLineActive: Color { Palette.fieldLineActive }
+}
+
+// MARK: - BookStatus
+
+/// O lado de design do estado de leitura: a sua cor e o seu glifo.
+///
+/// Vive aqui, e não em `Models/BookStatus.swift`, porque é mapeamento de token —
+/// o modelo só importa Foundation e não conhece cor nenhuma.
+extension BookStatus {
+
+    /// O ponto do chip de filtro e o círculo do badge na capa.
+    var tint: Color {
+        switch self {
+        case .reading: Palette.statusReading
+        case .rereading: Palette.statusRereading
+        case .iWantToRead: Palette.statusWantToRead
+        case .read: Palette.statusRead
+        case .abandoned: Palette.statusAbandoned
+        }
+    }
+
+    /// O SF Symbol do badge na capa.
+    var icon: String {
+        switch self {
+        case .reading: "book.fill"
+        case .rereading: "arrow.trianglehead.counterclockwise"
+        case .iWantToRead: "bookmark.fill"
+        case .read: "checkmark"
+        case .abandoned: "hand.thumbsdown.fill"
+        }
+    }
 }

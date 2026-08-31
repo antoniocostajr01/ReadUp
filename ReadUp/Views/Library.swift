@@ -14,16 +14,18 @@ struct Library: View {
 
     @State private var selectedBook: Book?
     @State private var searchText = ""
+    /// O status que filtra a grade. `nil` é "Todos".
+    @State private var statusFilter: BookStatus?
     private enum AddOption { case scan, search, manual }
 
     @State private var isShowingAddOptions = false
     @State private var pendingOption: AddOption?
     @Namespace private var addButtonNamespace
-    // A capa tocada é promovida à camada da frente e voa da prateleira até o herói do
+    // A capa tocada é promovida à camada da frente e voa da grade até o herói do
     // detalhe, sem nunca sair de tela. Anotação do Figma `47:1906`.
     @State private var frameStore = CoverFrameStore()
     /// O livro cuja capa está na camada da frente. Sobrevive ao fecho: só sai quando o
-    /// voo de volta termina, senão a capa reapareceria na prateleira a meio caminho.
+    /// voo de volta termina, senão a capa reapareceria na grade a meio caminho.
     @State private var flyingBook: Book?
     @State private var heroPlacement = HeroPlacement()
     /// `true` durante o voo. Fora dele o `placement` muda por scroll, e mola nenhuma.
@@ -31,6 +33,13 @@ struct Library: View {
     @State private var isShowingScanner = false
     @State private var isShowingSearch = false
     @State private var isShowingAddManually = false
+    /// A altura do chrome fixo, medida: é ela que dá o respiro do topo da grade.
+    @State private var chromeHeight: CGFloat = 180
+    /// A largura da grade, medida uma vez, para não pôr um `GeometryReader` por célula.
+    @State private var gridWidth: CGFloat = 0
+
+    /// Ordem do Figma, não a do enum: Lendo primeiro, abandonados por último.
+    private let shelfOrder: [BookStatus] = [.reading, .iWantToRead, .read, .rereading, .abandoned]
 
     /// Livros filtrados pela busca (título ou autor). Sem texto, retorna todos.
     private var filteredBooks: [Book] {
@@ -42,40 +51,37 @@ struct Library: View {
         }
     }
 
-    private var booksByStatus: [(status: BookStatus, items: [Book])] {
-        let source = filteredBooks
-        // Ordem do Figma, não a do enum: Lendo primeiro, abandonados por último.
-        let shelfOrder: [BookStatus] = [.reading, .iWantToRead, .read, .rereading, .abandoned]
-        let orderedStatuses = shelfOrder.filter { status in
-            source.contains(where: { $0.status == status })
-        }
+    /// O que a grade mostra: a busca, depois o filtro de status.
+    private var visibleBooks: [Book] {
+        let source = statusFilter.map { status in filteredBooks.filter { $0.status == status } }
+            ?? filteredBooks
+        return source.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
 
-        return orderedStatuses.map { status in
-            let items = source
-                .filter { $0.status == status }
-                .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
-            return (status, items)
-        }
+    private var columnWidth: CGFloat {
+        max(0, (gridWidth - Spacing.lg) / 2)
     }
 
     var body: some View {
-        // A camada de baixo troca; a capa tocada, na da frente, é a única que se move.
-        // O detalhe não é uma sheet: é esta tela, substituída no lugar.
-        ZStack {
-            // Camada de baixo: troca.
-            Group {
-                if let book = selectedBook {
-                    BookDetailsView(
-                        source: .library(book),
-                        onHeroPlacement: place,
-                        onClose: { select(nil) }
-                    )
-                    .transition(.opacity)
-                } else {
-                    shelvesScreen
-                        .transition(.opacity)
-                }
+        // Três camadas. A de baixo troca (grade ↔ detalhe), a do meio é a grade, que
+        // **nunca é desmontada** — é isso que deixa as capas explodirem por cima do
+        // detalhe em vez de sumirem com a tela. A da frente é a capa que voa.
+        ZStack(alignment: .top) {
+            if let book = selectedBook {
+                BookDetailsView(
+                    source: .library(book),
+                    onHeroPlacement: place,
+                    onClose: { select(nil) }
+                )
+                .transition(.opacity)
             }
+
+            grid
+                .allowsHitTesting(selectedBook == nil)
+
+            topChrome
+                .opacity(selectedBook == nil ? 1 : 0)
+                .allowsHitTesting(selectedBook == nil)
 
             // Camada da frente: a capa, que fica.
             if let flyingBook, heroPlacement.isPlaced {
@@ -110,11 +116,10 @@ struct Library: View {
         }
     }
 
-
     /// Abre ou fecha o detalhe, promovendo a capa tocada à camada da frente.
     private func select(_ book: Book?) {
         if let book {
-            // A capa arranca de onde está na prateleira, sem animação: só depois o
+            // A capa arranca de onde está na grade, sem animação: só depois o
             // detalhe se compõe e diz para onde ela vai.
             flyingBook = book
             // Sem frame de origem (capa nunca medida) não há de onde voar: a capa
@@ -154,35 +159,136 @@ struct Library: View {
         }
     }
 
-    private var shelvesScreen: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                searchField
+    // MARK: - Grade
 
+    private var grid: some View {
+        ScrollView {
+            Group {
                 if books.isEmpty {
                     emptyState
-                } else if booksByStatus.isEmpty {
+                } else if visibleBooks.isEmpty {
                     noResultsState
                 } else {
-                    ForEach(booksByStatus, id: \.status) { shelf in
-                        shelfView(shelf.status, books: shelf.items)
-                    }
+                    gridContent
                 }
             }
             .padding(.horizontal, Spacing.gutterList)
-            .padding(.top, Spacing.cardInset)
+            .padding(.top, chromeHeight)
             .padding(.bottom, Spacing.xxl)
         }
-        .background(Palette.surface)
+        .scrollIndicators(.never)
+        // Com o detalhe aberto a grade continua montada por baixo; rolá-la moveria as
+        // capas explodidas e a origem do voo de volta.
+        .scrollDisabled(selectedBook != nil)
     }
 
-    // MARK: - Cabeçalho e busca
+    private var gridContent: some View {
+        LazyVGrid(
+            columns: [GridItem(.flexible(), spacing: Spacing.lg), GridItem(.flexible(), spacing: Spacing.lg)],
+            spacing: Spacing.lg
+        ) {
+            ForEach(Array(visibleBooks.enumerated()), id: \.element.id) { index, book in
+                Button {
+                    select(book)
+                } label: {
+                    GridCover(
+                        book: book,
+                        width: columnWidth,
+                        showsStatus: statusFilter == nil,
+                        frameStore: frameStore,
+                        isRecording: selectedBook == nil,
+                        isFlying: flyingBook?.id == book.id
+                    )
+                }
+                .buttonStyle(.plain)
+                // Capas a direito: a explosão é o único movimento da grade.
+                .scaleEffect(explodes(book) ? 1.35 : 1)
+                .offset(explodeOffset(index: index))
+                .opacity(explodes(book) ? 0 : 1)
+                .zIndex(selectedBook == book ? 1 : 0)
+            }
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            gridWidth = width
+        }
+    }
 
-    /// Título e o "+" em ink. Figma `41:1019`.
+    private func explodes(_ book: Book) -> Bool {
+        selectedBook != nil && selectedBook != book
+    }
+
+    /// Empurra cada capa não selecionada radialmente para longe da célula tocada.
+    private func explodeOffset(index: Int) -> CGSize {
+        guard let selected = selectedBook,
+              let source = visibleBooks.firstIndex(of: selected),
+              source != index
+        else { return .zero }
+
+        let column = index % 2, row = index / 2
+        let sourceColumn = source % 2, sourceRow = source / 2
+        var dx = Double(column - sourceColumn)
+        let dy = Double(row - sourceRow)
+        // Mesma coluna: empurra na mesma para fora, senão a capa só se afastaria na vertical.
+        if dx == 0 { dx = column == 0 ? -0.5 : 0.5 }
+        let length = max(hypot(dx, dy), 0.001)
+        return CGSize(width: dx / length * 200, height: dy / length * 260)
+    }
+
+    // MARK: - Chrome fixo
+
+    /// Título, busca e o rail de status, sobre um material que se dissolve para baixo —
+    /// as capas passam por baixo dele em vez de colidirem com ele.
+    private var topChrome: some View {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            header
+                .padding(.horizontal, Spacing.gutterList)
+
+            searchField
+                .padding(.horizontal, Spacing.gutterList)
+
+            statusRail
+        }
+        .padding(.top, Spacing.cardInset)
+        .padding(.bottom, Spacing.lg)
+        .background(alignment: .top) {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    LinearGradient(
+                        colors: [Palette.surface.opacity(0.8), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .black, location: 0),
+                            .init(color: .black, location: 0.42),
+                            .init(color: .clear, location: 1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                // A cauda do esmaecido derrama para além dos chips.
+                .padding(.bottom, -95)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { height in
+            chromeHeight = height
+        }
+    }
+
+    /// Título e o "+" em ink. Figma `41:1019`. Com filtro, o título é o do status.
     private var header: some View {
         HStack {
-            Text(Localization.Library.title.string)
+            Text(statusFilter?.displayName ?? Localization.Library.title.string)
                 .textStyle(.titleScreenLarge)
                 .foregroundStyle(Palette.ink)
 
@@ -226,58 +332,50 @@ struct Library: View {
         .background(Capsule().fill(Palette.surfaceRaised))
     }
 
-    // MARK: - Prateleiras
+    // MARK: - Filtro por status
 
-    /// Uma prateleira: cabeça com nome, contagem e chevron, e as capas em linha.
-    /// Figma `41:1026`.
-    private func shelfView(_ status: BookStatus, books shelfBooks: [Book]) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
-                Text(status.displayName)
-                    .textStyle(.titleTertiary)
-                    .foregroundStyle(Palette.ink)
-
-                Text(Localization.Library.bookCount(shelfBooks.count))
-                    .textStyle(.captionFine)
-                    .foregroundStyle(Palette.inkFaint)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.iconLabel)
-                    .foregroundStyle(Palette.inkMeta)
-            }
-            .padding(.bottom, Spacing.sm)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(Palette.divider).frame(height: 1)
-            }
-
-            ScrollView(.horizontal) {
-                HStack(alignment: .top, spacing: Spacing.md) {
-                    ForEach(shelfBooks) { book in
-                        Button {
-                            select(book)
-                        } label: {
-                            ShelfCover(
-                                book: book,
-                                progress: status == .reading ? progressValue(for: book) : nil,
-                                frameStore: frameStore,
-                                isFlying: flyingBook?.id == book.id
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
+    /// As prateleiras viraram um rail de pílulas — mesma linguagem de cápsula do resto.
+    private var statusRail: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: Spacing.sm) {
+                chip(nil, Localization.Library.filterAll.string, filteredBooks.count)
+                ForEach(shelfOrder, id: \.self) { status in
+                    chip(status, status.displayName, filteredBooks.count { $0.status == status })
                 }
-                // A sombra das capas é cortada pelo ScrollView sem esta folga.
-                .padding(.vertical, Spacing.sm)
             }
-            .scrollIndicators(.never)
+            .padding(.horizontal, Spacing.gutterList)
         }
+        .scrollIndicators(.never)
+        .scrollClipDisabled()
     }
 
-    private func progressValue(for book: Book) -> Double {
-        guard book.numberOfPages > 0 else { return 0 }
-        return min(1, max(0, Double(book.progress ?? 0) / Double(book.numberOfPages)))
+    private func chip(_ status: BookStatus?, _ label: String, _ count: Int) -> some View {
+        let isOn = statusFilter == status
+
+        return Button {
+            withAnimation(Motion.fast) { statusFilter = status }
+        } label: {
+            HStack(spacing: 6) {
+                if let status {
+                    Circle()
+                        .fill(isOn ? Palette.onBrand : status.tint)
+                        .frame(width: 7, height: 7)
+                }
+
+                Text(label)
+                    .textStyle(.label)
+
+                Text("\(count)")
+                    .textStyle(.captionFine)
+                    .foregroundStyle(isOn ? Palette.onBrand.opacity(0.6) : Palette.inkMeta)
+            }
+            .foregroundStyle(isOn ? Palette.onBrand : Palette.ink)
+            .padding(.horizontal, Spacing.cardInset)
+            .frame(height: 36)
+            .background(isOn ? Palette.ink : Palette.surfaceRaised, in: .capsule)
+            .overlay(Capsule().stroke(Palette.border, lineWidth: isOn ? 0 : 1))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Modal de adicionar livro
@@ -376,7 +474,6 @@ struct Library: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.xxl)
     }
-    
 }
 
 #Preview {

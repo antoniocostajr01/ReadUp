@@ -6,7 +6,7 @@ import SwiftUI
 ///
 /// Não é um `Form`: o desenho pede campos sublinhados sobre creme, sem os agrupamentos
 /// e o fundo cinza que a lista do sistema impõe.
-struct BookFormView: View {
+struct BookFormView: View {    
     @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 

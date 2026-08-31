@@ -213,19 +213,23 @@ some other way. Figma covers are typeset placeholders until they do.
   with italic serif reserved for author names.
 - **The tab bar is the one component deliberately not built from Figma.** The
   `Chrome/Tab bar` pill (`16:46`, specimens `37:311`/`37:323`/`37:335`) is
-  reference-only: the app uses the **native iOS tab bar**, in the system colour, with
-  the three tabs the component defines — Home, Library, Profile. It carries no
-  `.tint()`: on iOS 26 a tint bleeds into the whole Liquid Glass capsule rather than
-  colouring just the selection, which turned the bar a muddy olive. The bar is the
+  reference-only: the app uses the **native iOS tab bar**, painted ink with cream
+  items, with the three tabs the component defines — Home, Library, Profile. It
+  carries no `.tint()`: on iOS 26 a tint bleeds into the whole Liquid Glass capsule
+  rather than colouring just the selection, which turned the bar a muddy olive. The
+  colours are set once in `ReadUpApp.init()` via `UITabBarAppearance`. The bar is the
   single sanctioned exception to "never a grey".
 
-  **Gotcha:** on iOS 26 the *native* tab bar is itself a floating translucent capsule,
-  so it looks almost exactly like the custom pill that was removed. The tell is the
-  filled selection indicator behind the active tab — the custom bar never drew one.
+  **Gotcha:** with Liquid Glass *on*, the iOS 26 native bar is itself a floating
+  translucent capsule and looks almost exactly like a custom pill — which is how an
+  earlier pass came to believe a change had not shipped. With the opt-out below in
+  place the bar is opaque and edge-to-edge, so that confusion no longer applies; it
+  comes straight back if the key is ever removed.
 
-  **An ink bar was built and then reverted** (`688282e`, reverted). Its colouring is
-  still an open question, deliberately parked. What was measured, so it isn't
-  re-derived — each of these looks plausible and is wrong:
+  **The ink bar costs the whole app's Liquid Glass.** It was built (`688282e`),
+  reverted for that cost, and put back on 2026-08-31 at the user's request. A custom
+  pill matching `pocBookAnimation` was tried in between and dropped. What was
+  measured, so it isn't re-derived — each of these looks plausible and is wrong:
 
   - `.tint(.ink)` on the `TabView` tints the whole glass capsule, not just the
     selection: the bar comes out a muddy `#6e695e` olive.
@@ -240,10 +244,9 @@ some other way. Figma covers are typeset placeholders until they do.
   - The only thing that produced a true ink `#171512` background was
     `UIDesignRequiresCompatibility` in `Info.plist` — which opts the **whole app** out
     of Liquid Glass, and is a temporary Apple escape hatch that dies against a future
-    SDK. That cost is why it was reverted.
-
-  Note the app's `AccentColor` is still the retired brand green `#2E7D32`, so with no
-  `.tint()` the selected tab reads green. That is a separate, unmade decision.
+    SDK. That cost is why it was reverted once — and it is the cost the app is now
+    paying: `UIDesignRequiresCompatibility` is in `Info.plist`, so **no** surface in
+    the app gets Liquid Glass, not just the tab bar.
 
 `DesignSystem/` in the app already routed every screen through semantic tokens, so
 adopting the palette was an edit to `Palette` in `Theme+Color.swift` plus the colorsets
