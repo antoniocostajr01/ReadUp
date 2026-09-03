@@ -14,18 +14,9 @@ struct BookCoverView: View {
     var author: String? = nil
 
     var body: some View {
-        AsyncImage(url: coverUrl.flatMap(URL.init(string:))) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            default:
-                placeholder
-            }
-        }
-        .frame(width: width, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        CoverImage(url: coverUrl.flatMap(URL.init(string:))) { placeholder }
+            .frame(width: width, height: height)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 
     @ViewBuilder

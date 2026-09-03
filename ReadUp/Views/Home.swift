@@ -26,12 +26,6 @@ struct Home: View {
     /// O livro do herói: o que está sendo lido agora. Com mais de um, o primeiro.
     private var heroBook: Book? { readingBooks.first }
 
-    /// Capa em cache para um livro (se já baixada pela `LibraryStore`).
-    private func coverData(for book: Book) -> Data? {
-        guard let url = book.coverUrl else { return nil }
-        return store.coverCache[url]
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
@@ -43,8 +37,7 @@ struct Home: View {
                 if let heroBook {
                     CurrentlyReadingCard(
                         book: heroBook,
-                        progressValue: viewModel.progressValue(for: heroBook),
-                        coverData: coverData(for: heroBook)
+                        progressValue: viewModel.progressValue(for: heroBook)
                     )
                     actions(for: heroBook)
                 } else {
@@ -61,11 +54,6 @@ struct Home: View {
         .background(Palette.surface)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
-        // A chave inclui a coverUrl: trocando a capa de um livro que já estava aqui, a
-        // lista de ids não muda e a task não reexecutava — a capa antiga ficava na tela.
-        .task(id: readingBooks.map { "\($0.id):\($0.coverUrl ?? "")" }) {
-            await store.ensureReadingCovers()
-        }
         .navigationDestination(item: $activeReadingBook) { book in
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
         }

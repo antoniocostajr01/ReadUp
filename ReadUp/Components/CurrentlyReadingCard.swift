@@ -8,8 +8,6 @@ import SwiftUI
 struct CurrentlyReadingCard: View {
     let book: Book
     let progressValue: Double
-    /// Capa já baixada (cache da `LibraryStore`). Se presente, é exibida direto, sem `AsyncImage`.
-    var coverData: Data? = nil
 
     private var pageLine: String {
         let current = max(0, book.progress ?? 0)
@@ -20,7 +18,7 @@ struct CurrentlyReadingCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            cover
+            CoverImage(url: book.coverUrl.flatMap(URL.init(string:))) { Palette.surfaceSunken }
                 .frame(maxWidth: .infinity)
                 .frame(height: Spacing.heroHeight)
                 .clipped()
@@ -56,22 +54,6 @@ struct CurrentlyReadingCard: View {
         }
         .frame(height: Spacing.heroHeight)
         .clipShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
-    }
-
-    /// Mostra a capa do cache (estável) ou cai no `AsyncImage` se ainda não baixada.
-    @ViewBuilder
-    private var cover: some View {
-        if let coverData, let image = UIImage(data: coverData) {
-            Image(uiImage: image).resizable().scaledToFill()
-        } else {
-            AsyncImage(url: book.coverUrl.flatMap(URL.init(string:))) { phase in
-                if case .success(let image) = phase {
-                    image.resizable().scaledToFill()
-                } else {
-                    Palette.surfaceSunken
-                }
-            }
-        }
     }
 }
 

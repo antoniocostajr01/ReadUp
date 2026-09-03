@@ -30,6 +30,12 @@ struct Library: View {
     @State private var heroPlacement = HeroPlacement()
     /// `true` durante o voo. Fora dele o `placement` muda por scroll, e mola nenhuma.
     @State private var isFlying = false
+    /// Identifica o voo em curso. A `completion` de um `withAnimation` chega no fim da
+    /// mola — se nesse meio tempo outro voo começou (fechar um livro e abrir o seguinte
+    /// antes de a animação acabar), a conclusão antiga não pode mexer em mais nada:
+    /// era ela que apagava o `flyingBook` do livro recém-aberto, deixando o detalhe sem
+    /// capa e a capa da grade parada por cima dele.
+    @State private var flightID = 0
     @State private var isShowingScanner = false
     @State private var isShowingSearch = false
     @State private var isShowingAddManually = false
@@ -118,6 +124,9 @@ struct Library: View {
 
     /// Abre ou fecha o detalhe, promovendo a capa tocada à camada da frente.
     private func select(_ book: Book?) {
+        flightID += 1
+        let flight = flightID
+
         if let book {
             // A capa arranca de onde está na grade, sem animação: só depois o
             // detalhe se compõe e diz para onde ela vai.
@@ -139,6 +148,7 @@ struct Library: View {
                 selectedBook = nil
                 if let origin { heroPlacement = HeroPlacement(frame: origin) }
             } completion: {
+                guard flight == flightID else { return }
                 flyingBook = nil
                 isFlying = false
             }
@@ -152,9 +162,11 @@ struct Library: View {
             heroPlacement = placement
             return
         }
+        let flight = flightID
         withAnimation(Motion.heroFlight) {
             heroPlacement = placement
         } completion: {
+            guard flight == flightID else { return }
             isFlying = false
         }
     }

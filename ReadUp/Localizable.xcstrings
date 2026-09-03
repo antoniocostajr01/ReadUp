@@ -3436,13 +3436,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Point at the barcode on the back of the book"
+            "value" : "Point the camera at the barcode on the back cover"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aponte para o código de barras na contracapa do livro"
+            "value" : "Aponte a câmera para o código de barras na contracapa"
           }
         }
       }

@@ -78,6 +78,15 @@ struct ISBNScanView: View {
         .fullScreenCover(item: $addedBook) { book in
             BookAddedView(book: book) { dismiss() }
         }
+        .onAppear {
+            // Todo livro escaneado precisa passar por confirmação — em vez de esperar o
+            // usuário tocar a linha, a folha 08c/08b abre sozinha assim que o ISBN resolve.
+            // Se já tem uma linha aberta, a nova espera na lista em vez de interromper.
+            viewModel.onResolved = { book in
+                guard inspectedRow == nil else { return }
+                inspectedRow = book
+            }
+        }
     }
 
     // MARK: - Lista do que foi escaneado

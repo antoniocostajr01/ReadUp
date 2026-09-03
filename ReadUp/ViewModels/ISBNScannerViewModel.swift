@@ -21,6 +21,11 @@ final class ISBNScannerViewModel {
 
     var scanned: [ScannedBook] = []
 
+    /// Chamado quando um ISBN termina de resolver (achado ou não) — é o gatilho pra
+    /// tela abrir a folha de confirmação (08c/08b) sozinha, sem o usuário precisar
+    /// tocar na linha. Todo livro escaneado passa por confirmação explícita.
+    var onResolved: ((ScannedBook) -> Void)?
+
     private let service: GoogleBooksService
     private let feedback = UIImpactFeedbackGenerator(style: .light)
 
@@ -46,6 +51,7 @@ final class ISBNScannerViewModel {
             let book = try? await service.lookupISBN(isbn)
             guard let index = scanned.firstIndex(where: { $0.isbn == isbn }) else { return }
             scanned[index].state = book.map(ScannedBook.State.found) ?? .notFound
+            onResolved?(scanned[index])
         }
     }
 
@@ -55,12 +61,16 @@ final class ISBNScannerViewModel {
 
     /// Adiciona todos os livros resolvidos (`.found`) à biblioteca. Devolve os livros
     /// criados — a tela de conquista exibe o primeiro deles.
+    ///
+    /// Remove cada linha adicionada da lista: sem isso o "Add N books" continuava
+    /// oferecendo os mesmos livros já salvos, e um segundo toque duplicava tudo.
     func addAll(to store: LibraryStore) async -> [Book] {
         var added: [Book] = []
         for row in scanned {
             guard case .found(let book) = row.state else { continue }
             if let created = await store.addBook(from: book, status: row.status, isbn: row.isbn) {
                 added.append(created)
+                remove(row)
             }
         }
         return added

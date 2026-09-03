@@ -32,6 +32,12 @@ struct ReadUpApp: App {
     /// temporária da Apple: quando ela sumir, ou a barra vira vidro e o fundo ink se
     /// perde, ou a pílula volta como view customizada.
     init() {
+        // O `URLCache` padrão do iOS é pequeno demais para capas (poucos MB em disco),
+        // então elas eram rebaixadas entre execuções. Com 200 MB, uma capa já vista
+        // volta do disco no próximo cold start sem tocar na rede.
+        URLCache.shared = URLCache(memoryCapacity: 32 * 1024 * 1024,
+                                   diskCapacity: 200 * 1024 * 1024)
+
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = UIColor(Palette.ink)

@@ -10,11 +10,6 @@ final class LibraryStore {
     var isLoading = false
     var errorMessage: String?
 
-    /// Cache em memória das capas já baixadas (chave = `coverUrl`).
-    /// O `AsyncImage` recarrega ao reciclar células e falha sob carga; este cache garante
-    /// que as capas da Home (livros `reading`) fiquem estáveis depois de baixadas uma vez.
-    var coverCache: [String: Data] = [:]
-
     private let bookService = BookService()
     private let sessionService = ReadingSessionService()
 
@@ -35,62 +30,26 @@ final class LibraryStore {
             let dtos = try await sessionService.fetchSessions(token: token)
             books = fetchedBooks
             sessions = assemble(dtos, books: fetchedBooks)
+            warmCovers()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Deixa as capas da biblioteca baixadas antes de a grade aparecer.
+    /// Fora do `await` de propósito: uma capa lenta não deve segurar a tela de carga.
+    private func warmCovers() {
+        let urls = books.compactMap { $0.coverUrl.flatMap(URL.init(string:)) }
+        Task { await CoverImageCache.warm(urls) }
     }
 
     /// Limpa todos os dados em memória (chamado no logout).
     func reset() {
         books = []
         sessions = []
-        coverCache = [:]
+        CoverImageCache.clear()
         errorMessage = nil
         isLoading = false
-    }
-
-    // MARK: - Capas (Home)
-
-    /// Verifica o estado das capas dos livros `reading` e baixa (GET) só as que ainda
-    /// não estão no cache. Chamado quando a Home aparece, para garantir que as capas
-    /// sejam exibidas mesmo que o `AsyncImage` tenha falhado ou os dados sejam recentes.
-    func ensureReadingCovers() async {
-        let urls = books
-            .filter { $0.status == .reading }
-            .compactMap { $0.coverUrl }
-            .filter { !$0.isEmpty }
-
-        let missing = Array(Set(urls.filter { coverCache[$0] == nil }))
-        guard !missing.isEmpty else { return }
-
-        let downloaded = await withTaskGroup(of: (String, Data?).self) { group -> [(String, Data)] in
-            for urlString in missing {
-                group.addTask { (urlString, await Self.downloadImage(from: urlString)) }
-            }
-            var result: [(String, Data)] = []
-            for await (urlString, data) in group {
-                if let data { result.append((urlString, data)) }
-            }
-            return result
-        }
-
-        for (urlString, data) in downloaded {
-            coverCache[urlString] = data
-        }
-    }
-
-    /// Baixa os bytes de uma imagem, validando que a resposta é 2xx.
-    private static func downloadImage(from urlString: String) async -> Data? {
-        guard let url = URL(string: urlString) else { return nil }
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-                return nil
-            }
-            return data
-        } catch {
-            return nil
-        }
     }
 
     // MARK: - Livros
@@ -141,8 +100,8 @@ final class LibraryStore {
             if let index = books.firstIndex(where: { $0.id == updated.id }) {
                 books[index] = updated
             }
-            if let coverUrl = updated.coverUrl {
-                coverCache.removeValue(forKey: coverUrl)
+            if let coverUrl = updated.coverUrl.flatMap(URL.init(string:)) {
+                CoverImageCache.invalidate(coverUrl)
             }
             for i in sessions.indices where sessions[i].book.id == updated.id {
                 sessions[i].book = updated

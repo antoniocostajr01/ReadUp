@@ -29,10 +29,17 @@ struct ScannedBookSheet: View {
 
     var body: some View {
         Group {
-            if case .found(let book) = row.state {
+            switch row.state {
+            case .found(let book):
                 foundBody(book)
-            } else {
+            case .notFound:
                 notFoundBody
+            case .resolving:
+                // A linha some da lista assim que resolve; ver isto aqui é uma corrida
+                // rara (toque bem no instante em que o lookup termina), não o normal.
+                ProgressView()
+                    .tint(Palette.inkMuted)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .padding(.horizontal, Spacing.sheetInset)
@@ -47,6 +54,26 @@ struct ScannedBookSheet: View {
         .sheet(isPresented: $isShowingManualEntry) {
             BookFormView(mode: .create, prefilledISBN: row.isbn)
         }
+        // "Buscar pelo título" e "Cadastrar manualmente" são fugas do 08b que adicionam
+        // o livro por um caminho totalmente à parte (Search / BookFormView já mostram a
+        // própria conquista sozinhas) — sem isto a linha "não encontrado" ficava presa na
+        // lista do scanner depois de o livro já estar salvo. Reage ao fechamento da folha
+        // filha, não à biblioteca crescer direto: fazer isso ali correria com a conquista
+        // que Search/BookFormView ainda estão prestes a mostrar e a derrubaria junto.
+        .onChange(of: isShowingSearch) { _, isShowing in
+            guard !isShowing else { return }
+            cleanUpIfAdded()
+        }
+        .onChange(of: isShowingManualEntry) { _, isShowing in
+            guard !isShowing else { return }
+            cleanUpIfAdded()
+        }
+    }
+
+    private func cleanUpIfAdded() {
+        guard store.books.contains(where: { $0.isbn == row.isbn }) else { return }
+        viewModel.remove(row)
+        dismiss()
     }
 
     // MARK: - Encontrado. Figma `47:1379`.
