@@ -55,6 +55,9 @@ enum Spacing {
     /// 44×64 — the cover in a History session row, one step up from the Home row.
     static let coverHistoryWidth: CGFloat = 44
     static let coverHistoryHeight: CGFloat = 64
+    /// 61×88 — the cover in the reading-session Live Activity. Figma `83:301`.
+    static let coverActivityWidth: CGFloat = 61
+    static let coverActivityHeight: CGFloat = 88
     /// 232×336 — o card do carrossel de "continuar lendo" do Home. A altura vem da
     /// mesma proporção de capa da prateleira (72×104): o card é um livro, e a 220 ele
     /// lia como um banner deitado.

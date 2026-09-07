@@ -6,11 +6,47 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA110000000000000000000B /* ReadUpWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA1100000000000000000002 /* ReadUpWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA110000000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B95F956C2E43EE15004461E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA1100000000000000000001;
+			remoteInfo = ReadUpWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA110000000000000000000A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA110000000000000000000B /* ReadUpWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		AA1100000000000000000002 /* ReadUpWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ReadUpWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B95F95742E43EE15004461E5 /* ReadUp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ReadUp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA1100000000000000000011 /* Exceptions for "ReadUpWidgets" folder in "ReadUpWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA1100000000000000000001 /* ReadUpWidgets */;
+		};
 		B9F62CD72FC3B9B300E6831C /* Exceptions for "ReadUp" folder in "ReadUp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -19,9 +55,44 @@
 			);
 			target = B95F95732E43EE15004461E5 /* ReadUp */;
 		};
+		AA1100000000000000000012 /* Exceptions for "ReadUp/DesignSystem" folder in "ReadUpWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Theme+BookStatus.swift",
+			);
+			target = AA1100000000000000000001 /* ReadUpWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		AA1100000000000000000003 /* ReadUpWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA1100000000000000000011 /* Exceptions for "ReadUpWidgets" folder in "ReadUpWidgets" target */,
+			);
+			path = ReadUpWidgets;
+			sourceTree = "<group>";
+		};
+		AA1100000000000000000004 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		AA1100000000000000000005 /* DesignSystem */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA1100000000000000000012 /* Exceptions for "ReadUp/DesignSystem" folder in "ReadUpWidgets" target */,
+			);
+			name = DesignSystem;
+			path = ReadUp/DesignSystem;
+			sourceTree = "<group>";
+		};
+		AA1100000000000000000006 /* Fonts */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = Fonts;
+			path = ReadUp/Resources/Fonts;
+			sourceTree = "<group>";
+		};
 		B95F95762E43EE15004461E5 /* ReadUp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -33,6 +104,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		AA1100000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B95F95712E43EE15004461E5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -43,11 +121,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B9028618304E5A4700D09E74 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				AA1100000000000000000005 /* DesignSystem */,
+				AA1100000000000000000006 /* Fonts */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		B95F956B2E43EE15004461E5 = {
 			isa = PBXGroup;
 			children = (
 				B95F95762E43EE15004461E5 /* ReadUp */,
+				AA1100000000000000000003 /* ReadUpWidgets */,
+				AA1100000000000000000004 /* Shared */,
 				B95F95752E43EE15004461E5 /* Products */,
+				B9028618304E5A4700D09E74 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -55,6 +145,7 @@
 			isa = PBXGroup;
 			children = (
 				B95F95742E43EE15004461E5 /* ReadUp.app */,
+				AA1100000000000000000002 /* ReadUpWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -62,6 +153,31 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AA1100000000000000000001 /* ReadUpWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA1100000000000000000010 /* Build configuration list for PBXNativeTarget "ReadUpWidgets" */;
+			buildPhases = (
+				AA1100000000000000000007 /* Sources */,
+				AA1100000000000000000008 /* Frameworks */,
+				AA1100000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA1100000000000000000003 /* ReadUpWidgets */,
+				AA1100000000000000000004 /* Shared */,
+				AA1100000000000000000005 /* DesignSystem */,
+				AA1100000000000000000006 /* Fonts */,
+			);
+			name = ReadUpWidgets;
+			packageProductDependencies = (
+			);
+			productName = ReadUpWidgets;
+			productReference = AA1100000000000000000002 /* ReadUpWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		B95F95732E43EE15004461E5 /* ReadUp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B95F957F2E43EE16004461E5 /* Build configuration list for PBXNativeTarget "ReadUp" */;
@@ -69,12 +185,15 @@
 				B95F95702E43EE15004461E5 /* Sources */,
 				B95F95712E43EE15004461E5 /* Frameworks */,
 				B95F95722E43EE15004461E5 /* Resources */,
+				AA110000000000000000000A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AA110000000000000000000D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
+				AA1100000000000000000004 /* Shared */,
 				B95F95762E43EE15004461E5 /* ReadUp */,
 			);
 			name = ReadUp;
@@ -94,6 +213,9 @@
 				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
+					AA1100000000000000000001 = {
+						CreatedOnToolsVersion = 26.0;
+					};
 					B95F95732E43EE15004461E5 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -114,11 +236,19 @@
 			projectRoot = "";
 			targets = (
 				B95F95732E43EE15004461E5 /* ReadUp */,
+				AA1100000000000000000001 /* ReadUpWidgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AA1100000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B95F95722E43EE15004461E5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -129,6 +259,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AA1100000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B95F95702E43EE15004461E5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -138,7 +275,67 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		AA110000000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA1100000000000000000001 /* ReadUpWidgets */;
+			targetProxy = AA110000000000000000000C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		AA110000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = PZ69U288R6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ReadUpWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ReadUp;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.5;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antoniocosta.ReadUpApp.ReadUpWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AA110000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = PZ69U288R6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ReadUpWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ReadUp;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.5;
+				PRODUCT_BUNDLE_IDENTIFIER = com.antoniocosta.ReadUpApp.ReadUpWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		B95F957D2E43EE16004461E5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = B95F95762E43EE15004461E5 /* ReadUp */;
@@ -349,6 +546,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		AA1100000000000000000010 /* Build configuration list for PBXNativeTarget "ReadUpWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA110000000000000000000E /* Debug */,
+				AA110000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		B95F956F2E43EE15004461E5 /* Build configuration list for PBXProject "ReadUp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

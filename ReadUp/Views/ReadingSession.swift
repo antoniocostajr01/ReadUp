@@ -72,7 +72,7 @@ struct ReadingSession: View {
         }
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
-            viewModel.start()
+            viewModel.start(book: selectedBook)
         }
         .onDisappear {
             viewModel.stopAllTimers()
@@ -125,6 +125,7 @@ struct ReadingSession: View {
         .alert(Localization.ReadingSession.leaveTitle.string, isPresented: $showExitConfirmation) {
             Button(Localization.ReadingSession.leave.string, role: .destructive) {
                 viewModel.stopAllTimers()
+                viewModel.endLiveActivity()
                 dismiss()
             }
             Button(Localization.ReadingSession.stay.string, role: .cancel) {}
@@ -138,6 +139,7 @@ struct ReadingSession: View {
                 pagesRead: Int(viewModel.lastPageRead) ?? selectedBook.progress ?? 0,
                 previousProgress: viewModel.previousProgress,
                 onSessionSaved: {
+                    viewModel.endLiveActivity()
                     activeReadingBook = nil
                 }
             )

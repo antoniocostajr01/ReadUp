@@ -36,6 +36,11 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   topic (`LiteraryTopicClassifier`, `AIChatView`, `LiteraryAssistantViewModel`).
 - **Onboarding.** Genre selection on first launch, used to seed genre shelves and
   personalize the home screen.
+- **Live Activity.** A reading session shows on the lock screen and in the Dynamic
+  Island (`ReadUpWidgets/`, Figma `22 · Lock screen — Live Activity`). It carries the
+  book and a timer and needs no updates at all: the timer is drawn from the session's
+  start date, so the card keeps counting with the app suspended — which is the point,
+  since the session screen tells the user to lock the phone.
 - **Localization.** English and Portuguese via `Localizable.xcstrings`, with one
   `Localization+<Area>.swift` file per feature area under `ReadUp/Localizations/`.
 
@@ -59,7 +64,18 @@ ReadUp/
   Services/         HTTP clients — one per backend resource (auth, books, sessions...)
   ViewModels/       @Observable view models, one per feature
   Views/            SwiftUI views, one per screen
+ReadUpWidgets/     Widget extension. Today it holds exactly one thing: the reading
+                   session Live Activity.
+Shared/            The only code both targets compile — the Live Activity's
+                   attributes and the typographic cover placeholder.
 ```
+
+The widget target also compiles `ReadUp/DesignSystem/` itself, pulled in as a nested
+file-system-synchronized group rather than copied, so the Live Activity is set in the
+same tokens as the app. One file is excluded from that group in the widget target:
+`Theme+BookStatus.swift`, which extends a model type the widget doesn't have. If a
+future design-system file reaches for something outside `DesignSystem/`, it needs the
+same exception — or the widget stops building.
 
 `DesignSystem/` is a hard boundary: `Theme+Color.swift` (semantic roles on a `Palette`
 enum, mirrored onto both `Color` and `ShapeStyle`), `Theme+Typography.swift`

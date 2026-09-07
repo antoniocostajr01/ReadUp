@@ -1,3 +1,4 @@
+import ActivityKit
 import Foundation
 import SwiftUI
 
@@ -13,20 +14,25 @@ final class ReadingSessionViewModel {
     var previousProgress = 0
 
     private static let countdownDuration: TimeInterval = 5
+    /// Teto da Live Activity: uma sessão esquecida (app morto, usuário dormiu)
+    /// envelhece sozinha em vez de morar no lock screen para sempre.
+    private static let maxSessionDuration: TimeInterval = 8 * 60 * 60
 
     // Âncora: fim do countdown == início da sessão. Todo o estado do timer é
     // derivado de Date.now - âncora, então o tempo segue contando mesmo com o
     // app suspenso (tela bloqueada/background).
     private(set) var sessionStartDate: Date?
     private var uiTimer: Timer?
+    private var activity: Activity<ReadingSessionAttributes>?
 
     // Idempotente: não reseta a âncora se a sessão já começou (ex.: voltar do summary).
-    func start() {
+    func start(book: Book) {
         if sessionStartDate == nil {
             sessionStartDate = Date.now.addingTimeInterval(Self.countdownDuration)
         }
         refresh()
         startUITimer()
+        startLiveActivity(for: book)
     }
 
     func refresh(now: Date = .now) {
@@ -52,6 +58,39 @@ final class ReadingSessionViewModel {
     func stopAllTimers() {
         uiTimer?.invalidate()
         uiTimer = nil
+    }
+
+    // MARK: Live Activity
+
+    /// Também idempotente: `start(book:)` roda de novo ao voltar do summary, e uma
+    /// segunda `request` criaria um card duplicado no lock screen.
+    private func startLiveActivity(for book: Book) {
+        guard activity == nil,
+              let start = sessionStartDate,
+              ActivityAuthorizationInfo().areActivitiesEnabled
+        else { return }
+
+        let content = ActivityContent(
+            state: ReadingSessionAttributes.ContentState(),
+            staleDate: start.addingTimeInterval(Self.maxSessionDuration)
+        )
+
+        // Sem update e sem push: o card desenha o cronômetro a partir de `startDate`.
+        activity = try? Activity.request(
+            attributes: ReadingSessionAttributes(
+                bookTitle: book.title,
+                bookAuthor: book.author,
+                startDate: start
+            ),
+            content: content,
+            pushType: nil
+        )
+    }
+
+    func endLiveActivity() {
+        guard let activity else { return }
+        self.activity = nil
+        Task { await activity.end(nil, dismissalPolicy: .immediate) }
     }
 
     func timeString(from seconds: Int) -> String {
