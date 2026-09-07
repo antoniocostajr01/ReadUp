@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UserNotifications
 
 struct Profile: View {
     @Environment(AuthManager.self) private var authManager
@@ -11,6 +12,10 @@ struct Profile: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var showEditName = false
     @State private var draftName = ""
+    /// "Edit profile" abre a escolha; daí sai ou a foto ou o nome.
+    @State private var showEditOptions = false
+    @State private var showPhotoPicker = false
+    @State private var showGenrePicker = false
 
     private var displayName: String {
         authManager.currentUser?.name ?? "Reader"
@@ -37,10 +42,6 @@ struct Profile: View {
         GenreCatalog.genres(for: authManager.genres)
     }
 
-    private var availableToAdd: [Genre] {
-        GenreCatalog.all.filter { !authManager.genres.contains($0.title) }
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -56,11 +57,32 @@ struct Profile: View {
         .toolbar(.hidden, for: .navigationBar)
         .frame(maxWidth: .infinity)
         .background(Palette.surface)
-        .confirmationDialog(Localization.Profile.signOutConfirmTitle.string, isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
+        // Mesma forma da exclusão de conta: sair é destrutivo o bastante para merecer um
+        // alerta com explicação, não um balão de ação.
+        .alert(Localization.Profile.signOutConfirmTitle.string, isPresented: $showSignOutConfirmation) {
             Button(Localization.Profile.signOut.string, role: .destructive) {
                 authManager.signOut()
             }
             Button(Localization.Generic.cancel.string, role: .cancel) {}
+        } message: {
+            Text(Localization.Profile.signOutConfirmMessage.string)
+        }
+        .confirmationDialog(Localization.Profile.editProfile.string, isPresented: $showEditOptions, titleVisibility: .visible) {
+            Button(Localization.Profile.changePhoto.string) { showPhotoPicker = true }
+            Button(Localization.Profile.editName.string) {
+                draftName = authManager.currentUser?.name ?? ""
+                showEditName = true
+            }
+            if avatarImage != nil {
+                Button(Localization.Profile.removePhoto.string, role: .destructive) {
+                    Task { await authManager.removeAvatar() }
+                }
+            }
+            Button(Localization.Generic.cancel.string, role: .cancel) {}
+        }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images, photoLibrary: .shared())
+        .fullScreenCover(isPresented: $showGenrePicker) {
+            GenreOnboardingView(mode: .editing, preselected: authManager.genres)
         }
         .alert(Localization.Profile.deleteAccountConfirmTitle.string, isPresented: $showDeleteAccountConfirmation) {
             Button(Localization.Profile.deleteAccountConfirmAction.string, role: .destructive) {
@@ -101,42 +123,32 @@ struct Profile: View {
 
     // MARK: - Identidade
 
-    /// Avatar, nome e "editar perfil" numa linha. Figma `41:1089`.
+    /// Avatar e nome, com o "editar perfil" como botão de verdade logo abaixo.
+    /// Figma `41:1089`.
+    ///
+    /// Antes o editar era um link de texto de 13pt que só trocava o nome, e a foto se
+    /// mudava tocando no avatar — dois caminhos escondidos. Agora é uma pílula da mesma
+    /// família dos outros botões do app, e ela abre a escolha entre foto e nome.
     private var identity: some View {
-        HStack(spacing: Spacing.lg) {
-            PhotosPicker(selection: $selectedPhoto, matching: .images, photoLibrary: .shared()) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            HStack(spacing: Spacing.lg) {
                 avatarView
-            }
-            .disabled(authManager.isLoading)
 
-            VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(displayName)
                     .textStyle(.titleBook)
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2)
 
-                Button {
-                    draftName = authManager.currentUser?.name ?? ""
-                    showEditName = true
-                } label: {
-                    Text(Localization.Profile.editProfile.string)
-                        .textStyle(.captionDefault)
-                        .foregroundStyle(Palette.ink)
-                }
-                .buttonStyle(.plain)
-                .disabled(authManager.isLoading)
-
-                if avatarImage != nil {
-                    Button(Localization.Profile.removePhoto.string) {
-                        Task { await authManager.removeAvatar() }
-                    }
-                    .textStyle(.captionDefault)
-                    .foregroundStyle(Palette.danger)
-                    .disabled(authManager.isLoading)
-                }
+                Spacer(minLength: 0)
             }
 
-            Spacer(minLength: 0)
+            ReadUpButton(
+                title: Localization.Profile.editProfile.string,
+                variant: .secondary,
+                isLoading: authManager.isLoading
+            ) {
+                showEditOptions = true
+            }
         }
     }
 
@@ -195,9 +207,7 @@ struct Profile: View {
     private var settings: some View {
         VStack(spacing: 0) {
             settingsRow(Localization.Profile.notifications.string) {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
+                Task { await openNotificationSettings() }
             }
 
             settingsRow(Localization.Profile.signOut.string) {
@@ -253,22 +263,18 @@ struct Profile: View {
                     .textStyle(.titleSecondary)
                     .foregroundStyle(Palette.ink)
                 Spacer()
-                if !availableToAdd.isEmpty {
-                    Menu {
-                        ForEach(availableToAdd) { genre in
-                            Button {
-                                add(genre)
-                            } label: {
-                                Label(title: { Text(genre.localizedTitle) }, icon: { Image(systemName: genre.icon) })
-                            }
-                        }
-                    } label: {
-                        Text(Localization.Generic.add.string)
-                            .textStyle(.label)
-                            .foregroundStyle(Palette.ink)
-                    }
-                    .disabled(authManager.isLoading)
+                // Abre a mesma tela de chips caindo do onboarding, com os gêneros atuais
+                // já marcados — em vez de um menu de lista, que não se parecia com nada
+                // mais no app.
+                Button {
+                    showGenrePicker = true
+                } label: {
+                    Text(Localization.Generic.add.string)
+                        .textStyle(.label)
+                        .foregroundStyle(Palette.ink)
                 }
+                .buttonStyle(.plain)
+                .disabled(authManager.isLoading)
             }
 
             if chosenGenres.isEmpty {
@@ -311,9 +317,24 @@ struct Profile: View {
 
     // MARK: - Ações
 
-    private func add(_ genre: Genre) {
-        let updated = authManager.genres + [genre.title]
-        Task { await authManager.updateGenres(updated) }
+    /// Leva às notificações do ReadUp nos Ajustes do iOS.
+    ///
+    /// `openSettingsURLString` só tem para onde ir depois que o app pediu alguma
+    /// permissão — sem isso ele não tem página nos Ajustes, e era por isso que tocar
+    /// aqui não fazia nada: o ReadUp nunca pediu nenhuma. Então o primeiro toque pede a
+    /// autorização de notificação, que é o que esta linha promete; do segundo em diante
+    /// o link abre a página do app.
+    private func openNotificationSettings() async {
+        let center = UNUserNotificationCenter.current()
+        let status = await center.notificationSettings().authorizationStatus
+
+        if status == .notDetermined {
+            _ = try? await center.requestAuthorization(options: [.alert, .badge, .sound])
+            return
+        }
+
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        await UIApplication.shared.open(url)
     }
 
     private func remove(_ genre: Genre) {

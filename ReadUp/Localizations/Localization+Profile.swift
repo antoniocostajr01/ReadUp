@@ -20,6 +20,7 @@ public extension Localization {
         case namePlaceholder
         case signOut
         case signOutConfirmTitle
+        case signOutConfirmMessage
         case yourGenres
         case noGenres
         case deleteAccount
@@ -42,6 +43,7 @@ public extension Localization {
             case .namePlaceholder: "profile.namePlaceholder"
             case .signOut: "profile.signOut"
             case .signOutConfirmTitle: "profile.signOutConfirmTitle"
+            case .signOutConfirmMessage: "profile.signOutConfirmMessage"
             case .yourGenres: "profile.yourGenres"
             case .noGenres: "profile.noGenres"
             case .deleteAccount: "profile.deleteAccount"
