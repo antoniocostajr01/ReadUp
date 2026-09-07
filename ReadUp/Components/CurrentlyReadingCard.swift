@@ -8,6 +8,10 @@ import SwiftUI
 struct CurrentlyReadingCard: View {
     let book: Book
     let progressValue: Double
+    /// `nil` = sangra na largura toda (o herói original). Com um valor, vira um card do
+    /// carrossel do Home.
+    var width: CGFloat? = nil
+    var height: CGFloat = Spacing.heroHeight
 
     private var pageLine: String {
         let current = max(0, book.progress ?? 0)
@@ -18,9 +22,20 @@ struct CurrentlyReadingCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            CoverImage(url: book.coverUrl.flatMap(URL.init(string:))) { Palette.surfaceSunken }
+            // Sem capa, cai no placeholder tipográfico do `BookCoverView` — é ele que os
+            // cards "S" e "O" do Figma mostram, não um preenchimento chapado.
+            CoverImage(url: book.coverUrl.flatMap(URL.init(string:))) {
+                BookCoverView(
+                    coverUrl: nil,
+                    width: width ?? Spacing.readingCardWidth,
+                    height: height,
+                    cornerRadius: 0,
+                    title: book.title,
+                    author: book.author
+                )
+            }
                 .frame(maxWidth: .infinity)
-                .frame(height: Spacing.heroHeight)
+                .frame(height: height)
                 .clipped()
 
             // Do Figma `13:16`: escuro em cima pro status bar, transparente no meio,
@@ -37,13 +52,15 @@ struct CurrentlyReadingCard: View {
             )
 
             VStack(alignment: .leading, spacing: Spacing.md) {
+                // Serifada de 30 sangrando na largura toda; num card de 232 ela quebraria
+                // em duas linhas no primeiro título comprido, então lá desce pra 22.
                 Text(book.title)
-                    .textStyle(.titlePrimary)
+                    .textStyle(width == nil ? .titlePrimary : .titleCard)
                     .foregroundStyle(Palette.inkOnArt)
                     .lineLimit(2)
 
                 Text(pageLine)
-                    .textStyle(.label)
+                    .textStyle(width == nil ? .label : .captionDefault)
                     .foregroundStyle(Palette.inkOnArt.opacity(0.72))
                     .lineLimit(1)
 
@@ -52,7 +69,7 @@ struct CurrentlyReadingCard: View {
             .padding(.horizontal, Spacing.gutterList)
             .padding(.bottom, Spacing.gutterList)
         }
-        .frame(height: Spacing.heroHeight)
+        .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
     }
 }
