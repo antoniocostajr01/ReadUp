@@ -4,8 +4,19 @@ import SpriteKit
 /// Tela de seleção de gêneros com efeito de "coisas caindo" (SpriteKit).
 /// Os chips são views SwiftUI renderizadas em textura (ImageRenderer) → SKSpriteNode.
 struct GenreOnboardingView: View {
+
+    /// A mesma tela serve dois momentos: a primeira execução e o Profile mexendo nos
+    /// gêneros já escolhidos. Só mudam o cabeçalho, o rodapé e o que o botão salva —
+    /// a cena de física é idêntica, então é um parâmetro e não uma segunda tela.
+    enum Mode { case onboarding, editing }
+
+    var mode: Mode = .onboarding
+    /// Gêneros que já vêm marcados (Profile). Vazio no onboarding.
+    var preselected: [String] = []
+
     @Environment(AuthManager.self) private var authManager
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.dismiss) private var dismiss
 
     @State private var selected: [String] = []
     @State private var scene: GenrePhysicsScene?
@@ -17,24 +28,13 @@ struct GenreOnboardingView: View {
             Color.surface.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text(Localization.Onboarding.genresTitleLine1.string)
-                        .textStyle(.titleXL)
-                        .foregroundStyle(.ink)
-                    Text(Localization.Onboarding.genresTitleLine2.string)
-                        .textStyle(.titleXL)
-                        .foregroundStyle(.ink)
-
-                    Text(Localization.Onboarding.genresSubtitle.string)
-                        .textStyle(.bodySupporting)
-                        .foregroundStyle(.inkMuted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, Spacing.gutterAuth)
-                .padding(.top, Spacing.xl)
-                .padding(.bottom, Spacing.sm)
-                .background(.surface)
-                .zIndex(1)
+                header
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Spacing.gutterAuth)
+                    .padding(.top, Spacing.xl)
+                    .padding(.bottom, Spacing.sm)
+                    .background(.surface)
+                    .zIndex(1)
 
                 // Área da física
                 GeometryReader { proxy in
@@ -62,20 +62,36 @@ struct GenreOnboardingView: View {
                             .foregroundStyle(.danger)
                     }
 
-                    ReadUpButton(
-                        title: Localization.Generic.continue.string,
-                        variant: .primary,
-                        isLoading: authManager.isLoading,
-                        isEnabled: !selected.isEmpty
-                    ) {
-                        Task { await authManager.completeOnboarding(with: selected) }
-                    }
+                    switch mode {
+                    case .onboarding:
+                        ReadUpButton(
+                            title: Localization.Generic.continue.string,
+                            variant: .primary,
+                            isLoading: authManager.isLoading,
+                            isEnabled: !selected.isEmpty
+                        ) {
+                            Task { await authManager.completeOnboarding(with: selected) }
+                        }
 
-                    ReadUpButton(
-                        title: Localization.Onboarding.skipForNow.string,
-                        variant: .tertiary
-                    ) {
-                        Task { await authManager.completeOnboarding(with: []) }
+                        ReadUpButton(
+                            title: Localization.Onboarding.skipForNow.string,
+                            variant: .tertiary
+                        ) {
+                            Task { await authManager.completeOnboarding(with: []) }
+                        }
+
+                    case .editing:
+                        // Sem mínimo aqui: quem já escolheu pode querer ficar sem nenhum.
+                        ReadUpButton(
+                            title: Localization.Generic.save.string,
+                            variant: .primary,
+                            isLoading: authManager.isLoading
+                        ) {
+                            Task {
+                                await authManager.updateGenres(selected)
+                                dismiss()
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, Spacing.gutterAuth)
@@ -83,6 +99,48 @@ struct GenreOnboardingView: View {
                 .background(.surface)
                 .zIndex(1)
             }
+
+            if mode == .editing {
+                // A tela é apresentada em fullScreenCover, então precisa da própria saída.
+                ChromeChip(systemImage: "xmark") { dismiss() }
+                    .padding(.leading, Spacing.gutterAuth)
+                    .padding(.top, Spacing.sm)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .zIndex(2)
+            }
+        }
+        .onAppear { selected = preselected }
+    }
+
+    @ViewBuilder
+    private var header: some View {
+        switch mode {
+        case .onboarding:
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text(Localization.Onboarding.genresTitleLine1.string)
+                    .textStyle(.titleXL)
+                    .foregroundStyle(.ink)
+                Text(Localization.Onboarding.genresTitleLine2.string)
+                    .textStyle(.titleXL)
+                    .foregroundStyle(.ink)
+
+                Text(Localization.Onboarding.genresSubtitle.string)
+                    .textStyle(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
+            }
+
+        case .editing:
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                Text(Localization.Profile.yourGenres.string)
+                    .textStyle(.titleXL)
+                    .foregroundStyle(.ink)
+
+                Text(Localization.Onboarding.genresSubtitle.string)
+                    .textStyle(.bodySupporting)
+                    .foregroundStyle(.inkMuted)
+            }
+            // Espaço para o botão de fechar, que flutua sobre o cabeçalho.
+            .padding(.top, Spacing.xl)
         }
     }
 
@@ -98,7 +156,8 @@ struct GenreOnboardingView: View {
             chips: renders,
             gravityY: -9.0,
             bounce: 0.3,
-            startDelay: 0.15
+            startDelay: 0.15,
+            initialSelection: preselected
         ) { selectedIDs in
             selected = selectedIDs
         }

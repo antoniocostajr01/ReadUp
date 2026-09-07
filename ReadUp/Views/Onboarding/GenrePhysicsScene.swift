@@ -27,12 +27,16 @@ final class GenrePhysicsScene: SKScene {
          gravityY: CGFloat = -4.0,
          bounce: CGFloat = 0.3,
          startDelay: TimeInterval = 0.1,
+         initialSelection: [String] = [],
          onSelectionChange: @escaping ([String]) -> Void) {
         self.chips = chips
         self.gravityY = gravityY
         self.bounce = bounce
         self.startDelay = startDelay
         self.onSelectionChange = onSelectionChange
+        // Aberto pelo Profile, os gêneros já escolhidos caem marcados — `addChip` lê
+        // este conjunto para escolher a textura de cada chip.
+        self.selectedIDs = Set(initialSelection)
         super.init(size: size)
         scaleMode = .resizeFill
         backgroundColor = .clear
