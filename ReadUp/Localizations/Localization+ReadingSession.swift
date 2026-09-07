@@ -18,7 +18,7 @@ public extension Localization {
         case leaveTitle
         case stay
         case leaveMessage
-        case currentPage
+        case startingPage
         case lockTip
         case lockSubtip
 
@@ -35,7 +35,7 @@ public extension Localization {
             case .leaveTitle: "readingSession.leaveTitle"
             case .stay: "readingSession.stay"
             case .leaveMessage: "readingSession.leaveMessage"
-            case .currentPage: "readingSession.currentPage"
+            case .startingPage: "readingSession.startingPage"
             case .lockTip: "readingSession.lockTip"
             case .lockSubtip: "readingSession.lockSubtip"
             }

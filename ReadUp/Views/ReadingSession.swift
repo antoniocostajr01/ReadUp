@@ -152,7 +152,7 @@ struct ReadingSession: View {
                     .font(.displayTimer)
                     .monospacedDigit()
 
-                SmallMetricCard(title: Localization.ReadingSession.currentPage.string, value: "\(selectedBook.progress ?? 0)")
+                SmallMetricCard(title: Localization.ReadingSession.startingPage.string, value: "\(selectedBook.progress ?? 0)")
             }
             .opacity(viewModel.isSessionRunning ? 1 : 0)
 

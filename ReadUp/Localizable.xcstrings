@@ -3353,22 +3353,6 @@
         }
       }
     },
-    "readingSession.currentPage": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CURRENT PAGE"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PÁGINA ATUAL"
-          }
-        }
-      }
-    },
     "readingSession.finish": {
       "localizations": {
         "en": {
@@ -3509,6 +3493,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Em qual página você parou?"
+          }
+        }
+      }
+    },
+    "readingSession.startingPage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STARTING PAGE"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PÁGINA INICIAL"
           }
         }
       }
