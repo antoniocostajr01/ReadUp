@@ -3593,6 +3593,22 @@
         }
       }
     },
+    "scan.added": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionado"
+          }
+        }
+      }
+    },
     "scan.barcodeRead": {
       "localizations": {
         "en": {

@@ -16,7 +16,12 @@ final class ISBNScannerViewModel {
         var id: String { isbn }
         let isbn: String
         var state: State
-        var status: BookStatus = .iWantToRead
+        /// `nil` até o usuário escolher — mostra "Select status", não vem pré-marcado.
+        var status: BookStatus?
+        /// `true` depois de persistido na biblioteca: a linha continua na lista (o
+        /// usuário volta pra ela ao tocar "Add another book"), só que não é mais
+        /// contada em `foundCount`/`addAll` nem reabre a folha de confirmação.
+        var isAdded = false
     }
 
     var scanned: [ScannedBook] = []
@@ -59,18 +64,26 @@ final class ISBNScannerViewModel {
         scanned.removeAll { $0.id == book.id }
     }
 
-    /// Adiciona todos os livros resolvidos (`.found`) à biblioteca. Devolve os livros
-    /// criados — a tela de conquista exibe o primeiro deles.
+    /// Marca uma linha como persistida sem tirá-la da lista — quem volta pro scanner
+    /// depois de "Add another book" precisa ver o que acabou de adicionar.
+    func markAdded(_ id: String) {
+        guard let index = scanned.firstIndex(where: { $0.id == id }) else { return }
+        scanned[index].isAdded = true
+    }
+
+    /// Adiciona todos os livros resolvidos (`.found`) e ainda não persistidos à
+    /// biblioteca. Devolve os livros criados — a tela de conquista exibe o primeiro.
     ///
-    /// Remove cada linha adicionada da lista: sem isso o "Add N books" continuava
-    /// oferecendo os mesmos livros já salvos, e um segundo toque duplicava tudo.
+    /// Marca cada linha adicionada em vez de removê-la: sem isso o "Add N books"
+    /// continuava oferecendo os mesmos livros já salvos, e um segundo toque duplicava
+    /// tudo — e a lista perdia o que tinha acabado de ser adicionado.
     func addAll(to store: LibraryStore) async -> [Book] {
         var added: [Book] = []
         for row in scanned {
-            guard case .found(let book) = row.state else { continue }
-            if let created = await store.addBook(from: book, status: row.status, isbn: row.isbn) {
+            guard case .found(let book) = row.state, !row.isAdded else { continue }
+            if let created = await store.addBook(from: book, status: row.status ?? .iWantToRead, isbn: row.isbn) {
                 added.append(created)
-                remove(row)
+                markAdded(row.id)
             }
         }
         return added

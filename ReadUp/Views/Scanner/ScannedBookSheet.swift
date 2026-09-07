@@ -47,33 +47,26 @@ struct ScannedBookSheet: View {
         .padding(.bottom, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Palette.surface)
+        // "Add another book" na conquista fecha esta folha (não só a conquista): volta
+        // direto pra lista do scanner, que já mostra a linha marcada como adicionada.
         .fullScreenCover(item: $addedBook) { book in
-            BookAddedView(book: book) { dismiss() }
-        }
-        .sheet(isPresented: $isShowingSearch) { Search() }
-        .sheet(isPresented: $isShowingManualEntry) {
-            BookFormView(mode: .create, prefilledISBN: row.isbn)
+            BookAddedView(book: book, onAddAnother: { dismiss() }) { dismiss() }
         }
         // "Buscar pelo título" e "Cadastrar manualmente" são fugas do 08b que adicionam
-        // o livro por um caminho totalmente à parte (Search / BookFormView já mostram a
-        // própria conquista sozinhas) — sem isto a linha "não encontrado" ficava presa na
-        // lista do scanner depois de o livro já estar salvo. Reage ao fechamento da folha
-        // filha, não à biblioteca crescer direto: fazer isso ali correria com a conquista
-        // que Search/BookFormView ainda estão prestes a mostrar e a derrubaria junto.
-        .onChange(of: isShowingSearch) { _, isShowing in
-            guard !isShowing else { return }
-            cleanUpIfAdded()
+        // o livro por um caminho totalmente à parte (Search / BookFormView mostram a
+        // própria conquista). `onAddAnother` cascateia o fechamento até aqui — quem sai
+        // por uma dessas fugas e termina de adicionar volta pro scanner, não fica preso
+        // numa folha vazia no meio do caminho.
+        .sheet(isPresented: $isShowingSearch) {
+            Search(onAddAnother: { viewModel.remove(row); dismiss() })
         }
-        .onChange(of: isShowingManualEntry) { _, isShowing in
-            guard !isShowing else { return }
-            cleanUpIfAdded()
+        .sheet(isPresented: $isShowingManualEntry) {
+            BookFormView(
+                mode: .create,
+                prefilledISBN: row.isbn,
+                onAddAnother: { viewModel.remove(row); dismiss() }
+            )
         }
-    }
-
-    private func cleanUpIfAdded() {
-        guard store.books.contains(where: { $0.isbn == row.isbn }) else { return }
-        viewModel.remove(row)
-        dismiss()
     }
 
     // MARK: - Encontrado. Figma `47:1379`.
@@ -181,7 +174,7 @@ struct ScannedBookSheet: View {
             let status = statusBinding.wrappedValue ?? .iWantToRead
             addedBook = await store.addBook(from: book, status: status, isbn: row.isbn)
             isAdding = false
-            if addedBook != nil { viewModel.remove(row) }
+            if addedBook != nil { viewModel.markAdded(row.id) }
         }
     }
 

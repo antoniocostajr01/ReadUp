@@ -15,11 +15,22 @@ struct BookFormView: View {
     /// ISBN já lido pelo scanner: entra no formulário quando o catálogo não tem o livro.
     let prefilledISBN: String?
     let onSaved: () -> Void
+    /// "Add another book" na conquista: por padrão fecha só este formulário. Quem
+    /// apresenta este formulário aninhado sob outra folha (a 08b do scanner, por
+    /// exemplo) passa aqui o fechamento dessa folha também, pra cascatear até a tela
+    /// de origem em vez de deixar o usuário preso numa folha vazia no meio do caminho.
+    var onAddAnother: () -> Void = {}
 
-    init(mode: BookFormViewModel.Mode, prefilledISBN: String? = nil, onSaved: @escaping () -> Void = {}) {
+    init(
+        mode: BookFormViewModel.Mode,
+        prefilledISBN: String? = nil,
+        onSaved: @escaping () -> Void = {},
+        onAddAnother: @escaping () -> Void = {}
+    ) {
         _viewModel = State(initialValue: BookFormViewModel(mode: mode))
         self.prefilledISBN = prefilledISBN
         self.onSaved = onSaved
+        self.onAddAnother = onAddAnother
     }
 
     private var isCreating: Bool {
@@ -77,7 +88,7 @@ struct BookFormView: View {
             Task { await viewModel.handlePhotoSelection(item) }
         }
         .fullScreenCover(item: $addedBook) { book in
-            BookAddedView(book: book) { dismiss() }
+            BookAddedView(book: book, onAddAnother: { dismiss(); onAddAnother() }) { dismiss() }
         }
     }
 

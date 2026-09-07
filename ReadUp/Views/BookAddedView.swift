@@ -12,6 +12,11 @@ import SwiftUI
 /// placeholder tipográfico eles já estão impressos na própria capa.
 struct BookAddedView: View {
     let book: Book
+    /// "Add another book": fecha só esta tela por padrão, deixando quem chamou de volta
+    /// pronto pra adicionar o próximo. Quem apresenta esta view a partir de uma folha
+    /// aninhada (scanner, busca dentro do scanner) passa aqui o próprio fechamento em
+    /// cascata, pra "matar" as folhas intermediárias até a tela de origem do fluxo.
+    var onAddAnother: () -> Void = {}
     /// Fechar a tela **e** o fluxo inteiro, voltando à biblioteca.
     let onClose: () -> Void
 
@@ -70,6 +75,7 @@ struct BookAddedView: View {
 
             ReadUpButton(title: Localization.BookDetails.addAnotherBook.string, variant: .tertiary) {
                 dismiss()
+                onAddAnother()
             }
             .padding(.vertical, Spacing.md)
         }

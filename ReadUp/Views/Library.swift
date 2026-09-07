@@ -9,6 +9,7 @@ import SwiftUI
 
 struct Library: View {
     @Environment(LibraryStore.self) private var store
+    @Environment(TabBarVisibility.self) private var tabBarVisibility
 
     private var books: [Book] { store.books }
 
@@ -100,8 +101,6 @@ struct Library: View {
             }
         }
         .coordinateSpace(.named(HeroSpace.name))
-        // A tab bar sai de cena junto: o detalhe é tela cheia, não uma folha por cima.
-        .toolbar(selectedBook == nil ? .visible : .hidden, for: .tabBar)
         .background(Palette.surface)
         .toolbar(.hidden, for: .navigationBar)
         // A tela escolhida abre no onDismiss, não no toque: apresentar uma sheet enquanto
@@ -140,18 +139,39 @@ struct Library: View {
                 heroPlacement = HeroPlacement()
                 isFlying = false
             }
-            withAnimation(Motion.heroFlight) { selectedBook = book }
+            withAnimation(Motion.heroFlight) {
+                selectedBook = book
+                tabBarVisibility.isHidden = true
+            }
         } else {
             isFlying = true
             let origin = flyingBook.flatMap { frameStore.frame(for: $0.id) }
             withAnimation(Motion.heroFlight) {
                 selectedBook = nil
+                tabBarVisibility.isHidden = false
                 if let origin { heroPlacement = HeroPlacement(frame: origin) }
             } completion: {
                 guard flight == flightID else { return }
                 flyingBook = nil
                 isFlying = false
             }
+            endFlightIfStuck(flight, clearsFlyingBook: true)
+        }
+    }
+
+    /// Rede de segurança: a `completion` do `withAnimation` às vezes não chega — SwiftUI
+    /// a perde quando várias capas mudam de geometria no mesmo instante (fechar um livro
+    /// enquanto o scroll ainda estava se ajustando, por exemplo). Sem isto `isFlying`
+    /// ficava preso em `true` para sempre, e com ele a grade travada, só destravando se o
+    /// usuário abrisse outro livro (que reatribui `isFlying` na marra). Corre em paralelo
+    /// com a `completion` de verdade; o `flightID` garante que só uma das duas mexe em
+    /// algo, e se a `completion` já tiver rodado isto é apenas um no-op.
+    private func endFlightIfStuck(_ flight: Int, clearsFlyingBook: Bool) {
+        Task {
+            try? await Task.sleep(for: .seconds(Motion.heroFlightSettleTime))
+            guard flight == flightID, isFlying else { return }
+            isFlying = false
+            if clearsFlyingBook { flyingBook = nil }
         }
     }
 
@@ -169,6 +189,7 @@ struct Library: View {
             guard flight == flightID else { return }
             isFlying = false
         }
+        endFlightIfStuck(flight, clearsFlyingBook: false)
     }
 
     // MARK: - Grade
@@ -189,9 +210,11 @@ struct Library: View {
             .padding(.bottom, Spacing.xxl)
         }
         .scrollIndicators(.never)
-        // Com o detalhe aberto a grade continua montada por baixo; rolá-la moveria as
-        // capas explodidas e a origem do voo de volta.
-        .scrollDisabled(selectedBook != nil)
+        // Com o detalhe aberto ou o voo (de ida ou de volta) em curso, a grade continua
+        // montada por baixo; rolá-la moveria as capas explodidas e a origem do voo. Sem
+        // o `isFlying`, o fecho reativava o scroll antes da capa terminar de recuar —
+        // ela ficava presa em tela por não acompanhar o offset do `ScrollView`.
+        .scrollDisabled(selectedBook != nil || isFlying)
     }
 
     private var gridContent: some View {

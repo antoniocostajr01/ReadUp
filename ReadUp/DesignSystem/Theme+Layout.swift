@@ -118,6 +118,9 @@ enum Motion {
     /// A capa a voar da prateleira até o herói do detalhe. Mola, não curva: o peso é
     /// o que faz o voo parecer um objeto a ser levantado e não um fade caro.
     static let heroFlight = Animation.spring(response: 0.45, dampingFraction: 0.82)
+    /// Tempo de sobra para o `heroFlight` assentar. Usado como rede de segurança onde a
+    /// `completion` do `withAnimation` pode nunca chegar — ver `Library.endFlightIfStuck`.
+    static let heroFlightSettleTime: Double = 0.6
 
     /// Tapped pills and cards shrink slightly.
     static let pressScale: CGFloat = 0.97

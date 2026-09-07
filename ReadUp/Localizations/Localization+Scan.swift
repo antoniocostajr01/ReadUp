@@ -24,6 +24,7 @@ public extension Localization {
         case notInCatalogMessage
         case searchByTitle
         case enterManually
+        case added
 
         public var key: String.LocalizationValue {
             switch self {
@@ -44,6 +45,7 @@ public extension Localization {
             case .notInCatalogMessage: "scan.notInCatalog.message"
             case .searchByTitle: "scan.searchByTitle"
             case .enterManually: "scan.enterManually"
+            case .added: "scan.added"
             }
         }
     }

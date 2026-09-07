@@ -19,7 +19,10 @@ struct ISBNScanView: View {
     }
 
     private var foundCount: Int {
-        viewModel.scanned.filter { if case .found = $0.state { true } else { false } }.count
+        viewModel.scanned.filter {
+            guard case .found = $0.state else { return false }
+            return !$0.isAdded
+        }.count
     }
 
     var body: some View {
@@ -62,6 +65,12 @@ struct ISBNScanView: View {
             }
         }
         .sheet(isPresented: .constant(true)) {
+            // 08c/08b e a conquista do "Add N books" têm que ser apresentados a partir
+            // desta folha, não da ZStack raiz: a folha da lista fica permanentemente
+            // aberta (.constant(true)), então uma segunda apresentação encadeada na MESMA
+            // view de origem nunca aparece — o UIKit já tem um controller apresentado
+            // dali e recusa apresentar um segundo por cima. Aninhar aqui é o padrão
+            // suportado de folha-sobre-folha.
             scannedListSheet
                 .presentationDetents([.height(190), .medium, .large])
                 .presentationBackground(Palette.surface)
@@ -69,14 +78,14 @@ struct ISBNScanView: View {
                 .presentationBackgroundInteraction(.enabled)
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled()
-        }
-        .sheet(item: $inspectedRow) { row in
-            ScannedBookSheet(row: row, viewModel: viewModel)
-                .presentationDetents([.large])
-                .presentationCornerRadius(Radius.sheet)
-        }
-        .fullScreenCover(item: $addedBook) { book in
-            BookAddedView(book: book) { dismiss() }
+                .sheet(item: $inspectedRow) { row in
+                    ScannedBookSheet(row: row, viewModel: viewModel)
+                        .presentationDetents([.large])
+                        .presentationCornerRadius(Radius.sheet)
+                }
+                .fullScreenCover(item: $addedBook) { book in
+                    BookAddedView(book: book) { dismiss() }
+                }
         }
         .onAppear {
             // Todo livro escaneado precisa passar por confirmação — em vez de esperar o
@@ -162,66 +171,82 @@ struct ISBNScanView: View {
         let book = row.wrappedValue
 
         return HStack(spacing: Spacing.md) {
-            Button {
-                inspectedRow = book
-            } label: {
-                HStack(spacing: Spacing.md) {
-                    cover(for: book)
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        switch book.state {
-                        case .resolving:
-                            Text(Localization.Scan.resolving.string)
-                                .textStyle(.headingRow)
-                                .foregroundStyle(Palette.inkMuted)
-                            Text(book.isbn)
-                                .textStyle(.captionDefault)
-                                .foregroundStyle(Palette.inkMeta)
-
-                        case .found(let found):
-                            Text(found.title)
-                                .textStyle(.headingRow)
-                                .foregroundStyle(Palette.ink)
-                                .lineLimit(1)
-                            Text(found.author)
-                                .textStyle(.captionDefault)
-                                .foregroundStyle(Palette.inkMeta)
-                                .lineLimit(1)
-
-                        case .notFound:
-                            Text(Localization.Scan.notFound.string)
-                                .textStyle(.headingRow)
-                                .foregroundStyle(Palette.ink)
-                            Text(book.isbn)
-                                .textStyle(.captionDefault)
-                                .foregroundStyle(Palette.inkMeta)
-                        }
-                    }
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            Group {
+                if book.isAdded {
+                    // Já persistido: a linha fica só como registro do que voltou de
+                    // "Add another book", não reabre a folha de confirmação.
+                    rowLabel(for: book)
+                } else {
+                    Button { inspectedRow = book } label: { rowLabel(for: book) }
+                        .buttonStyle(.plain)
                 }
             }
-            .buttonStyle(.plain)
 
-            if case .found = book.state {
+            if case .found = book.state, !book.isAdded {
                 statusMenu(selection: row.status)
             }
 
-            // Botão explícito além do swipe: com a câmera aberta o usuário precisa
-            // corrigir um código errado na hora, sem descobrir um gesto escondido.
-            Button {
-                viewModel.remove(book)
-            } label: {
-                Image(systemName: "xmark")
+            if book.isAdded {
+                Image(systemName: "checkmark.circle.fill")
                     .font(.iconLabel)
-                    .foregroundStyle(Palette.inkFaint)
+                    .foregroundStyle(Palette.brand)
+                    .accessibilityLabel(Localization.Scan.added.string)
+            } else {
+                // Botão explícito além do swipe: com a câmera aberta o usuário precisa
+                // corrigir um código errado na hora, sem descobrir um gesto escondido.
+                Button {
+                    viewModel.remove(book)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.iconLabel)
+                        .foregroundStyle(Palette.inkFaint)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Localization.Generic.delete.string)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Localization.Generic.delete.string)
         }
         .padding(.vertical, Spacing.md)
+        .opacity(book.isAdded ? Motion.disabledOpacity : 1)
         .overlay(alignment: .top) {
             Rectangle().fill(Palette.divider).frame(height: 1)
+        }
+    }
+
+    private func rowLabel(for book: ISBNScannerViewModel.ScannedBook) -> some View {
+        HStack(spacing: Spacing.md) {
+            cover(for: book)
+
+            VStack(alignment: .leading, spacing: 3) {
+                switch book.state {
+                case .resolving:
+                    Text(Localization.Scan.resolving.string)
+                        .textStyle(.headingRow)
+                        .foregroundStyle(Palette.inkMuted)
+                    Text(book.isbn)
+                        .textStyle(.captionDefault)
+                        .foregroundStyle(Palette.inkMeta)
+
+                case .found(let found):
+                    Text(found.title)
+                        .textStyle(.headingRow)
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                    Text(found.author)
+                        .textStyle(.captionDefault)
+                        .foregroundStyle(Palette.inkMeta)
+                        .lineLimit(1)
+
+                case .notFound:
+                    Text(Localization.Scan.notFound.string)
+                        .textStyle(.headingRow)
+                        .foregroundStyle(Palette.ink)
+                    Text(book.isbn)
+                        .textStyle(.captionDefault)
+                        .foregroundStyle(Palette.inkMeta)
+                }
+            }
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -243,16 +268,16 @@ struct ISBNScanView: View {
         }
     }
 
-    private func statusMenu(selection: Binding<BookStatus>) -> some View {
+    /// `nil` até o usuário escolher — mostra "Select status" em vez de vir com um
+    /// valor pré-marcado que o usuário nunca escolheu.
+    private func statusMenu(selection: Binding<BookStatus?>) -> some View {
         Menu {
-            Picker("", selection: selection) {
-                ForEach(BookStatus.allCases, id: \.self) { status in
-                    Text(status.displayName).tag(status)
-                }
+            ForEach(BookStatus.allCases, id: \.self) { status in
+                Button(status.displayName) { selection.wrappedValue = status }
             }
         } label: {
             HStack(spacing: Spacing.xs) {
-                Text(selection.wrappedValue.displayName)
+                Text(selection.wrappedValue?.displayName ?? Localization.BookDetails.selectStatus.string)
                     .textStyle(.captionFine)
                     .lineLimit(1)
                 Image(systemName: "chevron.down")

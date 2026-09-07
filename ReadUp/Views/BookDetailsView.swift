@@ -68,8 +68,14 @@ struct BookDetailsView: View {
                 scrollOffset = max(0, offset)
                 reportHero()
             }
-
-            actions
+            // Preso ao fundo do `ScrollView`, não encadeado depois dele: sem isto, uma
+            // descrição curta deixava o `VStack` inteiro com altura de conteúdo, e as
+            // ações ficavam coladas embaixo da descrição em vez de no pé da tela.
+            .safeAreaInset(edge: .bottom) {
+                actions
+                    .padding(.top, Spacing.md)
+                    .background(Palette.surface)
+            }
         }
         .padding(.horizontal, Spacing.gutterDetail)
         .padding(.bottom, 30)

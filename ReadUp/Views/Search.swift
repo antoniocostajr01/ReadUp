@@ -11,6 +11,12 @@ struct Search: View {
     @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
+    /// "Add another book" depois de cair no cadastro manual: por padrão fecha só esta
+    /// tela. Quem abre a busca aninhada sob outra folha (a 08b do scanner) passa aqui o
+    /// fechamento dessa folha também, pra cascatear até a tela de origem. Não se aplica
+    /// à conquista do `+` direto num resultado — essa fica na própria busca de propósito.
+    var onAddAnother: () -> Void = {}
+
     @State private var selectedBook: SearchBook?
     @State private var isShowingAddManually = false
     @State private var addedBook: Book?
@@ -58,7 +64,7 @@ struct Search: View {
         .background(Palette.surface)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $isShowingAddManually) {
-            BookFormView(mode: .create)
+            BookFormView(mode: .create, onAddAnother: { dismiss(); onAddAnother() })
         }
         .fullScreenCover(item: $addedBook) { book in
             BookAddedView(book: book) { dismiss() }
