@@ -55,9 +55,11 @@ enum Spacing {
     /// 44×64 — the cover in a History session row, one step up from the Home row.
     static let coverHistoryWidth: CGFloat = 44
     static let coverHistoryHeight: CGFloat = 64
-    /// 232×220 — a card no carrossel de "continuar lendo" do Home.
+    /// 232×336 — o card do carrossel de "continuar lendo" do Home. A altura vem da
+    /// mesma proporção de capa da prateleira (72×104): o card é um livro, e a 220 ele
+    /// lia como um banner deitado.
     static let readingCardWidth: CGFloat = 232
-    static let readingCardHeight: CGFloat = 220
+    static let readingCardHeight: CGFloat = 336
     /// 88 — a barra mais alta da semana no History; 12 é o toco de um dia sem leitura.
     static let weekBarMaxHeight: CGFloat = 88
     static let weekBarEmptyHeight: CGFloat = 12

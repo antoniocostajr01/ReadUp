@@ -20,7 +20,7 @@ was left alone — it already matches its mock.
 ## Files touched
 
 **Design system.** `DesignSystem/Theme+Layout.swift` — six new `Spacing` members
-(`readingCardWidth/Height` 232×220, `coverHistoryWidth/Height` 44×64,
+(`readingCardWidth/Height` 232×336, `coverHistoryWidth/Height` 44×64,
 `weekBarMaxHeight` 88, `weekBarEmptyHeight` 12), following the existing
 `heroHeight`/`coverShelfWidth` naming.
 
@@ -59,6 +59,11 @@ wrong. Rebound to `surface`.
   would be decorative — you could swipe to a book and still start a session on a
   different one. Verified on device: swiping to 1984 and tapping the button opened a
   1984 session.
+- **The card is 232×336, not the artboard's 232×220.** At 220 it read as a landscape
+  banner with a cropped cover, and the point of the rail is that you recognise the book
+  by its cover. The height is the shelf cover's own ratio (72×104) applied to the card
+  width, so the card is proportioned like every other book in the app. The artboard is
+  now the thing that disagrees; it was not updated.
 - **The active card is centred, not leading-aligned.** The first pass pinned the rail
   with `anchor: .leading` and a plain horizontal padding; on device it read badly — the
   "current" card sat against the left edge and the dot indicator felt disconnected from
