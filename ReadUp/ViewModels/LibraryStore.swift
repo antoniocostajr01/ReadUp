@@ -200,6 +200,10 @@ final class LibraryStore {
         }
     }
 
+    /// Ordena da mais recente para a mais antiga aqui, e não em cada tela: o backend
+    /// devolve `GET /sessions` sem ordem garantida, e tanto o `prefix(4)` do Home quanto
+    /// as seções do History assumem "mais nova primeiro". Ordenando na montagem, o
+    /// `sessions.insert(_, at: 0)` do `logSession` continua correto.
     private func assemble(_ dtos: [ReadingSessionDTO], books: [Book]) -> [LiterarySession] {
         let booksById = Dictionary(books.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         return dtos.compactMap { dto in
@@ -213,5 +217,6 @@ final class LibraryStore {
                 timesTamp: dto.date
             )
         }
+        .sorted { $0.timesTamp > $1.timesTamp }
     }
 }

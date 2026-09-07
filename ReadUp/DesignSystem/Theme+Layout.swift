@@ -52,6 +52,15 @@ enum Spacing {
     /// 36×52 — the thumbnail cover in a session row.
     static let coverRowWidth: CGFloat = 36
     static let coverRowHeight: CGFloat = 52
+    /// 44×64 — the cover in a History session row, one step up from the Home row.
+    static let coverHistoryWidth: CGFloat = 44
+    static let coverHistoryHeight: CGFloat = 64
+    /// 232×220 — a card no carrossel de "continuar lendo" do Home.
+    static let readingCardWidth: CGFloat = 232
+    static let readingCardHeight: CGFloat = 220
+    /// 88 — a barra mais alta da semana no History; 12 é o toco de um dia sem leitura.
+    static let weekBarMaxHeight: CGFloat = 88
+    static let weekBarEmptyHeight: CGFloat = 12
 }
 
 /// Corner radii. Covers stay nearly square — a book is a book. Chrome goes fully round.
