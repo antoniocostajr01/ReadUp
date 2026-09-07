@@ -12,6 +12,9 @@ public extension Localization {
         case greetingEvening
         case metricDayStreak
         case metricAverageTime
+        case metricThisWeek
+        case continueReadingSection
+        case continueReadingSectionCount
         case recentActivity
         case seeAll
         case alertNoBooksTitle
@@ -27,6 +30,9 @@ public extension Localization {
             case .greetingEvening: "home.greeting.evening"
             case .metricDayStreak: "home.metric.dayStreak"
             case .metricAverageTime: "home.metric.averageTime"
+            case .metricThisWeek: "home.metric.thisWeek"
+            case .continueReadingSection: "home.continueReading.section"
+            case .continueReadingSectionCount: "home.continueReading.sectionCount"
             case .recentActivity: "home.recentActivity"
             case .seeAll: "home.seeAll"
             case .alertNoBooksTitle: "home.alert.noBooksTitle"
