@@ -55,8 +55,10 @@ enum Palette {
     /// `surface/night` — camera and scanner background. The one dark surface.
     static let surfaceNight = Color(hex: 0x26221B)
 
-    /// `chrome/tabbar` — the floating tab bar pill: ink at 94%.
-    static let surfaceChrome = ink.opacity(0.94)
+    /// `chrome/tabbar` — the floating tab bar pill. Solid ink, no alpha: at 94% the
+    /// cream underneath bled through and the pill picked up whatever it was floating
+    /// over. It is an object on top of the page, not a tint of it.
+    static let surfaceChrome = ink
 
     /// A fully-opaque raised surface — overlay chips over camera preview or artwork.
     static let surfaceElevated = surfaceRaised
