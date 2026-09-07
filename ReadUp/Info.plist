@@ -23,7 +23,5 @@
 		<string>instagram</string>
 		<string>instagram-stories</string>
 	</array>
-	<key>UIDesignRequiresCompatibility</key>
-	<true/>
 </dict>
 </plist>

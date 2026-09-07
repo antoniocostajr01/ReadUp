@@ -211,25 +211,31 @@ some other way. Figma covers are typeset placeholders until they do.
 - **Never a grey.** Anything that reads grey is ink at 9–22% alpha, or a cream step.
 - Type is Instrument Serif (content, and every number) + Instrument Sans (interface),
   with italic serif reserved for author names.
-- **The tab bar is the one component deliberately not built from Figma.** The
-  `Chrome/Tab bar` pill (`16:46`, specimens `37:311`/`37:323`/`37:335`) is
-  reference-only: the app uses the **native iOS tab bar**, painted ink with cream
-  items, with the three tabs the component defines — Home, Library, Profile. It
-  carries no `.tint()`: on iOS 26 a tint bleeds into the whole Liquid Glass capsule
-  rather than colouring just the selection, which turned the bar a muddy olive. The
-  colours are set once in `ReadUpApp.init()` via `UITabBarAppearance`. The bar is the
-  single sanctioned exception to "never a grey".
+- **The tab bar is a custom floating pill, built from `pocBookAnimation`'s
+  prototype, not the native iOS tab bar.** `Chrome/Tab bar` (`16:46`, specimens
+  `37:311`/`37:323`/`37:335`) is now the real source, not reference-only. `TabBar.swift`
+  keeps `TabView` for content switching (free per-tab state and lazy loading) but
+  hides its native chrome (`.toolbar(.hidden, for: .tabBar)` on each tab's
+  `NavigationStack`) and draws its own capsule — `Palette.surfaceChrome` (ink at 94%),
+  cream icons at full/45% opacity for selected/unselected — reading and writing the
+  same `selection`. Tapping the already-selected tab resets that tab's own
+  `NavigationPath`, matching the native pop-to-root behaviour; each tab keeps a
+  separate path so switching tabs doesn't lose where you were.
 
-  **Gotcha:** with Liquid Glass *on*, the iOS 26 native bar is itself a floating
-  translucent capsule and looks almost exactly like a custom pill — which is how an
-  earlier pass came to believe a change had not shipped. With the opt-out below in
-  place the bar is opaque and edge-to-edge, so that confusion no longer applies; it
-  comes straight back if the key is ever removed.
+  **Why this replaced the native bar (2026-09-04).** The native-bar era (below, kept
+  for the reasoning) needed `UIDesignRequiresCompatibility` to get an opaque ink
+  background at all, which cost Liquid Glass for the *entire app*, not just the tab
+  bar — a bad trade for one component. A SwiftUI-drawn capsule doesn't go through
+  `UITabBarAppearance` at all, so the `.tint()`-bleeds-into-the-glass bug that started
+  this whole saga doesn't apply to it, and the flag came out of `Info.plist` in the
+  same change — the rest of the app (cards, sheets) gets Liquid Glass back.
 
-  **The ink bar costs the whole app's Liquid Glass.** It was built (`688282e`),
-  reverted for that cost, and put back on 2026-08-31 at the user's request. A custom
-  pill matching `pocBookAnimation` was tried in between and dropped. What was
-  measured, so it isn't re-derived — each of these looks plausible and is wrong:
+  **Native-bar history, kept for context — a custom pill matching `pocBookAnimation`
+  was tried once before (built in `688282e`) and dropped for the Liquid Glass cost;
+  the native bar went back in on 2026-08-31; it was replaced by the pill again on
+  2026-09-04, this time for good, once the flag-removal fixed the original cost.**
+  What was measured on the native-bar path, so it isn't re-derived if a future pass
+  ever reconsiders `UITabBarAppearance`:
 
   - `.tint(.ink)` on the `TabView` tints the whole glass capsule, not just the
     selection: the bar comes out a muddy `#6e695e` olive.
@@ -240,13 +246,12 @@ some other way. Figma covers are typeset placeholders until they do.
   - Setting the appearance proxy in `TabBar.init()` is a **race**: `UITabBar.appearance()`
     only affects bars created afterwards, and SwiftUI re-inits View structs freely, so
     the same build rendered ink on one launch and glass on the next. It belongs in
-    `ReadUpApp.init()`, which runs once before any UI exists.
+    `ReadUpApp.init()`, which runs once before any UI exists — moot now that
+    `ReadUpApp.init()` no longer touches `UITabBar.appearance()` at all.
   - The only thing that produced a true ink `#171512` background was
-    `UIDesignRequiresCompatibility` in `Info.plist` — which opts the **whole app** out
-    of Liquid Glass, and is a temporary Apple escape hatch that dies against a future
-    SDK. That cost is why it was reverted once — and it is the cost the app is now
-    paying: `UIDesignRequiresCompatibility` is in `Info.plist`, so **no** surface in
-    the app gets Liquid Glass, not just the tab bar.
+    `UIDesignRequiresCompatibility`, the temporary Apple escape hatch that opts the
+    **whole app** out of Liquid Glass and dies against a future SDK. That cost is why
+    the native ink bar was reverted once, and is the cost the custom pill avoids.
 
 `DesignSystem/` in the app already routed every screen through semantic tokens, so
 adopting the palette was an edit to `Palette` in `Theme+Color.swift` plus the colorsets
