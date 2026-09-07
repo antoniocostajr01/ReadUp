@@ -12,8 +12,6 @@ struct Profile: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var showEditName = false
     @State private var draftName = ""
-    /// "Edit profile" abre a escolha; daí sai ou a foto ou o nome.
-    @State private var showEditOptions = false
     @State private var showPhotoPicker = false
     @State private var showGenrePicker = false
 
@@ -66,19 +64,6 @@ struct Profile: View {
             Button(Localization.Generic.cancel.string, role: .cancel) {}
         } message: {
             Text(Localization.Profile.signOutConfirmMessage.string)
-        }
-        .confirmationDialog(Localization.Profile.editProfile.string, isPresented: $showEditOptions, titleVisibility: .visible) {
-            Button(Localization.Profile.changePhoto.string) { showPhotoPicker = true }
-            Button(Localization.Profile.editName.string) {
-                draftName = authManager.currentUser?.name ?? ""
-                showEditName = true
-            }
-            if avatarImage != nil {
-                Button(Localization.Profile.removePhoto.string, role: .destructive) {
-                    Task { await authManager.removeAvatar() }
-                }
-            }
-            Button(Localization.Generic.cancel.string, role: .cancel) {}
         }
         .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images, photoLibrary: .shared())
         .fullScreenCover(isPresented: $showGenrePicker) {
@@ -142,13 +127,38 @@ struct Profile: View {
                 Spacer(minLength: 0)
             }
 
-            ReadUpButton(
-                title: Localization.Profile.editProfile.string,
-                variant: .secondary,
-                isLoading: authManager.isLoading
-            ) {
-                showEditOptions = true
+            // `Menu` e não um diálogo: as opções saem do próprio botão, ancoradas nele,
+            // em vez de um balão no meio da tela. O label é a mesma pílula que o
+            // `ReadUpButton` desenha.
+            Menu {
+                Button {
+                    showPhotoPicker = true
+                } label: {
+                    Label(Localization.Profile.changePhoto.string, systemImage: "photo")
+                }
+
+                Button {
+                    draftName = authManager.currentUser?.name ?? ""
+                    showEditName = true
+                } label: {
+                    Label(Localization.Profile.editName.string, systemImage: "pencil")
+                }
+
+                if avatarImage != nil {
+                    Button(role: .destructive) {
+                        Task { await authManager.removeAvatar() }
+                    } label: {
+                        Label(Localization.Profile.removePhoto.string, systemImage: "trash")
+                    }
+                }
+            } label: {
+                ReadUpButtonLabel(
+                    title: Localization.Profile.editProfile.string,
+                    variant: .secondary,
+                    isLoading: authManager.isLoading
+                )
             }
+            .disabled(authManager.isLoading)
         }
     }
 

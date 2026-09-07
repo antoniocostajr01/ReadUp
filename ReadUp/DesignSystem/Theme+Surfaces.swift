@@ -65,47 +65,11 @@ struct ReadUpButton: View {
 
     @State private var isPressed = false
 
-    private var height: CGFloat { variant == .tertiary || variant == .danger ? 35 : 54 }
-
-    private var foreground: Color {
-        switch variant {
-        case .primary: Palette.onBrand
-        case .secondary: Palette.ink
-        case .tertiary: Palette.inkMuted
-        case .danger: Palette.danger
-        }
-    }
-
-    private var background: Color {
-        variant == .primary ? Palette.brand : .clear
-    }
-
-    private var borderColor: Color {
-        variant == .secondary ? Palette.borderStrong : .clear
-    }
-
-    /// Text-only variants dim on press; filled ones shrink.
-    private var isTextOnly: Bool { variant == .tertiary || variant == .danger }
+    private var isTextOnly: Bool { variant.isTextOnly }
 
     var body: some View {
         Button(action: action) {
-            ZStack {
-                if isLoading {
-                    ProgressView().tint(foreground)
-                } else {
-                    Text(title)
-                        .textStyle(.field)
-                        .foregroundStyle(foreground)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .background(
-                Capsule(style: .continuous).fill(background)
-            )
-            .overlay(
-                Capsule(style: .continuous).strokeBorder(borderColor, lineWidth: 1)
-            )
+            ReadUpButtonLabel(title: title, variant: variant, isLoading: isLoading)
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled || isLoading)
@@ -119,6 +83,58 @@ struct ReadUpButton: View {
         if !isEnabled || isLoading { return Motion.disabledOpacity }
         if isPressed && isTextOnly { return Motion.pressDim }
         return 1
+    }
+}
+
+extension ReadUpButton.Variant {
+    /// Text-only variants dim on press; filled ones shrink.
+    var isTextOnly: Bool { self == .tertiary || self == .danger }
+
+    var height: CGFloat { isTextOnly ? 35 : 54 }
+
+    var foreground: Color {
+        switch self {
+        case .primary: Palette.onBrand
+        case .secondary: Palette.ink
+        case .tertiary: Palette.inkMuted
+        case .danger: Palette.danger
+        }
+    }
+
+    var background: Color { self == .primary ? Palette.brand : .clear }
+
+    var borderColor: Color { self == .secondary ? Palette.borderStrong : .clear }
+}
+
+/// A pílula desenhada, sem o `Button` em volta.
+///
+/// Existe porque um `Menu` pede um *label*, não um botão: para um menu nativo sair do
+/// próprio botão parecendo um botão do app, os dois precisam desenhar exatamente a
+/// mesma coisa. Copiar o estilo no call site funcionaria hoje e divergiria no primeiro
+/// retoque do `ReadUpButton`.
+struct ReadUpButtonLabel: View {
+    let title: String
+    var variant: ReadUpButton.Variant = .primary
+    var isLoading: Bool = false
+
+    var body: some View {
+        ZStack {
+            if isLoading {
+                ProgressView().tint(variant.foreground)
+            } else {
+                Text(title)
+                    .textStyle(.field)
+                    .foregroundStyle(variant.foreground)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: variant.height)
+        .background(
+            Capsule(style: .continuous).fill(variant.background)
+        )
+        .overlay(
+            Capsule(style: .continuous).strokeBorder(variant.borderColor, lineWidth: 1)
+        )
     }
 }
 
