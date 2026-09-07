@@ -69,4 +69,104 @@ final class HomeViewModel {
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
+
+    // MARK: - Métricas do Home
+
+    /// Média diária em minutos inteiros. O card novo mostra "32 min", não o "32:07" do
+    /// tile antigo — `averageTimePerDayFormatted` continua existindo porque o Profile
+    /// ainda a usa.
+    func averageMinutesPerDay(from sessions: [LiterarySession]) -> Int {
+        let days = Set(sessions.map { Calendar.current.startOfDay(for: $0.timesTamp) }).count
+        guard days > 0 else { return 0 }
+        return sessions.reduce(0) { $0 + $1.timeRead } / days / 60
+    }
+
+    /// Páginas lidas na semana corrente.
+    func pagesThisWeek(from sessions: [LiterarySession]) -> Int {
+        sessionsThisWeek(from: sessions).reduce(0) { $0 + $1.pagesRead }
+    }
+
+    // MARK: - Semana
+
+    /// O intervalo da semana corrente segundo o calendário do usuário — respeita
+    /// `firstWeekday`, que não é domingo em todo lugar.
+    private func currentWeek() -> DateInterval? {
+        Calendar.current.dateInterval(of: .weekOfYear, for: Date())
+    }
+
+    func sessionsThisWeek(from sessions: [LiterarySession]) -> [LiterarySession] {
+        guard let week = currentWeek() else { return [] }
+        return sessions.filter { week.contains($0.timesTamp) }
+    }
+
+    /// Minutos lidos por dia da semana corrente, já na ordem em que as barras são
+    /// desenhadas (a partir de `firstWeekday`). Sempre sete valores.
+    func minutesByWeekday(from sessions: [LiterarySession]) -> [Int] {
+        let calendar = Calendar.current
+        var totals = [Int](repeating: 0, count: 7)
+        for session in sessionsThisWeek(from: sessions) {
+            // `component(.weekday:)` é 1...7 com 1 = domingo; a rotação por `firstWeekday`
+            // põe o primeiro dia da semana do usuário na posição 0.
+            let weekday = calendar.component(.weekday, from: session.timesTamp)
+            let index = (weekday - calendar.firstWeekday + 7) % 7
+            totals[index] += session.timeRead / 60
+        }
+        return totals
+    }
+
+    /// Os rótulos das barras, na mesma ordem — vêm do calendário, então já chegam
+    /// traduzidos sem custar sete chaves de localização.
+    func weekdayLabels() -> [String] {
+        let calendar = Calendar.current
+        let symbols = calendar.shortWeekdaySymbols
+        let offset = calendar.firstWeekday - 1
+        return (0..<7).map { symbols[($0 + offset) % 7] }
+    }
+
+    // MARK: - Métricas do History
+
+    /// Cabeçalho do History: quantas sessões, quanto tempo, quantas páginas.
+    func historyTotals(from sessions: [LiterarySession]) -> (count: Int, seconds: Int, pages: Int) {
+        (
+            count: sessions.count,
+            seconds: sessions.reduce(0) { $0 + $1.timeRead },
+            pages: sessions.reduce(0) { $0 + $1.pagesRead }
+        )
+    }
+
+    /// "21h 12m" — e só "12m" quando não houve uma hora inteira.
+    func durationFormatted(seconds: Int) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+    }
+
+    /// As sessões partidas em "esta semana" e o resto. A lista já chega ordenada do
+    /// `LibraryStore`, então aqui é só um particionamento.
+    func sessionsByPeriod(
+        from sessions: [LiterarySession]
+    ) -> (thisWeek: [LiterarySession], earlier: [LiterarySession]) {
+        guard let week = currentWeek() else { return ([], sessions) }
+        var thisWeek: [LiterarySession] = []
+        var earlier: [LiterarySession] = []
+        for session in sessions {
+            if week.contains(session.timesTamp) {
+                thisWeek.append(session)
+            } else {
+                earlier.append(session)
+            }
+        }
+        return (thisWeek, earlier)
+    }
+
+    /// A linha de meta de uma sessão no History: "Today, 8:12 PM · 41 min".
+    func sessionMeta(_ session: LiterarySession) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.doesRelativeDateFormatting = true
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        let minutes = max(1, session.timeRead / 60)
+        return "\(formatter.string(from: session.timesTamp)) · \(minutes) min"
+    }
 }
