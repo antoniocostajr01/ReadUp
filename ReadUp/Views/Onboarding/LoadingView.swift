@@ -9,7 +9,7 @@ struct LoadingView: View {
 
     var body: some View {
         ZStack {
-            Color.accent.ignoresSafeArea()
+            Color.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 28) {
                 Image("ReadUpIcon")
