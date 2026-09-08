@@ -6,9 +6,5 @@
 	<array>
 		<string>group.com.antoniocosta.ReadUpApp</string>
 	</array>
-	<key>com.apple.developer.applesignin</key>
-	<array>
-		<string>Default</string>
-	</array>
 </dict>
 </plist>

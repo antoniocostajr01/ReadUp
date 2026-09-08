@@ -44,6 +44,14 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				ReadUpWidgets.entitlements,
+			);
+			target = AA1100000000000000000001 /* ReadUpWidgets */;
+		};
+		AA1100000000000000000012 /* Exceptions for "DesignSystem" folder in "ReadUpWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Theme+BookStatus.swift",
 			);
 			target = AA1100000000000000000001 /* ReadUpWidgets */;
 		};
@@ -54,13 +62,6 @@
 				Secrets.xcconfig,
 			);
 			target = B95F95732E43EE15004461E5 /* ReadUp */;
-		};
-		AA1100000000000000000012 /* Exceptions for "ReadUp/DesignSystem" folder in "ReadUpWidgets" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"Theme+BookStatus.swift",
-			);
-			target = AA1100000000000000000001 /* ReadUpWidgets */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -81,7 +82,7 @@
 		AA1100000000000000000005 /* DesignSystem */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AA1100000000000000000012 /* Exceptions for "ReadUp/DesignSystem" folder in "ReadUpWidgets" target */,
+				AA1100000000000000000012 /* Exceptions for "DesignSystem" folder in "ReadUpWidgets" target */,
 			);
 			name = DesignSystem;
 			path = ReadUp/DesignSystem;
@@ -287,6 +288,7 @@
 		AA110000000000000000000E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ReadUpWidgets/ReadUpWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = PZ69U288R6;
@@ -313,6 +315,7 @@
 		AA110000000000000000000F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ReadUpWidgets/ReadUpWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = PZ69U288R6;

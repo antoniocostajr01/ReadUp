@@ -31,9 +31,9 @@ struct ReadingSessionLiveActivity: Widget {
     private func dynamicIsland(for attributes: ReadingSessionAttributes) -> DynamicIsland {
         DynamicIsland {
             DynamicIslandExpandedRegion(.leading) {
-                CoverPlaceholder(title: attributes.bookTitle, author: nil, width: Spacing.coverRowWidth)
-                    .frame(width: Spacing.coverRowWidth, height: Spacing.coverRowHeight)
-                    .clipShape(RoundedRectangle(cornerRadius: Radius.coverSm, style: .continuous))
+                SessionCover(title: attributes.bookTitle,
+                             width: Spacing.coverRowWidth,
+                             height: Spacing.coverRowHeight)
             }
 
             DynamicIslandExpandedRegion(.trailing) {
@@ -42,7 +42,7 @@ struct ReadingSessionLiveActivity: Widget {
                         .textStyle(.overline)
                         .foregroundStyle(Palette.inkInverse.opacity(0.6))
 
-                    SessionTimer(startDate: attributes.startDate, role: .displayMetric)
+                    SessionTimer(range: attributes.timerRange, role: .displayMetric)
                         .foregroundStyle(Palette.inkInverse)
                 }
             }
@@ -65,7 +65,7 @@ struct ReadingSessionLiveActivity: Widget {
             Image(systemName: "book")
                 .foregroundStyle(Palette.accentProgress)
         } compactTrailing: {
-            SessionTimer(startDate: attributes.startDate, role: .captionDefault)
+            SessionTimer(range: attributes.timerRange, role: .captionDefault)
                 .foregroundStyle(Palette.inkInverse)
         } minimal: {
             Image(systemName: "book")
@@ -80,18 +80,16 @@ struct ReadingSessionActivityCard: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.md) {
-            // Placeholder tipográfico, não a capa real: a extensão renderiza fora do
-            // processo do app e não baixa `coverUrl`. Para a capa de verdade seria
-            // preciso um App Group — o app grava a imagem no container compartilhado
-            // ao abrir a sessão e passa o caminho nos attributes.
-            CoverPlaceholder(title: attributes.bookTitle, author: nil, width: Spacing.coverActivityWidth)
-                .frame(width: Spacing.coverActivityWidth, height: Spacing.coverActivityHeight)
-                .clipShape(RoundedRectangle(cornerRadius: Radius.coverSm, style: .continuous))
+            SessionCover(title: attributes.bookTitle)
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(Localization.LiveActivity.currentSession)
                     .textStyle(.overline)
                     .foregroundStyle(Palette.inkMeta)
+                    // Uma linha, sempre: quebrada no meio ("CURRENT / SESSION") a
+                    // etiqueta some como etiqueta e vira mais um bloco de texto.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
 
                 Text(attributes.bookTitle)
                     .textStyle(.headingRow)
@@ -110,8 +108,9 @@ struct ReadingSessionActivityCard: View {
                 Text(Localization.LiveActivity.time)
                     .textStyle(.overline)
                     .foregroundStyle(Palette.inkMeta)
+                    .lineLimit(1)
 
-                SessionTimer(startDate: attributes.startDate, role: .displayMetricXL)
+                SessionTimer(range: attributes.timerRange, role: .displayMetricXL)
                     .foregroundStyle(Palette.ink)
             }
         }
@@ -119,13 +118,44 @@ struct ReadingSessionActivityCard: View {
     }
 }
 
+/// A capa da sessão: a imagem real que o app deixou no App Group, e o placeholder
+/// tipográfico quando o livro não tem capa (ou quando o arquivo ainda não chegou).
+private struct SessionCover: View {
+    let title: String
+    var width: CGFloat = Spacing.coverActivityWidth
+    var height: CGFloat = Spacing.coverActivityHeight
+
+    var body: some View {
+        Group {
+            if let cover = SharedCoverStore.read() {
+                Image(uiImage: cover)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                CoverPlaceholder(title: title, author: nil, width: width)
+            }
+        }
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.coverSm, style: .continuous))
+    }
+}
+
 /// Cronômetro que o sistema anima sozinho a partir do início da sessão.
+///
+/// `Text(timerInterval:countsDown:)`, não `Text(_:style: .timer)`: no contexto de
+/// widget o segundo cai para uma descrição relativa e o card mostra "<1 minute"
+/// no lugar do relógio.
+///
+/// `showsHours: false` é o que mantém o relógio em mm:ss, como no artboard — e é
+/// também o que o mantém estreito: o texto reserva a largura do maior valor que o
+/// intervalo pode produzir, e com horas ligadas ele pede largura de "8:00:00" e
+/// espreme as outras colunas do card até sumirem.
 private struct SessionTimer: View {
-    let startDate: Date
+    let range: ClosedRange<Date>
     let role: TypeRole
 
     var body: some View {
-        Text(startDate, style: .timer)
+        Text(timerInterval: range, countsDown: false, showsHours: false)
             .textStyle(role)
             .monospacedDigit()
             .lineLimit(1)

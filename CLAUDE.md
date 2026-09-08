@@ -40,7 +40,10 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   Island (`ReadUpWidgets/`, Figma `22 · Lock screen — Live Activity`). It carries the
   book and a timer and needs no updates at all: the timer is drawn from the session's
   start date, so the card keeps counting with the app suspended — which is the point,
-  since the session screen tells the user to lock the phone.
+  since the session screen tells the user to lock the phone. The cover reaches the
+  extension through the App Group `group.com.antoniocosta.ReadUpApp` — the app stages
+  a resized JPEG there *before* requesting the activity, because the card is rendered
+  once, in another process, and that process cannot fetch `coverUrl`.
 - **Localization.** English and Portuguese via `Localizable.xcstrings`, with one
   `Localization+<Area>.swift` file per feature area under `ReadUp/Localizations/`.
 

@@ -19,7 +19,17 @@ struct ReadingSessionAttributes: ActivityAttributes {
     /// tempo é desenhado a partir de `startDate`.
     struct ContentState: Codable, Hashable {}
 
+    /// Horizonte da sessão: teto do cronômetro e idade máxima do card. Uma sessão
+    /// esquecida (app morto, usuário dormiu) envelhece sozinha em vez de morar no
+    /// lock screen para sempre.
+    static let maxDuration: TimeInterval = 8 * 60 * 60
+
     let bookTitle: String
     let bookAuthor: String
     let startDate: Date
+
+    /// A janela que `Text(timerInterval:)` desenha.
+    var timerRange: ClosedRange<Date> {
+        startDate...startDate.addingTimeInterval(Self.maxDuration)
+    }
 }
