@@ -8,6 +8,7 @@ struct ScannedBookSheet: View {
     let row: ISBNScannerViewModel.ScannedBook
     let viewModel: ISBNScannerViewModel
 
+    @Environment(AuthManager.self) private var authManager
     @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
@@ -15,6 +16,7 @@ struct ScannedBookSheet: View {
     @State private var addedBook: Book?
     @State private var isShowingSearch = false
     @State private var isShowingManualEntry = false
+    @State private var showAuth = false
 
     /// O status vive na linha do scanner, não aqui: fechar a folha não pode perder a escolha.
     private var statusBinding: Binding<BookStatus?> {
@@ -60,6 +62,7 @@ struct ScannedBookSheet: View {
         .sheet(isPresented: $isShowingSearch) {
             Search(onAddAnother: { viewModel.remove(row); dismiss() })
         }
+        .sheet(isPresented: $showAuth) { AuthSheet() }
         .sheet(isPresented: $isShowingManualEntry) {
             BookFormView(
                 mode: .create,
@@ -169,6 +172,7 @@ struct ScannedBookSheet: View {
     }
 
     private func add(_ book: SearchBook) {
+        guard !authManager.isGuest else { showAuth = true; return }
         isAdding = true
         Task {
             let status = statusBinding.wrappedValue ?? .iWantToRead

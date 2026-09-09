@@ -43,7 +43,10 @@ struct TabBar: View {
             Tab(Localization.Tab.library.string, systemImage: "books.vertical", value: .library) {
                 NavigationStack(path: $libraryPath) {
                     ZStack(alignment: .bottom) {
-                        gated(Library(), icon: "books.vertical.fill", title: Localization.Tab.library.string)
+                        // Livre no modo convidado: procurar livros (busca, scanner e
+                        // cadastro manual) é a vitrine do app. O login só é pedido na
+                        // hora de salvar.
+                        Library()
                             .tabBarClearance(pillHeight)
                         pill
                     }

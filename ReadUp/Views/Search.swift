@@ -21,6 +21,7 @@ struct Search: View {
     @State private var isShowingAddManually = false
     @State private var addedBook: Book?
     @State private var addingBookID: String?
+    @State private var showAuth = false
     @FocusState private var isSearchFocused: Bool
     // Mesma camada da frente da Library: a capa tocada é promovida e não sai de tela.
     @State private var frameStore = CoverFrameStore()
@@ -69,6 +70,7 @@ struct Search: View {
         .fullScreenCover(item: $addedBook) { book in
             BookAddedView(book: book) { dismiss() }
         }
+        .sheet(isPresented: $showAuth) { AuthSheet() }
         .task { await reloadRecommendations() }
         .onChange(of: authManager.genres) {
             Task { await reloadRecommendations() }
@@ -343,6 +345,7 @@ struct Search: View {
     private func addButton(_ book: SearchBook) -> some View {
         Button {
             guard !store.contains(book) else { return }
+            guard !authManager.isGuest else { showAuth = true; return }
             addingBookID = book.id
             Task {
                 addedBook = await store.addBook(from: book, status: .iWantToRead)

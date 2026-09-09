@@ -7,11 +7,13 @@ import SwiftUI
 /// Não é um `Form`: o desenho pede campos sublinhados sobre creme, sem os agrupamentos
 /// e o fundo cinza que a lista do sistema impõe.
 struct BookFormView: View {    
+    @Environment(AuthManager.self) private var authManager
     @Environment(LibraryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: BookFormViewModel
     @State private var addedBook: Book?
+    @State private var showAuth = false
     /// ISBN já lido pelo scanner: entra no formulário quando o catálogo não tem o livro.
     let prefilledISBN: String?
     let onSaved: () -> Void
@@ -90,6 +92,7 @@ struct BookFormView: View {
         .fullScreenCover(item: $addedBook) { book in
             BookAddedView(book: book, onAddAnother: { dismiss(); onAddAnother() }) { dismiss() }
         }
+        .sheet(isPresented: $showAuth) { AuthSheet() }
     }
 
     // MARK: - Chrome
@@ -131,6 +134,7 @@ struct BookFormView: View {
     }
 
     private func save() {
+        guard !authManager.isGuest else { showAuth = true; return }
         Task {
             guard await viewModel.save(store: store) else { return }
             onSaved()
@@ -253,5 +257,6 @@ struct BookFormView: View {
 
 #Preview {
     BookFormView(mode: .create)
+        .environment(AuthManager())
         .environment(LibraryStore())
 }
