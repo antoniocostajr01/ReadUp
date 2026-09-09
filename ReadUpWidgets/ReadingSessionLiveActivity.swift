@@ -25,51 +25,21 @@ struct ReadingSessionLiveActivity: Widget {
         }
     }
 
-    // A Dynamic Island não está no artboard 22 — a API a exige, então ela é
-    // montada com os mesmos tokens. Fundo da ilha é sempre preto: a tinta aqui é
-    // `ink/inverse`, não `ink`.
+    // A Dynamic Island foi desligada: vazia em todas as regiões.
+    //
+    // Não dá para omiti-la — `ActivityConfiguration` exige o builder, e num aparelho
+    // com ilha o sistema sempre reserva o pill enquanto a atividade existe. Sem
+    // conteúdo ele fica preto e mudo, que é o mais perto de não existir que a API
+    // permite. A sessão se lê no lock screen.
     private func dynamicIsland(for attributes: ReadingSessionAttributes) -> DynamicIsland {
         DynamicIsland {
-            DynamicIslandExpandedRegion(.leading) {
-                SessionCover(title: attributes.bookTitle,
-                             width: Spacing.coverRowWidth,
-                             height: Spacing.coverRowHeight)
-            }
-
-            DynamicIslandExpandedRegion(.trailing) {
-                VStack(alignment: .trailing, spacing: Spacing.xs) {
-                    Text(Localization.LiveActivity.time)
-                        .textStyle(.overline)
-                        .foregroundStyle(Palette.inkInverse.opacity(0.6))
-
-                    SessionTimer(range: attributes.timerRange, role: .displayMetric)
-                        .foregroundStyle(Palette.inkInverse)
-                }
-            }
-
-            DynamicIslandExpandedRegion(.bottom) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(attributes.bookTitle)
-                        .textStyle(.headingRow)
-                        .foregroundStyle(Palette.inkInverse)
-                        .lineLimit(1)
-
-                    Text(attributes.bookAuthor)
-                        .textStyle(.authorRow)
-                        .foregroundStyle(Palette.inkInverse.opacity(0.65))
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            DynamicIslandExpandedRegion(.center) { EmptyView() }
         } compactLeading: {
-            Image(systemName: "book")
-                .foregroundStyle(Palette.accentProgress)
+            EmptyView()
         } compactTrailing: {
-            SessionTimer(range: attributes.timerRange, role: .captionDefault)
-                .foregroundStyle(Palette.inkInverse)
+            EmptyView()
         } minimal: {
-            Image(systemName: "book")
-                .foregroundStyle(Palette.accentProgress)
+            EmptyView()
         }
     }
 }
@@ -160,5 +130,9 @@ private struct SessionTimer: View {
             .monospacedDigit()
             .lineLimit(1)
             .minimumScaleFactor(0.5)
+            // O texto reserva a largura do maior valor que o intervalo pode
+            // produzir, e desenhava os dígitos centrados nessa sobra — fora de
+            // prumo com o rótulo acima. Alinhado à direita, os dois batem.
+            .multilineTextAlignment(.trailing)
     }
 }

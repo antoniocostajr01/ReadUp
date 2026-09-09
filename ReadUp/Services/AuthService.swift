@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 enum AuthServiceError: LocalizedError {
     case invalidURL
@@ -47,6 +48,17 @@ struct AuthUser: Codable, Identifiable {
         self.avatar = avatar
         self.genres = genres
     }
+
+    /// A foto de perfil decodada. Vive aqui e não em cada tela porque o mesmo
+    /// `base64` → `Data` → `UIImage` já estava escrito no Profile e no resumo de
+    /// sessão, e o fluxo de compartilhamento seria a terceira cópia.
+    var avatarImage: UIImage? {
+        guard let avatar, let data = Data(base64Encoded: avatar) else { return nil }
+        return UIImage(data: data)
+    }
+
+    /// O nome exibido, com o fallback que as telas já usavam.
+    var displayName: String { name ?? "Reader" }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)

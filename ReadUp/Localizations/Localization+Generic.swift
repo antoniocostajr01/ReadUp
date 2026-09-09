@@ -9,6 +9,7 @@ public extension Localization {
     enum Generic: LocalizationProtocol {
         case ok
         case cancel
+        case close
         case confirm
         case delete
         case done
@@ -25,6 +26,7 @@ public extension Localization {
             switch self {
             case .ok: "generic.ok"
             case .cancel: "generic.cancel"
+            case .close: "generic.close"
             case .confirm: "generic.confirm"
             case .delete: "generic.delete"
             case .done: "generic.done"

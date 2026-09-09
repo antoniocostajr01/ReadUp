@@ -1,140 +1,213 @@
 import SwiftUI
 
 struct SessionSummaryShareCard: View {
-    let currentBook: Book
-    let coverImage: UIImage?
-    let sessionPagesRead: Int
-    let sessionTime: String
-    let totalProgress: Int
-    let userName: String
-    let userAvatar: UIImage?
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-            .fill(Color.surfaceRaised.opacity(0.7))
+    enum Skin {
+        /// O story sozinho, de borda a borda, sobre creme.
+        case solid
+        /// Sobre a foto do usuário — sem fundo.
+        case sticker
+
+        var hasGround: Bool { self == .solid }
+
+        /// Títulos, números, nome do leitor.
+        var primaryInk: Color { self == .solid ? Palette.ink : Palette.inkOnArt }
+        /// Autor e rodapé.
+        var secondaryInk: Color { self == .solid ? Palette.inkMuted : Palette.inkOnArt.opacity(0.88) }
+        /// Os rótulos versaletes de 11pt.
+        var labelInk: Color { self == .solid ? Palette.inkStrongMuted : Palette.inkOnArt.opacity(0.92) }
+        /// Os fios entre as colunas de estatística.
+        var ruleColor: Color { self == .solid ? Palette.rule : Palette.inkOnArt.opacity(0.4) }
     }
-    
+
+    let story: SessionStory
+    var skin: Skin = .solid
+
+    /// 9:16. O export sai a 3× disto — 1080×1920, o tamanho de um story.
+    static let size = CGSize(width: 360, height: 640)
+    static let exportScale: CGFloat = 3
+
+    private let coverSize = CGSize(width: 196, height: 268)
+
     var body: some View {
-        VStack(spacing: Spacing.cardInset) {
-            headerCard
-            
-            totalProgressCard
-            
-            HStack(spacing: 10) {
-                ShareStatCard(icon: "book.pages", title: "Pages Read", value: "\(sessionPagesRead)")
-                ShareStatCard(icon: "timer", title: "Session Time", value: sessionTime)
-            }
-            
-            footerCard
+        VStack(spacing: 0) {
+            header
+
+            Spacer(minLength: Spacing.md)
+
+            cover
+
+            Spacer(minLength: Spacing.md)
+
+            stats
+
+            Spacer(minLength: Spacing.lg)
+
+            signature
+
+            footer
+                .padding(.top, Spacing.sm + 2)
         }
-        .padding(Spacing.xl)
-        .background(Color.clear)
-        .frame(width: 380)
+        .padding(.top, Spacing.md + Spacing.lg)
+        .padding(.bottom, Spacing.xl)
+        .padding(.horizontal, Spacing.md + Spacing.lg)
+        .frame(width: Self.size.width, height: Self.size.height)
+        .background(skin.hasGround ? Palette.surfaceRaised : .clear)
+        .shadow(color: skin.hasGround ? .clear : .black.opacity(0.5), radius: 5, y: 1)
     }
-    
-    private var headerCard: some View {
-        HStack(spacing: Spacing.cardInset) {
-            if let coverImage {
+
+    // MARK: - Blocos
+
+    private var header: some View {
+        VStack(spacing: Spacing.xs + 2) {
+            Text(Localization.SessionSummary.storyOverline.string)
+                .textStyle(.overline)
+                .textCase(.uppercase)
+                .foregroundStyle(skin.labelInk)
+
+            Text(story.book.title)
+                .textStyle(.titlePrimary)
+                .foregroundStyle(skin.primaryInk)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+
+            Text(story.book.author)
+                .textStyle(.authorRow)
+                .foregroundStyle(skin.secondaryInk)
+                .lineLimit(1)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var cover: some View {
+        Group {
+            if let coverImage = story.coverImage {
                 Image(uiImage: coverImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 92, height: 132)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            } else {
+                CoverPlaceholder(
+                    title: story.book.title,
+                    author: story.book.author,
+                    width: coverSize.width
+                )
             }
-            
-            VStack(alignment: .leading, spacing: 6) {
-                // Título completo: sem lineLimit, o card cresce se precisar.
-                Text(currentBook.title)
-                    .font(.titleSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .foregroundStyle(Color.ink)
-
-                Text(currentBook.author)
-                    .font(.title3)
-                    .foregroundStyle(.inkMuted)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
         }
-        .padding(Spacing.cardInset)
-        .background(cardBackground)
+        .frame(width: coverSize.width, height: coverSize.height)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.coverLg, style: .continuous))
+        .coverShadow(.coverHero)
     }
 
-    /// Assinatura do leitor: foto e nome do perfil.
-    private var footerCard: some View {
-        HStack(spacing: Spacing.md) {
-            if let userAvatar {
+    private var stats: some View {
+        HStack(spacing: 0) {
+            statCell(Localization.SessionSummary.pagesRead.string, "\(story.pagesRead)")
+            rule
+            statCell(Localization.SessionSummary.sessionTime.string, story.sessionTime)
+            rule
+            statCell(Localization.SessionSummary.totalCompletion.string, "\(story.completionPercentage)%")
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func statCell(_ label: String, _ value: String) -> some View {
+        VStack(spacing: Spacing.sm - 1) {
+            Text(label)
+                .textStyle(.overline)
+                .textCase(.uppercase)
+                .foregroundStyle(skin.labelInk)
+
+            Text(value)
+                .textStyle(.displayMetric)
+                .foregroundStyle(skin.primaryInk)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var rule: some View {
+        Rectangle()
+            .fill(skin.ruleColor)
+            .frame(width: 1, height: 30)
+    }
+
+    /// Quem leu. A assinatura do leitor, com a foto do perfil.
+    private var signature: some View {
+        HStack(spacing: Spacing.sm + 1) {
+            avatar
+
+            Text(story.userName)
+                .textStyle(.field)
+                .foregroundStyle(skin.primaryInk)
+                .lineLimit(1)
+        }
+    }
+
+    private var avatar: some View {
+        Group {
+            if let userAvatar = story.userAvatar {
                 Image(uiImage: userAvatar)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 40, height: 40)
-                    .clipShape(Circle())
             } else {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.brand)
-                    .frame(width: 40, height: 40)
+                ZStack {
+                    Circle().fill(skin.hasGround ? Palette.surfaceFill : Palette.inkOnArt.opacity(0.2))
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundStyle(skin.secondaryInk)
+                }
             }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(userName)
-                    .font(.system(.headline, weight: .bold))
-                    .lineLimit(1)
-                    .foregroundStyle(Color.ink)
-
-                Text("ReadUp")
-                    .font(.bodySupporting)
-                    .foregroundStyle(.inkMuted)
-            }
-
-            Spacer(minLength: 0)
         }
-        .padding(Spacing.cardInset)
-        .background(cardBackground)
+        .frame(width: 32, height: 32)
+        .clipShape(Circle())
+        .overlay(Circle().strokeBorder(skin.ruleColor, lineWidth: 1))
     }
 
-    private var totalProgressCard: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Label("Total Progress", systemImage: "book")
-                .font(.bodySupporting)
-                .foregroundStyle(.inkMuted)
-            
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
-                Text("\(totalProgress)")
-                    .font(.system(.largeTitle, weight: .bold))
-                    .foregroundStyle(.brand)
-                Text("/ \(currentBook.numberOfPages) pages")
-                    .font(.title3)
-                    .foregroundStyle(.inkMuted)
-            }
+    private var footer: some View {
+        HStack(spacing: Spacing.sm - 2) {
+            // A marca solta, não o tile do ícone: ao lado de texto, o quadrado creme
+            // do `AppIcon` leria como um segundo card.
+            Image(.readUpIcon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+
+            Text(Localization.SessionSummary.madeWith.string)
+                .textStyle(.captionFine)
+                .foregroundStyle(skin.secondaryInk)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.cardInset)
-        .background(cardBackground)
     }
 }
 
-fileprivate struct ShareStatCard: View {
-    let icon: String
-    let title: String
-    let value: String
+// MARK: - Render
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Label(title, systemImage: icon)
-                .font(.bodySupporting)
-                .foregroundStyle(.inkMuted)
+extension SessionSummaryShareCard {
 
-            Text(value)
-                .font(.titlePrimary)
-                .foregroundStyle(.brand)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.cardInset)
-        .background(
-            RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                .fill(Color.surfaceRaised.opacity(0.7))
-        )
+    /// Rasteriza o card a 1080×1920.
+    ///
+    /// Síncrono de propósito: o `ImageRenderer` não espera um `AsyncImage`, então a
+    /// capa e o avatar têm de chegar aqui já como `UIImage`.
+    @MainActor
+    func render() -> UIImage? {
+        let renderer = ImageRenderer(content: self)
+        renderer.scale = Self.exportScale
+        renderer.isOpaque = skin.hasGround
+        return renderer.uiImage
     }
+}
+
+#Preview("Solid") {
+    SessionSummaryShareCard(story: .preview)
+}
+
+#Preview("Sticker over a photo") {
+    ZStack {
+        LinearGradient(
+            colors: [Palette.inkStrongMuted, Palette.surfaceNight],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        SessionSummaryShareCard(story: .preview, skin: .sticker)
+    }
+    .ignoresSafeArea()
 }

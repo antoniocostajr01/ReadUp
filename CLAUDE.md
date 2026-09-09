@@ -34,8 +34,13 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
 - **AI reading assistant.** A chat surface scoped to literary discussion, with a
   client-side topic classifier plus a backend guardrail so the assistant stays on
   topic (`LiteraryTopicClassifier`, `AIChatView`, `LiteraryAssistantViewModel`).
-- **Onboarding.** Genre selection on first launch, used to seed genre shelves and
-  personalize the home screen.
+- **Onboarding.** Two things, in different places. Before any account exists,
+  `OnboardingTour` runs a pre-auth tour — the three ways to add a book, then the Live
+  Activity, then the Welcome screen (Figma page `Screens`, section `Onboarding`). The
+  first two carry a "Skip" that jumps straight to Welcome; Welcome is the last step and
+  has none. `@AppStorage("hasSeenOnboardingTour")` retires it after one pass. Genre
+  selection is *not* part of that tour: it happens after login, in the `AuthManager`
+  `.onboarding` phase, and seeds genre shelves and the home screen.
 - **Live Activity.** A reading session shows on the lock screen and in the Dynamic
   Island (`ReadUpWidgets/`, Figma `22 · Lock screen — Live Activity`). It carries the
   book and a timer and needs no updates at all: the timer is drawn from the session's

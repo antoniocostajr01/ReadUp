@@ -182,6 +182,23 @@ final class LibraryStore {
         }
     }
 
+    /// Atualiza os pensamentos de uma sessão existente no backend.
+    @discardableResult
+    func updateSession(id: String, thoughts: String) async -> Bool {
+        guard let token else { return false }
+        do {
+            let payload = UpdateSessionPayload(thoughts: thoughts.isEmpty ? nil : thoughts)
+            let dto = try await sessionService.updateSession(id: id, payload, token: token)
+            if let index = sessions.firstIndex(where: { $0.id == id }) {
+                sessions[index].thoughts = dto.thoughts ?? ""
+            }
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - Helpers
 
     private func applyUpdate(bookId: String, payload: UpdateBookPayload) async {

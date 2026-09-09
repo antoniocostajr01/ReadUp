@@ -192,11 +192,10 @@ struct BookFormView: View {
                 .textStyle(.overline)
                 .foregroundStyle(Palette.inkFaint)
 
-            TextEditor(text: $viewModel.details)
+            TextField("", text: $viewModel.details, axis: .vertical)
                 .textStyle(.bodyDefault)
                 .foregroundStyle(Palette.ink)
-                .scrollContentBackground(.hidden)
-                .frame(height: 74)
+                .lineLimit(3...)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 11)
                 .overlay(

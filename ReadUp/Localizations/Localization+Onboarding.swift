@@ -21,6 +21,20 @@ public extension Localization {
         case skipForNow
         case genresTitleLine1
         case genresTitleLine2
+        case skip
+        case addTitle
+        case addSubtitle
+        case addScanTitle
+        case addScanBody
+        case addSearchTitle
+        case addSearchBody
+        case addManualTitle
+        case addManualBody
+        case liveTitle
+        case liveSubtitle
+        case liveNote
+        case liveCurrentSession
+        case liveTimeLabel
 
         public var key: String.LocalizationValue {
             switch self {
@@ -38,6 +52,20 @@ public extension Localization {
             case .skipForNow: "onboarding.skipForNow"
             case .genresTitleLine1: "onboarding.genres.titleLine1"
             case .genresTitleLine2: "onboarding.genres.titleLine2"
+            case .skip: "onboarding.skip"
+            case .addTitle: "onboarding.add.title"
+            case .addSubtitle: "onboarding.add.subtitle"
+            case .addScanTitle: "onboarding.add.scan.title"
+            case .addScanBody: "onboarding.add.scan.body"
+            case .addSearchTitle: "onboarding.add.search.title"
+            case .addSearchBody: "onboarding.add.search.body"
+            case .addManualTitle: "onboarding.add.manual.title"
+            case .addManualBody: "onboarding.add.manual.body"
+            case .liveTitle: "onboarding.live.title"
+            case .liveSubtitle: "onboarding.live.subtitle"
+            case .liveNote: "onboarding.live.note"
+            case .liveCurrentSession: "onboarding.live.currentSession"
+            case .liveTimeLabel: "onboarding.live.timeLabel"
             }
         }
     }

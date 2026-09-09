@@ -7,7 +7,6 @@ struct LoginView: View {
 
     @State private var email = ""
     @State private var password = ""
-    @State private var appleSignIn = AppleSignInCoordinator()
 
     private var isFormValid: Bool {
         !email.isEmpty && !password.isEmpty
@@ -62,6 +61,7 @@ struct LoginView: View {
                 }
 
                 appleSignInButton
+                
 
                 HStack(spacing: 4) {
                     Spacer()
@@ -87,15 +87,17 @@ struct LoginView: View {
         .onAppear { authManager.errorMessage = nil }
     }
 
-    /// "Continue with Apple" é um `ReadUpButton(.secondary)` de verdade: o fluxo da
-    /// Apple é disparado direto pelo `AppleSignInCoordinator`, sem o botão nativo
-    /// escondido por baixo (que vazava por trás do nosso).
+    /// Botão nativo da Apple: a App Store exige o controle oficial, então nada de
+    /// restilizar. Só o raio de canto acompanha a pílula do `ReadUpButton`.
     private var appleSignInButton: some View {
-        ReadUpButton(title: Localization.Auth.continueWithApple.string, variant: .secondary) {
-            appleSignIn.start { result in
-                Task { await authManager.signInWithApple(result: result) }
-            }
+        SignInWithAppleButton(.continue) { request in
+            request.requestedScopes = [.fullName, .email]
+        } onCompletion: { result in
+            Task { await authManager.signInWithApple(result: result) }
         }
+        .signInWithAppleButtonStyle(.black)
+        .frame(height: 54)
+        .clipShape(Capsule(style: .continuous))
     }
 }
 

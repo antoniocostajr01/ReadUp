@@ -44,7 +44,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				ReadUpWidgets.entitlements,
 			);
 			target = AA1100000000000000000001 /* ReadUpWidgets */;
 		};
@@ -481,7 +480,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ReadUp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ReadUp;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Permita o acesso à câmera para escanear o código de barras dos seus livros.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Permita o acesso à câmera para escanear códigos de barras e para tirar uma foto ao compartilhar sua sessão de leitura.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Permita o acesso para salvar o resumo da sessão na sua galeria.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -521,7 +520,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ReadUp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ReadUp;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Permita o acesso à câmera para escanear o código de barras dos seus livros.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Permita o acesso à câmera para escanear códigos de barras e para tirar uma foto ao compartilhar sua sessão de leitura.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Permita o acesso para salvar o resumo da sessão na sua galeria.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

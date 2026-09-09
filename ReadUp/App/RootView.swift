@@ -29,7 +29,9 @@ struct RootView: View {
                 switch authManager.phase {
                 case .unauthenticated:
                     NavigationStack {
-                        WelcomeView()
+                        // O tour entra antes da Welcome e some depois de visto —
+                        // a própria `OnboardingTour` decide qual das duas mostrar.
+                        OnboardingTour()
                     }
                 case .guest:
                     TabBar()

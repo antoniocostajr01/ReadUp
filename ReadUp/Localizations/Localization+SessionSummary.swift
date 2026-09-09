@@ -10,32 +10,71 @@ public extension Localization {
         case title
         case pagesRead
         case sessionTime
-        case mins
         case totalCompletion
         case finalThoughts
         case thoughtsPlaceholder
         case saveSession
-        case totalProgress
+        case editSession
+        case saveChanges
+        case changesSaved
+        case changesFailed
         case ofPages
-        case shareToInstagram
-        case clipboardInstruction
-        case clipboardCopied
+
+        // MARK: Fluxo de compartilhamento
+
+        case share
+        case storyOverline
+        case madeWith
+        case optionPhotoTitle
+        case optionPhotoCaption
+        case optionCardTitle
+        case optionCardCaption
+        case continueAction
+        case cameraBack
+        case cameraFront
+        case cameraDenied
+        case cameraOpenSettings
+        case editorHint
+        case editorAddText
+        case editorDone
+        case editorTextColor
+        case shareToStories
+        case shareOther
+        case readyCaption
 
         public var key: String.LocalizationValue {
             switch self {
             case .title: "sessionSummary.title"
             case .pagesRead: "sessionSummary.pagesRead"
             case .sessionTime: "sessionSummary.sessionTime"
-            case .mins: "sessionSummary.mins"
             case .totalCompletion: "sessionSummary.totalCompletion"
             case .finalThoughts: "sessionSummary.finalThoughts"
             case .thoughtsPlaceholder: "sessionSummary.thoughtsPlaceholder"
             case .saveSession: "sessionSummary.saveSession"
-            case .totalProgress: "sessionSummary.totalProgress"
+            case .editSession: "sessionSummary.editSession"
+            case .saveChanges: "sessionSummary.saveChanges"
+            case .changesSaved: "sessionSummary.changesSaved"
+            case .changesFailed: "sessionSummary.changesFailed"
             case .ofPages: "sessionSummary.ofPages"
-            case .shareToInstagram: "sessionSummary.shareToInstagram"
-            case .clipboardInstruction: "sessionSummary.clipboardInstruction"
-            case .clipboardCopied: "sessionSummary.clipboardCopied"
+            case .share: "sessionSummary.share"
+            case .storyOverline: "sessionSummary.storyOverline"
+            case .madeWith: "sessionSummary.madeWith"
+            case .optionPhotoTitle: "sessionSummary.optionPhotoTitle"
+            case .optionPhotoCaption: "sessionSummary.optionPhotoCaption"
+            case .optionCardTitle: "sessionSummary.optionCardTitle"
+            case .optionCardCaption: "sessionSummary.optionCardCaption"
+            case .continueAction: "sessionSummary.continueAction"
+            case .cameraBack: "sessionSummary.cameraBack"
+            case .cameraFront: "sessionSummary.cameraFront"
+            case .cameraDenied: "sessionSummary.cameraDenied"
+            case .cameraOpenSettings: "sessionSummary.cameraOpenSettings"
+            case .editorHint: "sessionSummary.editorHint"
+            case .editorAddText: "sessionSummary.editorAddText"
+            case .editorDone: "sessionSummary.editorDone"
+            case .editorTextColor: "sessionSummary.editorTextColor"
+            case .shareToStories: "sessionSummary.shareToStories"
+            case .shareOther: "sessionSummary.shareOther"
+            case .readyCaption: "sessionSummary.readyCaption"
             }
         }
     }

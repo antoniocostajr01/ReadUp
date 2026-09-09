@@ -148,6 +148,10 @@ struct Home: View {
                         height: Spacing.readingCardHeight
                     )
                     .id(book.id)
+                    // A capa é o alvo óbvio: tocar nela abre a sessão do livro
+                    // tocado, mesmo que não seja o card centralizado.
+                    .contentShape(.rect)
+                    .onTapGesture { activeReadingBook = book }
                 }
             }
             .scrollTargetLayout()

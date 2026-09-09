@@ -135,6 +135,12 @@ struct ReadUpButtonLabel: View {
         .overlay(
             Capsule(style: .continuous).strokeBorder(variant.borderColor, lineWidth: 1)
         )
+        // A pílula inteira é o alvo, não os glifos do texto.
+        //
+        // Só a `.primary` tem fill opaco; nas outras o `Capsule` é `.clear` e o
+        // contorno é um `strokeBorder` — nenhum dos dois responde a toque, então o
+        // botão só engatava quando o dedo caía exatamente na palavra.
+        .contentShape(Capsule(style: .continuous))
     }
 }
 

@@ -16,14 +16,12 @@ struct Profile: View {
     @State private var showGenrePicker = false
 
     private var displayName: String {
-        authManager.currentUser?.name ?? "Reader"
+        authManager.currentUser?.displayName ?? "Reader"
     }
 
     /// Foto de perfil decodada do base64 vindo do backend (se houver).
     private var avatarImage: UIImage? {
-        guard let base64 = authManager.currentUser?.avatar,
-              let data = Data(base64Encoded: base64) else { return nil }
-        return UIImage(data: data)
+        authManager.currentUser?.avatarImage
     }
 
     /// Iniciais do nome — o avatar do Figma é tipográfico quando não há foto.

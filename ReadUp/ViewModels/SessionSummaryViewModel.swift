@@ -12,6 +12,12 @@ final class SessionSummaryViewModel {
     var isSaving = false
     private(set) var hasSaved = false
 
+    /// Indica se o usuário está editando os pensamentos de uma sessão já salva.
+    var isEditing = false
+
+    /// `true` quando a tela está em modo de visualização de sessão anterior.
+    var isReviewing: Bool { sessionToEdit != nil }
+
     init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, sessionToEdit: LiterarySession? = nil) {
         self.readingTime = readingTime
         self.currentBook = currentBook
@@ -77,5 +83,37 @@ final class SessionSummaryViewModel {
             onSessionSaved?()
             onDismiss()
         }
+    }
+
+    /// Confirmação da última gravação, para a tela mostrar o retorno.
+    ///
+    /// Existe porque salvar era indistinguível de não salvar: no sucesso a tela se
+    /// fechava sozinha, então o usuário via a mesma coisa que veria se o PUT tivesse
+    /// falhado em silêncio. Agora a tela fica de pé, confirma, e o botão volta a Edit.
+    var didSaveChanges = false
+
+    /// Verdadeiro quando a última tentativa de gravar falhou. A `LibraryStore` guarda
+    /// a mensagem; aqui só interessa que houve falha, para não mentir um sucesso.
+    var didFailToSave = false
+
+    /// Atualiza apenas os pensamentos de uma sessão existente.
+    func updateSession(store: LibraryStore) async {
+        guard let session = sessionToEdit else { return }
+        isSaving = true
+        defer { isSaving = false }
+
+        didSaveChanges = false
+        didFailToSave = false
+
+        guard await store.updateSession(id: session.id, thoughts: thoughts) else {
+            didFailToSave = true
+            return
+        }
+
+        // Mantém o snapshot local coerente: `setupForEditting` relê daqui, e sem isto
+        // um segundo Edit na mesma tela recarregaria o texto antigo.
+        sessionToEdit?.thoughts = thoughts
+        isEditing = false
+        didSaveChanges = true
     }
 }

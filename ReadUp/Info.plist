@@ -25,5 +25,7 @@
 		<string>instagram</string>
 		<string>instagram-stories</string>
 	</array>
+	<key>FACEBOOK_APP_ID</key>
+	<string>$(FACEBOOK_APP_ID)</string>
 </dict>
 </plist>
