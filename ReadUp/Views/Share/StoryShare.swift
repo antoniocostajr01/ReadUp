@@ -143,15 +143,6 @@ enum StoryDestination {
     }
 }
 
-/// Fecha o fluxo de compartilhamento inteiro, de qualquer degrau dele.
-///
-/// Pelo ambiente e não por um closure passado de mão em mão: quem precisa disso é o
-/// `StoryDestinations`, dois níveis abaixo, e o caminho até lá atravessaria o editor
-/// e a tela do card pronto sem que nenhum dos dois tivesse o que fazer com ele.
-extension EnvironmentValues {
-    @Entry var dismissStoryFlow: () -> Void = {}
-}
-
 /// O share sheet do sistema.
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -173,8 +164,16 @@ struct ShareSheet: UIViewControllerRepresentable {
 struct StoryDestinations: View {
     let image: () -> UIImage?
     var onDark: Bool = false
-
-    @Environment(\.dismissStoryFlow) private var dismissStoryFlow
+    /// Chamado só quando o hand-off pro Instagram acontece de verdade — não no X, não
+    /// no share sheet do sistema. Quem monta o fluxo decide o que fazer (hoje: fechar
+    /// o fluxo e voltar pra Home).
+    ///
+    /// Passado de mão em mão através do editor e da tela do card pronto, e não pelo
+    /// ambiente: uma destination de `navigationDestination` é instanciada pela própria
+    /// `NavigationStack`, não como filha da view que registrou o modificador, então
+    /// valores de ambiente postos na raiz do fluxo nunca chegavam aqui — o closure lido
+    /// era o padrão vazio, e publicar no Instagram não fechava nada.
+    var onPublished: () -> Void = {}
 
     @State private var shareURL: URL?
     @State private var isShowingShareSheet = false
@@ -184,10 +183,10 @@ struct StoryDestinations: View {
             Button {
                 guard let image = image() else { return }
                 // Entregue ao Instagram, o trabalho aqui acabou: o fluxo se fecha
-                // atrás do usuário, que volta do story direto para o resumo da
-                // sessão em vez de para o editor que já não tem o que fazer.
+                // atrás do usuário, que volta do story direto pra Home em vez de para
+                // o editor que já não tem o que fazer.
                 if StoryDestination.instagramStories(image) {
-                    dismissStoryFlow()
+                    onPublished()
                 } else {
                     presentShareSheet(for: image)
                 }

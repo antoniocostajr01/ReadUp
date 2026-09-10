@@ -102,6 +102,11 @@ struct Library: View {
         }
         .coordinateSpace(.named(HeroSpace.name))
         .background(Palette.surface)
+        // Tocar fora do campo fecha o teclado. `simultaneousGesture` para não roubar o
+        // toque das capas nem dos chips de filtro — o mesmo par que a `SessionSummary`
+        // já usa.
+        .simultaneousGesture(TapGesture().onEnded { hideKeyboard() })
+        .scrollDismissesKeyboard(.interactively)
         .toolbar(.hidden, for: .navigationBar)
         // A tela escolhida abre no onDismiss, não no toque: apresentar uma sheet enquanto
         // outra ainda está saindo faz o SwiftUI engolir a segunda.
@@ -200,7 +205,14 @@ struct Library: View {
                 if books.isEmpty {
                     emptyState
                 } else if visibleBooks.isEmpty {
-                    noResultsState
+                    // Busca sem resultado nenhum (mesmo sem o filtro de status): oferece
+                    // adicionar o livro. Se o filtro de status é que esconde tudo (o livro
+                    // está na estante, só não nesta), o "nenhum resultado" genérico basta.
+                    if !searchText.trimmingCharacters(in: .whitespaces).isEmpty && filteredBooks.isEmpty {
+                        notFoundState
+                    } else {
+                        noResultsState
+                    }
                 } else {
                     gridContent
                 }
@@ -400,7 +412,7 @@ struct Library: View {
                 Text(label)
                     .textStyle(.label)
 
-                Text("\(count)")
+                Text(verbatim: "\(count)")
                     .textStyle(.captionFine)
                     .foregroundStyle(isOn ? Palette.onBrand.opacity(0.6) : Palette.inkMeta)
             }
@@ -486,6 +498,27 @@ struct Library: View {
                 .textStyle(.bodySupporting)
                 .foregroundStyle(Palette.inkMuted)
                 .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxl)
+    }
+
+    /// Busca sem nenhum resultado na estante: oferece adicionar o livro pelo modal padrão.
+    private var notFoundState: some View {
+        VStack(spacing: Spacing.cardInset) {
+            Text(Localization.Library.notFoundTitle.string)
+                .textStyle(.titleSecondary)
+                .foregroundStyle(Palette.ink)
+
+            Text(String(format: Localization.Library.notFoundMessage.string, searchText.trimmingCharacters(in: .whitespaces)))
+                .textStyle(.bodySupporting)
+                .foregroundStyle(Palette.inkMuted)
+                .multilineTextAlignment(.center)
+
+            ReadUpButton(title: Localization.Library.notFoundAction.string, variant: .primary) {
+                isShowingAddOptions = true
+            }
+            .padding(.top, Spacing.sm)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.xxl)

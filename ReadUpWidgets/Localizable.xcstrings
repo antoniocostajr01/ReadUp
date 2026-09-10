@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
     "liveActivity.currentSession" : {
       "comment" : "Overline above the book on the reading-session Live Activity.",
       "extractionState" : "manual",

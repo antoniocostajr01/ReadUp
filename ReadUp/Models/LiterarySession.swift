@@ -11,7 +11,7 @@ import Foundation
 /// (o backend devolve só `bookId`; o `LibraryStore` faz o join).
 /// `timeRead` está em segundos; `timesTamp` é a data da sessão.
 struct LiterarySession: Identifiable, Hashable {
-    let id: String
+    var id: String
     var book: Book
     var pagesRead: Int
     var timeRead: Int

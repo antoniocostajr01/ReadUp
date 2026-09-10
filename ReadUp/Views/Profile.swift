@@ -153,7 +153,8 @@ struct Profile: View {
                 ReadUpButtonLabel(
                     title: Localization.Profile.editProfile.string,
                     variant: .secondary,
-                    isLoading: authManager.isLoading
+                    isLoading: authManager.isLoading,
+                    isEnabled: !authManager.isLoading
                 )
             }
             .disabled(authManager.isLoading)

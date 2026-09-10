@@ -45,7 +45,7 @@ struct GridCover: View {
         .opacity(isFlying ? 0 : 1)
         .modifier(RecordsFrame(store: isRecording ? frameStore : nil, id: book.id))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(book.title), \(book.author), \(book.status.displayName)")
+        .accessibilityLabel(Text(verbatim: "\(book.title), \(book.author), \(book.status.displayName)"))
     }
 }
 

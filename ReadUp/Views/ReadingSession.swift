@@ -7,12 +7,15 @@ struct ReadingSession: View {
     @State private var viewModel = ReadingSessionViewModel()
     @State private var showValidationError = false
     @State private var validationMessage = ""
+    /// O mesmo alerta serve para página inválida e para falha ao gravar — só o título muda.
+    @State private var validationTitle = Localization.ReadingSession.invalidPage.string
     @State private var showExitConfirmation = false
     @State private var lockAnimationTrigger = false
     @State private var isPhoneLocked = false
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(LibraryStore.self) private var store
 
     var body: some View {
         VStack(spacing: Spacing.xl) {
@@ -38,21 +41,13 @@ struct ReadingSession: View {
 
             Spacer()
 
-            Button {
+            ReadUpButton(
+                title: Localization.ReadingSession.finish.string,
+                isLoading: viewModel.isSaving,
+                isEnabled: viewModel.isSessionRunning
+            ) {
                 viewModel.isShowingAlertValue = true
-            } label: {
-                Label(Localization.ReadingSession.finish.string, systemImage: "checkmark.circle")
-                    .font(.titleTertiary)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.cardInset)
-                    .background(
-                        RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                            .fill(Color.brand)
-                    )
             }
-            .disabled(!viewModel.isSessionRunning)
-            .opacity(viewModel.isSessionRunning ? 1 : 0.5)
             .padding(.horizontal, Spacing.lg)
             .padding(.bottom, Spacing.lg)
         }
@@ -76,6 +71,12 @@ struct ReadingSession: View {
         }
         .onDisappear {
             viewModel.stopAllTimers()
+            // Sair de qualquer outro jeito (swipe back, X, matar o app) tem que
+            // encerrar o card. Empurrando o summary a atividade já foi encerrada no
+            // Confirmar da página — refazer aqui é inofensivo, mas desnecessário.
+            if viewModel.savedSession == nil {
+                viewModel.endLiveActivity()
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -91,22 +92,52 @@ struct ReadingSession: View {
                     let currentProgress = selectedBook.progress ?? 0
 
                     if page < currentProgress {
+                        validationTitle = Localization.ReadingSession.invalidPage.string
                         validationMessage = String(format: Localization.ReadingSession.cantGoBack.string, currentProgress)
                         showValidationError = true
                         return
                     }
 
                     if page > selectedBook.numberOfPages {
+                        validationTitle = Localization.ReadingSession.invalidPage.string
                         validationMessage = String(format: Localization.ReadingSession.exceedsPages.string, selectedBook.numberOfPages)
                         showValidationError = true
                         return
                     }
 
-                    // Salva o progresso anterior; o novo progresso é persistido ao salvar a sessão.
                     viewModel.previousProgress = currentProgress
                     viewModel.lastPageRead = "\(page)"
                     viewModel.refresh()
-                    viewModel.isShowingSummary = true
+
+                    // A sessão é gravada aqui, no momento em que o usuário confirma a
+                    // página — não mais quando ele toca Confirmar no summary. Sair da
+                    // tela de qualquer outro jeito não perdia mais só o compartilhamento,
+                    // perdia a sessão inteira.
+                    viewModel.isSaving = true
+                    Task {
+                        let session = await store.logSession(
+                            book: selectedBook,
+                            sessionPagesRead: page - currentProgress,
+                            totalProgress: page,
+                            timeRead: viewModel.timeElapsed,
+                            thoughts: ""
+                        )
+                        viewModel.isSaving = false
+
+                        // Sem sessão só acontece se não houver token — offline já volta
+                        // uma sessão local pela fila do `PendingSessionStore`. Nesse caso
+                        // não encerra a atividade nem navega: o usuário continua na sessão
+                        // e pode tentar de novo em vez de perder a leitura em silêncio.
+                        guard let session else {
+                            validationTitle = Localization.ReadingSession.saveFailed.string
+                            validationMessage = Localization.ReadingSession.saveFailedMessage.string
+                            showValidationError = true
+                            return
+                        }
+
+                        viewModel.endLiveActivity()
+                        viewModel.savedSession = session
+                    }
                 }
             }
 
@@ -114,7 +145,7 @@ struct ReadingSession: View {
                 viewModel.lastPageRead = ""
             }
         }
-        .alert(Localization.ReadingSession.invalidPage.string, isPresented: $showValidationError) {
+        .alert(validationTitle, isPresented: $showValidationError) {
             Button(Localization.Generic.ok.string, role: .cancel) {
                 viewModel.lastPageRead = ""
                 viewModel.isShowingAlertValue = true
@@ -132,16 +163,15 @@ struct ReadingSession: View {
         } message: {
             Text(Localization.ReadingSession.leaveMessage.string)
         }
-        .navigationDestination(isPresented: $viewModel.isShowingSummary) {
+        .navigationDestination(item: $viewModel.savedSession) { session in
             SessionSummary(
                 readingTime: viewModel.timeElapsed,
                 currentBook: selectedBook,
                 pagesRead: Int(viewModel.lastPageRead) ?? selectedBook.progress ?? 0,
                 previousProgress: viewModel.previousProgress,
-                onSessionSaved: {
-                    viewModel.endLiveActivity()
-                    activeReadingBook = nil
-                }
+                session: session,
+                mode: .finished,
+                onFinish: { activeReadingBook = nil }
             )
         }
     }
@@ -160,7 +190,7 @@ struct ReadingSession: View {
 
             // Estado: countdown (número + lock tip)
             VStack(spacing: Spacing.cardInset) {
-                Text("\(viewModel.countdown)")
+                Text(verbatim: "\(viewModel.countdown)")
                     .font(.displayTimer)
                     .foregroundStyle(.brand)
 

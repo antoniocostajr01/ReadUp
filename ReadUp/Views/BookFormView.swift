@@ -110,10 +110,13 @@ struct BookFormView: View {
 
             Spacer()
 
-            ChromeChip(systemImage: "checkmark", isFilled: true, action: save)
-                .opacity(viewModel.isSaveEnabled && !viewModel.isSaving ? 1 : Motion.disabledOpacity)
-                .disabled(!viewModel.isSaveEnabled || viewModel.isSaving)
-                .accessibilityLabel(Localization.AddBook.saveBook.string)
+            ChromeChip(
+                systemImage: "checkmark",
+                isFilled: true,
+                isEnabled: viewModel.isSaveEnabled && !viewModel.isSaving,
+                action: save
+            )
+            .accessibilityLabel(Localization.AddBook.saveBook.string)
         }
         .frame(height: 36)
     }
@@ -196,7 +199,7 @@ struct BookFormView: View {
                 .textStyle(.overline)
                 .foregroundStyle(Palette.inkFaint)
 
-            TextField("", text: $viewModel.details, axis: .vertical)
+            TextField("" as String, text: $viewModel.details, axis: .vertical)
                 .textStyle(.bodyDefault)
                 .foregroundStyle(Palette.ink)
                 .lineLimit(3...)

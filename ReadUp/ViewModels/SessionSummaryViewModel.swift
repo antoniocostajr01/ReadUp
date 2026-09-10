@@ -3,27 +3,37 @@ import Foundation
 @MainActor
 @Observable
 final class SessionSummaryViewModel {
+    /// De onde a tela foi alcançada. A sessão já está salva nos dois casos — o que
+    /// muda é só o que os botões fazem e dizem.
+    enum Mode {
+        /// Acabou de terminar de ler: `ReadingSession` já gravou a sessão.
+        case finished
+        /// Revendo uma sessão antiga, vinda de Home ou History.
+        case reviewing
+    }
+
     var readingTime: Int
     var currentBook: Book
     var pagesRead: Int
     var previousProgress: Int
     var thoughts: String = ""
-    var sessionToEdit: LiterarySession?
+    var session: LiterarySession
+    let mode: Mode
     var isSaving = false
-    private(set) var hasSaved = false
 
     /// Indica se o usuário está editando os pensamentos de uma sessão já salva.
     var isEditing = false
 
     /// `true` quando a tela está em modo de visualização de sessão anterior.
-    var isReviewing: Bool { sessionToEdit != nil }
+    var isReviewing: Bool { mode == .reviewing }
 
-    init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, sessionToEdit: LiterarySession? = nil) {
+    init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, session: LiterarySession, mode: Mode) {
         self.readingTime = readingTime
         self.currentBook = currentBook
         self.pagesRead = pagesRead
         self.previousProgress = previousProgress
-        self.sessionToEdit = sessionToEdit
+        self.session = session
+        self.mode = mode
     }
 
     /// Páginas lidas NESTA sessão
@@ -51,38 +61,15 @@ final class SessionSummaryViewModel {
     }
 
     func setupForEditting() {
-        if let session = sessionToEdit {
-            pagesRead = session.pagesRead
-            currentBook = session.book
-            thoughts = session.thoughts
-            readingTime = session.timeRead
-        }
-    }
-
-    /// Registra a sessão no backend (via store) e atualiza o progresso do livro.
-    func saveSession(store: LibraryStore, onSessionSaved: (() -> Void)?, onDismiss: @escaping () -> Void) async {
-        // Idempotente: evita salvar duas vezes quando o botão Confirmar e a rede
-        // de segurança do onDisappear disparam para a mesma sessão.
-        guard !hasSaved else {
-            onDismiss()
-            return
-        }
-        isSaving = true
-        defer { isSaving = false }
-
-        let success = await store.logSession(
-            book: currentBook,
-            sessionPagesRead: sessionPagesRead,
-            totalProgress: pagesRead,
-            timeRead: readingTime,
-            thoughts: thoughts
-        )
-
-        if success {
-            hasSaved = true
-            onSessionSaved?()
-            onDismiss()
-        }
+        guard mode == .reviewing else { return }
+        // `pagesRead` NÃO é relido daqui: `session.pagesRead` é o delta da sessão, e
+        // quem abriu a tela já passou o progresso acumulado do livro naquele momento
+        // (`LibraryStore.cumulativeProgress(upTo:)`). Reler o delta aqui desfazia essa
+        // conta — era o que fazia o card mostrar 15/384 e "6 páginas" numa sessão de
+        // 15 páginas sobre um livro que estava na 24.
+        currentBook = session.book
+        thoughts = session.thoughts
+        readingTime = session.timeRead
     }
 
     /// Confirmação da última gravação, para a tela mostrar o retorno.
@@ -98,7 +85,6 @@ final class SessionSummaryViewModel {
 
     /// Atualiza apenas os pensamentos de uma sessão existente.
     func updateSession(store: LibraryStore) async {
-        guard let session = sessionToEdit else { return }
         isSaving = true
         defer { isSaving = false }
 
@@ -112,8 +98,18 @@ final class SessionSummaryViewModel {
 
         // Mantém o snapshot local coerente: `setupForEditting` relê daqui, e sem isto
         // um segundo Edit na mesma tela recarregaria o texto antigo.
-        sessionToEdit?.thoughts = thoughts
+        session.thoughts = thoughts
         isEditing = false
         didSaveChanges = true
+    }
+
+    /// "Back to home": grava os pensamentos digitados, se houver algum, antes de sair.
+    /// A sessão já existe — uma falha aqui perde só o texto, não a sessão — então não
+    /// há toast nem bloqueio de saída, o usuário já está de saída.
+    func finish(store: LibraryStore) async {
+        guard !thoughts.isEmpty else { return }
+        isSaving = true
+        defer { isSaving = false }
+        await store.updateSession(id: session.id, thoughts: thoughts)
     }
 }

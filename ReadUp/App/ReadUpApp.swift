@@ -20,6 +20,10 @@ struct ReadUpApp: App {
         // volta do disco no próximo cold start sem tocar na rede.
         URLCache.shared = URLCache(memoryCapacity: 32 * 1024 * 1024,
                                    diskCapacity: 200 * 1024 * 1024)
+
+        // Um crash ou force-quit durante uma sessão não roda `endLiveActivity()` —
+        // o card só some sozinho no `staleDate` de 8h. Varre no próximo launch.
+        Task { @MainActor in ReadingSessionViewModel.endAllReadingActivities() }
     }
 
     var body: some Scene {

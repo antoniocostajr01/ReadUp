@@ -43,7 +43,7 @@ struct RecentActivityRow: View {
             Spacer(minLength: Spacing.sm)
 
             VStack(alignment: .trailing, spacing: 0) {
-                Text("+\(session.pagesRead)")
+                Text(verbatim: "+\(session.pagesRead)")
                     .textStyle(showsPagesCaption ? .valueStatus : .titleTertiary)
                     .foregroundStyle(Palette.ink)
 

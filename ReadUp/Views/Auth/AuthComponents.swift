@@ -73,33 +73,3 @@ struct AuthSecureField: View {
         )
     }
 }
-
-/// Botão primário verde (estilo "Sign in" / "Create Account" do Figma).
-struct AuthPrimaryButton: View {
-    let title: String
-    var isLoading: Bool = false
-    var isEnabled: Bool = true
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Text(title)
-                        .font(.headingRow)
-                        .foregroundStyle(.white)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: Radius.lg, style: .continuous)
-                    .fill(isEnabled ? Color.brand : Color.inkMuted)
-            )
-        }
-        .disabled(!isEnabled || isLoading)
-    }
-}

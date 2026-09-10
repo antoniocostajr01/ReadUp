@@ -123,20 +123,6 @@ struct GoogleBooksService {
         }
     }
 
-    func loadImageData(from url: URL?) async -> Data? {
-        guard let url else { return nil }
-
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                return nil
-            }
-            return data
-        } catch {
-            return nil
-        }
-    }
-
     /// Idioma preferido do usuário (pt/en), enviado ao backend como `langRestrict`.
     private func appLanguageCode() -> String {
         guard let preferred = Locale.preferredLanguages.first else {

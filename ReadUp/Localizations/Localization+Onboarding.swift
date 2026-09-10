@@ -12,7 +12,6 @@ public extension Localization {
         case genresSubtitle
         case selectAtLeast
         case selected
-        case alreadyHaveAccount
         case heroLine1
         case heroLine2
         case heroLine3
@@ -43,7 +42,6 @@ public extension Localization {
             case .genresSubtitle: "onboarding.genres.subtitle"
             case .selectAtLeast: "onboarding.genres.selectAtLeast"
             case .selected: "onboarding.genres.selected"
-            case .alreadyHaveAccount: "onboarding.alreadyHaveAccount"
             case .heroLine1: "onboarding.hero.line1"
             case .heroLine2: "onboarding.hero.line2"
             case .heroLine3: "onboarding.hero.line3"

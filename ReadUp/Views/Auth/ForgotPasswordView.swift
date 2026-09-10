@@ -34,8 +34,9 @@ struct ForgotPasswordView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                AuthPrimaryButton(
+                ReadUpButton(
                     title: Localization.Auth.sendCode.string,
+                    variant: .primary,
                     isLoading: authManager.isLoading,
                     isEnabled: !email.isEmpty
                 ) {

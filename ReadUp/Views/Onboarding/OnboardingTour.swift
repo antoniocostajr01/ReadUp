@@ -243,11 +243,11 @@ private struct LiveActivityPreview: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
 
-                Text("1984")
+                Text(verbatim: "1984")
                     .textStyle(.headingRow)
                     .foregroundStyle(.ink)
 
-                Text("George Orwell")
+                Text(verbatim: "George Orwell")
                     .textStyle(.authorRow)
                     .foregroundStyle(.inkMuted)
             }
@@ -259,7 +259,7 @@ private struct LiveActivityPreview: View {
                     .textStyle(.overline)
                     .foregroundStyle(.inkMeta)
 
-                Text("42:15")
+                Text(verbatim: "42:15")
                     .textStyle(.displayMetricXL)
                     .foregroundStyle(.ink)
             }

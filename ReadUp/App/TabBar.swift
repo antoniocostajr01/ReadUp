@@ -36,6 +36,11 @@ struct TabBar: View {
                             .tabBarClearance(pillHeight)
                         pill
                     }
+                    // O teclado passa POR CIMA da pílula em vez de empurrá-la. O alvo é
+                    // o ZStack, não a pílula: é ele que o teclado encolhe, e a pílula
+                    // está ancorada no `.bottom` dele — desativar a inset só na pílula
+                    // não adiantava, ela seguia o fundo novo do stack.
+                    .ignoresSafeArea(.keyboard, edges: .bottom)
                 }
                 .toolbar(.hidden, for: .tabBar)
             }
@@ -50,6 +55,11 @@ struct TabBar: View {
                             .tabBarClearance(pillHeight)
                         pill
                     }
+                    // O teclado passa POR CIMA da pílula em vez de empurrá-la. O alvo é
+                    // o ZStack, não a pílula: é ele que o teclado encolhe, e a pílula
+                    // está ancorada no `.bottom` dele — desativar a inset só na pílula
+                    // não adiantava, ela seguia o fundo novo do stack.
+                    .ignoresSafeArea(.keyboard, edges: .bottom)
                 }
                 .toolbar(.hidden, for: .tabBar)
             }
@@ -61,6 +71,11 @@ struct TabBar: View {
                             .tabBarClearance(pillHeight)
                         pill
                     }
+                    // O teclado passa POR CIMA da pílula em vez de empurrá-la. O alvo é
+                    // o ZStack, não a pílula: é ele que o teclado encolhe, e a pílula
+                    // está ancorada no `.bottom` dele — desativar a inset só na pílula
+                    // não adiantava, ela seguia o fundo novo do stack.
+                    .ignoresSafeArea(.keyboard, edges: .bottom)
                 }
                 .toolbar(.hidden, for: .tabBar)
             }

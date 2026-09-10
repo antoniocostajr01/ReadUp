@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 /// Fonte de verdade (em memória) dos livros e sessões do usuário logado.
 /// Carrega do backend no login e é zerada no logout — garantindo isolamento por usuário.
@@ -12,9 +13,23 @@ final class LibraryStore {
 
     private let bookService = BookService()
     private let sessionService = ReadingSessionService()
+    private let pathMonitor = NWPathMonitor()
 
     private var token: String? {
         KeychainHelper.read(KeychainKey.authToken)
+    }
+
+    init() {
+        // Uma tentativa no boot, e depois sempre que a rede voltar — a fila de
+        // sessões pendentes existe pra sobreviver justamente a esses dois momentos.
+        Task { await PendingSessionStore.shared.flush(store: self) }
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            guard path.status == .satisfied, let self else { return }
+            Task { @MainActor in
+                await PendingSessionStore.shared.flush(store: self)
+            }
+        }
+        pathMonitor.start(queue: DispatchQueue(label: "com.readup.libraryStore.pathMonitor"))
     }
 
     // MARK: - Ciclo de vida da sessão
@@ -143,9 +158,12 @@ final class LibraryStore {
     ///   - sessionPagesRead: páginas lidas NESTA sessão.
     ///   - totalProgress: página total atingida (novo progresso do livro).
     ///   - timeRead: duração em segundos.
+    /// O usuário nunca fica travado: se o POST falhar (ex.: sem rede), a sessão
+    /// é guardada localmente (`PendingSessionStore`) e uma sessão "pending:" é
+    /// devolvida do mesmo jeito, pra UI seguir em frente.
     @discardableResult
-    func logSession(book: Book, sessionPagesRead: Int, totalProgress: Int, timeRead: Int, thoughts: String) async -> Bool {
-        guard let token else { return false }
+    func logSession(book: Book, sessionPagesRead: Int, totalProgress: Int, timeRead: Int, thoughts: String) async -> LiterarySession? {
+        guard let token else { return nil }
         do {
             let sessionPayload = CreateSessionPayload(
                 bookId: book.id,
@@ -175,16 +193,74 @@ final class LibraryStore {
                 timesTamp: dto.date
             )
             sessions.insert(session, at: 0)
-            return true
+            return session
         } catch {
             errorMessage = error.localizedDescription
-            return false
+
+            // Sem rede (ou outra falha): não perde a sessão, guarda na fila local
+            // e aplica o progresso no livro localmente enquanto isso.
+            let localID = "pending:\(UUID().uuidString)"
+            let pending = PendingSession(
+                localID: localID,
+                bookID: book.id,
+                pagesRead: sessionPagesRead,
+                totalProgress: totalProgress,
+                readingTimeSeconds: timeRead,
+                thoughts: thoughts,
+                date: Date()
+            )
+            PendingSessionStore.shared.enqueue(pending)
+
+            let completed = totalProgress >= book.numberOfPages
+            var localBook = book
+            localBook.progress = totalProgress
+            if completed { localBook.status = .read }
+            if let index = books.firstIndex(where: { $0.id == book.id }) {
+                books[index] = localBook
+            }
+
+            let session = LiterarySession(
+                id: localID,
+                book: localBook,
+                pagesRead: sessionPagesRead,
+                timeRead: timeRead,
+                thoughts: thoughts,
+                timesTamp: pending.date
+            )
+            sessions.insert(session, at: 0)
+            return session
         }
     }
 
-    /// Atualiza os pensamentos de uma sessão existente no backend.
+    /// Progresso do livro **no momento daquela sessão**, acumulado.
+    ///
+    /// A `ReadingSession` guarda só o delta (páginas lidas naquela sessão), então uma
+    /// sessão antiga aberta pelo histórico não sabe sozinha em que página o livro
+    /// estava. Sem isto, cada sessão mostrava o próprio delta como se fosse o total —
+    /// ler 10 páginas e depois 11 aparecia como 10/300 e 11/300, em vez de 10/300 e
+    /// 21/300.
+    ///
+    /// ponytail: soma os deltas das sessões anteriores do mesmo livro. Diverge se o
+    /// progresso for editado à mão no formulário do livro; guardar o total na própria
+    /// sessão exigiria uma coluna nova e uma migration no Supabase de produção.
+    func cumulativeProgress(upTo session: LiterarySession) -> (previous: Int, total: Int) {
+        let previous = sessions
+            .filter { $0.book.id == session.book.id && $0.timesTamp < session.timesTamp }
+            .reduce(0) { $0 + $1.pagesRead }
+        return (previous, previous + session.pagesRead)
+    }
+
+    /// Atualiza os pensamentos de uma sessão existente. Sessões ainda pendentes
+    /// (id "pending:") não existem no backend — a edição fica só na fila local.
     @discardableResult
     func updateSession(id: String, thoughts: String) async -> Bool {
+        if id.hasPrefix("pending:") {
+            PendingSessionStore.shared.updateThoughts(localID: id, thoughts)
+            if let index = sessions.firstIndex(where: { $0.id == id }) {
+                sessions[index].thoughts = thoughts
+            }
+            return true
+        }
         guard let token else { return false }
         do {
             let payload = UpdateSessionPayload(thoughts: thoughts.isEmpty ? nil : thoughts)

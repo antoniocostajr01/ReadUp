@@ -50,12 +50,16 @@ struct History: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(item: $selectedSession) { session in
+            // O acumulado até esta sessão, não o delta dela: o card e a barra de
+            // progresso falam do livro, não da sessão.
+            let progress = store.cumulativeProgress(upTo: session)
             SessionSummary(
                 readingTime: session.timeRead,
                 currentBook: session.book,
-                pagesRead: session.pagesRead,
-                previousProgress: 0,
-                sessionToEdit: session
+                pagesRead: progress.total,
+                previousProgress: progress.previous,
+                session: session,
+                mode: .reviewing
             )
         }
     }

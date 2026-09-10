@@ -15,7 +15,7 @@ struct CurrentlyReadingCard: View {
 
     private var pageLine: String {
         let current = max(0, book.progress ?? 0)
-        return "\(book.author) · " + String(
+        return String(
             format: Localization.Components.pageOf.string, current, book.numberOfPages
         )
     }
@@ -52,17 +52,28 @@ struct CurrentlyReadingCard: View {
             )
 
             VStack(alignment: .leading, spacing: Spacing.md) {
-                // Serifada de 30 sangrando na largura toda; num card de 232 ela quebraria
-                // em duas linhas no primeiro título comprido, então lá desce pra 22.
-                Text(book.title)
-                    .textStyle(width == nil ? .titlePrimary : .titleCard)
-                    .foregroundStyle(Palette.inkOnArt)
-                    .lineLimit(2)
+                // Três linhas, uma informação em cada. Autor e página dividiam a mesma
+                // linha com `lineLimit(1)`: na largura do carrossel, qualquer nome um
+                // pouco maior comia a contagem de páginas junto.
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    // Serifada de 30 sangrando na largura toda; num card de 232 ela
+                    // quebraria em duas linhas no primeiro título comprido, então lá
+                    // desce pra 22.
+                    Text(book.title)
+                        .textStyle(width == nil ? .titlePrimary : .titleCard)
+                        .foregroundStyle(Palette.inkOnArt)
+                        .lineLimit(2)
 
-                Text(pageLine)
-                    .textStyle(width == nil ? .label : .captionDefault)
-                    .foregroundStyle(Palette.inkOnArt.opacity(0.72))
-                    .lineLimit(1)
+                    Text(book.author)
+                        .textStyle(width == nil ? .label : .captionDefault)
+                        .foregroundStyle(Palette.inkOnArt.opacity(0.72))
+                        .lineLimit(1)
+
+                    Text(pageLine)
+                        .textStyle(width == nil ? .label : .captionDefault)
+                        .foregroundStyle(Palette.inkOnArt.opacity(0.72))
+                        .lineLimit(1)
+                }
 
                 ProgressTrackOnArt(value: progressValue)
             }

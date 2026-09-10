@@ -69,7 +69,7 @@ struct ReadUpButton: View {
 
     var body: some View {
         Button(action: action) {
-            ReadUpButtonLabel(title: title, variant: variant, isLoading: isLoading)
+            ReadUpButtonLabel(title: title, variant: variant, isLoading: isLoading, isEnabled: isEnabled)
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled || isLoading)
@@ -79,8 +79,9 @@ struct ReadUpButton: View {
         .onLongPressGesture(minimumDuration: 0, pressing: { isPressed = $0 }, perform: {})
     }
 
+    // O desabilitado e o "carregando" agora têm cor própria (`isEnabled` na label) —
+    // só o dim de toque no texto continua sendo opacidade de grupo.
     private var opacity: Double {
-        if !isEnabled || isLoading { return Motion.disabledOpacity }
         if isPressed && isTextOnly { return Motion.pressDim }
         return 1
     }
@@ -92,18 +93,25 @@ extension ReadUpButton.Variant {
 
     var height: CGFloat { isTextOnly ? 35 : 54 }
 
-    var foreground: Color {
+    func foreground(isEnabled: Bool) -> Color {
+        guard isEnabled else { return Palette.inkDisabled }
         switch self {
-        case .primary: Palette.onBrand
-        case .secondary: Palette.ink
-        case .tertiary: Palette.inkMuted
-        case .danger: Palette.danger
+        case .primary: return Palette.onBrand
+        case .secondary: return Palette.ink
+        case .tertiary: return Palette.inkMuted
+        case .danger: return Palette.danger
         }
     }
 
-    var background: Color { self == .primary ? Palette.brand : .clear }
+    func background(isEnabled: Bool) -> Color {
+        guard self == .primary else { return .clear }
+        return isEnabled ? Palette.brand : Palette.surfaceDisabled
+    }
 
-    var borderColor: Color { self == .secondary ? Palette.borderStrong : .clear }
+    func borderColor(isEnabled: Bool) -> Color {
+        guard self == .secondary else { return .clear }
+        return isEnabled ? Palette.borderStrong : Palette.border
+    }
 }
 
 /// A pílula desenhada, sem o `Button` em volta.
@@ -116,24 +124,25 @@ struct ReadUpButtonLabel: View {
     let title: String
     var variant: ReadUpButton.Variant = .primary
     var isLoading: Bool = false
+    var isEnabled: Bool = true
 
     var body: some View {
         ZStack {
             if isLoading {
-                ProgressView().tint(variant.foreground)
+                ProgressView().tint(variant.foreground(isEnabled: isEnabled))
             } else {
                 Text(title)
                     .textStyle(.field)
-                    .foregroundStyle(variant.foreground)
+                    .foregroundStyle(variant.foreground(isEnabled: isEnabled))
             }
         }
         .frame(maxWidth: .infinity)
         .frame(height: variant.height)
         .background(
-            Capsule(style: .continuous).fill(variant.background)
+            Capsule(style: .continuous).fill(variant.background(isEnabled: isEnabled))
         )
         .overlay(
-            Capsule(style: .continuous).strokeBorder(variant.borderColor, lineWidth: 1)
+            Capsule(style: .continuous).strokeBorder(variant.borderColor(isEnabled: isEnabled), lineWidth: 1)
         )
         // A pílula inteira é o alvo, não os glifos do texto.
         //
@@ -215,9 +224,9 @@ struct UnderlinedField: View {
         let prompt = Text(placeholder).foregroundStyle(Palette.inkFaint)
 
         if isSecure && !isRevealed {
-            SecureField("", text: $text, prompt: prompt)
+            SecureField("" as String, text: $text, prompt: prompt)
         } else {
-            TextField("", text: $text, prompt: prompt)
+            TextField("" as String, text: $text, prompt: prompt)
         }
     }
 }
@@ -230,17 +239,23 @@ struct UnderlinedField: View {
 struct ChromeChip: View {
     let systemImage: String
     var isFilled: Bool = false
+    var isEnabled: Bool = true
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.iconLabel)
-                .foregroundStyle(isFilled ? Palette.onBrand : Palette.ink)
+                .foregroundStyle(isEnabled ? (isFilled ? Palette.onBrand : Palette.ink) : Palette.inkDisabled)
                 .frame(width: 34, height: 34)
-                .background(Circle().fill(isFilled ? Palette.brand : Palette.surfaceControl))
+                .background(
+                    Circle().fill(
+                        isEnabled ? (isFilled ? Palette.brand : Palette.surfaceControl) : Palette.surfaceDisabled
+                    )
+                )
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
     }
 }
 

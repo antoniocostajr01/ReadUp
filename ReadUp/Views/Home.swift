@@ -28,7 +28,29 @@ struct Home: View {
 
     private var books: [Book] { store.books }
     private var sessions: [LiterarySession] { store.sessions }
-    private var readingBooks: [Book] { books.filter { $0.status == .reading } }
+    /// Em andamento, do lido mais recentemente para o mais antigo.
+    ///
+    /// A ordem do backend é de cadastro, que não diz nada sobre o que a pessoa está
+    /// lendo agora: o livro da sessão de ontem ficava atrás de um que ela não abre há
+    /// um mês. Livro em andamento sem nenhuma sessão vai para o fim, em ordem
+    /// alfabética — nunca foi lido, então não tem lugar na régua de recência.
+    private var readingBooks: [Book] {
+        let lastRead = Dictionary(
+            sessions.map { ($0.book.id, $0.timesTamp) },
+            uniquingKeysWith: max
+        )
+        return books
+            .filter { $0.status == .reading }
+            .sorted { lhs, rhs in
+                switch (lastRead[lhs.id], lastRead[rhs.id]) {
+                case let (lhsDate?, rhsDate?): lhsDate > rhsDate
+                case (nil, .some): false
+                case (.some, nil): true
+                case (nil, nil):
+                    lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+                }
+            }
+    }
 
     /// O livro sobre o qual o botão primário age: o do card visível, com o primeiro
     /// como rede de segurança enquanto a rolagem ainda não reportou nada.
@@ -72,12 +94,16 @@ struct Home: View {
             ReadingSession(selectedBook: book, activeReadingBook: $activeReadingBook)
         }
         .navigationDestination(item: $selectedSession) { session in
+            // O acumulado até esta sessão, não o delta dela: o card e a barra de
+            // progresso falam do livro, não da sessão.
+            let progress = store.cumulativeProgress(upTo: session)
             SessionSummary(
                 readingTime: session.timeRead,
                 currentBook: session.book,
-                pagesRead: session.pagesRead,
-                previousProgress: 0,
-                sessionToEdit: session
+                pagesRead: progress.total,
+                previousProgress: progress.previous,
+                session: session,
+                mode: .reviewing
             )
         }
     }

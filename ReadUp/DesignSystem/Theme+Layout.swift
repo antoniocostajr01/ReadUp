@@ -129,8 +129,6 @@ enum Motion {
     static let pressScale: CGFloat = 0.97
     /// Tapped text buttons dim.
     static let pressDim: Double = 0.82
-    /// Disabled controls.
-    static let disabledOpacity: Double = 0.38
 }
 
 /// One warm shadow family, for objects that are physically stacked.

@@ -6,12 +6,15 @@ import SwiftUI
 @Observable
 final class ReadingSessionViewModel {
     var timeElapsed = 0
-    var isShowingSummary = false
     var isShowingAlertValue = false
     var lastPageRead = ""
     var countdown = 5
     var isSessionRunning = false
     var previousProgress = 0
+    var isSaving = false
+    /// A sessão gravada ao confirmar a página — sua presença é o que empurra o
+    /// `SessionSummary` na tela.
+    var savedSession: LiterarySession?
 
     private static let countdownDuration: TimeInterval = 5
 
@@ -22,6 +25,10 @@ final class ReadingSessionViewModel {
     private var uiTimer: Timer?
     private var activity: Activity<ReadingSessionAttributes>?
     private var isStartingActivity = false
+    /// Fecha a corrida com um `Activity.request` em voo: sem isto, sair durante o
+    /// `stageCover` assíncrono deixaria o request terminar depois e ressuscitar um
+    /// card que o `endLiveActivity` já achava ter encerrado.
+    private var isEnded = false
 
     // Idempotente: não reseta a âncora se a sessão já começou (ex.: voltar do summary).
     func start(book: Book) {
@@ -76,6 +83,7 @@ final class ReadingSessionViewModel {
             // é desenhado uma vez, quando a atividade nasce, e a extensão não tem
             // como buscar a imagem depois.
             await stageCover(for: book)
+            guard !isEnded else { return }
 
             let content = ActivityContent(
                 state: ReadingSessionAttributes.ContentState(),
@@ -110,11 +118,30 @@ final class ReadingSessionViewModel {
         SharedCoverStore.write(image)
     }
 
+    /// Não confia mais no próprio handle: encerra *toda* atividade do tipo, não só a
+    /// que este view model acha que criou. Root-cause fix para três vazamentos — handle
+    /// escopado à view destruída, `isStartingActivity` ignorado ao sair, e crash/force
+    /// quit que só o `staleDate` de 8h resolveria sozinho.
     func endLiveActivity() {
         SharedCoverStore.clear()
-        guard let activity else { return }
-        self.activity = nil
-        Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        isEnded = true // fecha a corrida com o request em voo
+        activity = nil
+        Task {
+            for activity in Activity<ReadingSessionAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+        }
+    }
+
+    /// Roda uma vez no launch do app: limpa qualquer card que tenha sobrevivido a um
+    /// crash ou force-quit, já que nesse caso nenhum `endLiveActivity()` de instância
+    /// chega a rodar.
+    static func endAllReadingActivities() {
+        Task {
+            for activity in Activity<ReadingSessionAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+        }
     }
 
     func timeString(from seconds: Int) -> String {

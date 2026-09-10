@@ -9,17 +9,20 @@ import Foundation
 struct SessionSummary: View {
     @Environment(LibraryStore.self) private var store
     @Environment(AuthManager.self) private var authManager
-    @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: SessionSummaryViewModel
     @State private var coverImage: UIImage?
     @State private var isShowingShareFlow = false
+    /// Marca que o hand-off pro Instagram aconteceu, pro `onDismiss` do
+    /// `fullScreenCover` saber se deve continuar a saída (modo recém-concluído) ou só
+    /// voltar pro resumo (fechar pelo X, ou revendo uma sessão antiga).
+    @State private var didPublish = false
     @FocusState private var isThoughtsFocused: Bool
-    var onSessionSaved: (() -> Void)? = nil
+    var onFinish: (() -> Void)? = nil
 
-    init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, onSessionSaved: (() -> Void)? = nil, sessionToEdit: LiterarySession? = nil) {
-        self.onSessionSaved = onSessionSaved
-        self._viewModel = State(initialValue: SessionSummaryViewModel(readingTime: readingTime, currentBook: currentBook, pagesRead: pagesRead, previousProgress: previousProgress, sessionToEdit: sessionToEdit))
+    init(readingTime: Int, currentBook: Book, pagesRead: Int, previousProgress: Int, session: LiterarySession, mode: SessionSummaryViewModel.Mode, onFinish: (() -> Void)? = nil) {
+        self.onFinish = onFinish
+        self._viewModel = State(initialValue: SessionSummaryViewModel(readingTime: readingTime, currentBook: currentBook, pagesRead: pagesRead, previousProgress: previousProgress, session: session, mode: mode))
     }
 
     var body: some View {
@@ -56,7 +59,7 @@ struct SessionSummary: View {
         .navigationBarTitleDisplayMode(.inline)
         // Sessão recém-concluída: só sai daqui confirmando. Ao editar uma sessão
         // antiga (vinda de Home/History), o voltar continua disponível.
-        .navigationBarBackButtonHidden(viewModel.sessionToEdit == nil)
+        .navigationBarBackButtonHidden(viewModel.mode == .finished)
         .toolbar(.hidden, for: .tabBar)
         .onChange(of: viewModel.isEditing) { _, isEditing in
             isThoughtsFocused = isEditing
@@ -74,30 +77,45 @@ struct SessionSummary: View {
             viewModel.didSaveChanges = false
             viewModel.didFailToSave = false
         }
-        .fullScreenCover(isPresented: $isShowingShareFlow) {
-            ShareFlowView(story: story)
+        .fullScreenCover(isPresented: $isShowingShareFlow, onDismiss: {
+            // Publicou de verdade (não só fechou pelo X) e a sessão acabou de ser
+            // concluída: o Instagram já ficou com o card, então volta pra Home em vez
+            // de deixar o usuário parado no resumo. Revendo uma sessão antiga, o
+            // publish sempre volta pro resumo — comportamento de hoje, inalterado.
+            if didPublish, viewModel.mode == .finished {
+                onFinish?()
+            }
+            didPublish = false
+        }) {
+            ShareFlowView(story: story, onPublished: { didPublish = true })
         }
         .onAppear(perform: viewModel.setupForEditting)
-        .onDisappear {
-            // Rede de segurança: garante que a sessão seja registrada ao finalizar,
-            // mesmo que o usuário saia sem tocar em Confirmar (ex.: swipe back).
-            guard viewModel.sessionToEdit == nil, !viewModel.hasSaved else { return }
-            Task { await viewModel.saveSession(store: store, onSessionSaved: onSessionSaved, onDismiss: {}) }
-        }
         .task {
-            // A capa é baixada aqui, e não no card de compartilhamento, porque o
+            // A capa é resolvida aqui, e não no card de compartilhamento, porque o
             // `ImageRenderer` é síncrono e não aguarda um `AsyncImage`.
-            coverImage = await GoogleBooksService()
-                .loadImageData(from: viewModel.currentBook.coverUrl.flatMap(URL.init(string:)))
-                .flatMap(UIImage.init(data:))
+            //
+            // Pelo `CoverImageCache`, o mesmo cache que desenha a capa no card acima:
+            // baixar de novo por fora dele dava um card com o placeholder tipográfico
+            // enquanto a capa real estava na memória a duas views de distância.
+            guard let url = viewModel.currentBook.coverUrl.flatMap(URL.init(string:)) else { return }
+            coverImage = await CoverImageCache.load(url)
         }
+    }
+
+    /// A capa já baixada, lida de forma síncrona. `nil` só se ela de fato nunca chegou.
+    private var cachedCover: UIImage? {
+        viewModel.currentBook.coverUrl
+            .flatMap(URL.init(string:))
+            .flatMap(CoverImageCache.image(for:))
     }
 
     /// Os dados que o fluxo de compartilhamento consome.
     private var story: SessionStory {
         SessionStory(
             book: viewModel.currentBook,
-            coverImage: coverImage,
+            // Se o toque em Share vier antes da `.task` resolver, ainda assim a capa
+            // sai do cache — que já a tem, porque o card acima acabou de desenhá-la.
+            coverImage: coverImage ?? cachedCover,
             pagesRead: viewModel.sessionPagesRead,
             sessionTime: viewModel.sessionTimeFormatted,
             totalProgress: viewModel.pagesRead,
@@ -135,7 +153,7 @@ struct SessionSummary: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     ProgressTrack(value: Double(viewModel.completionPercentage) / 100)
 
-                    Text("\(viewModel.pagesRead) / \(viewModel.currentBook.numberOfPages) \(Localization.SessionSummary.ofPages.string)")
+                    Text(verbatim: "\(viewModel.pagesRead) / \(viewModel.currentBook.numberOfPages) \(Localization.SessionSummary.ofPages.string)")
                         .textStyle(.captionDefault)
                         .foregroundStyle(Palette.inkMeta)
                 }
@@ -213,10 +231,13 @@ struct SessionSummary: View {
                 shareButton(variant: .secondary, isEnabled: !viewModel.isEditing)
             } else {
                 ReadUpButton(
-                    title: Localization.SessionSummary.saveSession.string,
+                    title: Localization.SessionSummary.backToHome.string,
                     isLoading: viewModel.isSaving
                 ) {
-                    Task { await viewModel.saveSession(store: store, onSessionSaved: onSessionSaved, onDismiss: { dismiss() }) }
+                    Task {
+                        await viewModel.finish(store: store)
+                        onFinish?()
+                    }
                 }
 
                 shareButton(variant: .secondary, isEnabled: true)

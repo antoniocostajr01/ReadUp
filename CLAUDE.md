@@ -14,9 +14,13 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   parts of the app (`ReadUp/Views/Auth/`, `AuthManager`, `AuthService`).
 - **Library.** Users track books through statuses (reading, read, want to read,
   abandoned, rereading) with page-level progress (`LibraryStore`, `Models/Book.swift`).
-- **Reading sessions.** Timed sessions logging pages read and thoughts, summarized at
-  the end with a shareable image card (`ReadingSession`, `SessionSummary`,
-  `SessionSummaryShareCard`).
+- **Reading sessions.** Timed sessions logging pages read and thoughts. The session
+  is written the moment the user confirms the page they stopped on — the alert on
+  `ReadingSession`, not a later Confirm tap — so nothing downstream (a swipe back, a
+  crash, sharing to Instagram) can lose it. `SessionSummary` is a review/share
+  surface for a session that already exists, in one of two explicit modes: just
+  finished, or reopened from Home/History. See
+  `.claude/specs/2026-09-09-session-lifecycle-and-offline-write.md`.
 - **Book search.** `Search` proxies through the backend, which indexes Open Library
   (work-level search, so a query returns the actual books people mean, not every
   loose edition and derivative) with Google Books as a fallback.
@@ -31,9 +35,6 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   Open Library engine — no hand-maintained title lists.
 - **Profile.** Editable display name and a profile photo (picked from the library,
   resized and compressed client-side, stored as base64 on the backend).
-- **AI reading assistant.** A chat surface scoped to literary discussion, with a
-  client-side topic classifier plus a backend guardrail so the assistant stays on
-  topic (`LiteraryTopicClassifier`, `AIChatView`, `LiteraryAssistantViewModel`).
 - **Onboarding.** Two things, in different places. Before any account exists,
   `OnboardingTour` runs a pre-auth tour — the three ways to add a book, then the Live
   Activity, then the Welcome screen (Figma page `Screens`, section `Onboarding`). The
@@ -48,12 +49,39 @@ book-search engine — lives in a separate repository, `ReadUpBackend`, currentl
   since the session screen tells the user to lock the phone. The cover reaches the
   extension through the App Group `group.com.antoniocosta.ReadUpApp` — the app stages
   a resized JPEG there *before* requesting the activity, because the card is rendered
-  once, in another process, and that process cannot fetch `coverUrl`.
+  once, in another process, and that process cannot fetch `coverUrl`. It ends when the
+  session is written, at page-confirm on `ReadingSession`. Ending is a sweep, not a
+  handle: `ReadingSessionViewModel.endLiveActivity()` ends every
+  `Activity<ReadingSessionAttributes>.activities` rather than trusting `self.activity`,
+  because the handle is view-scoped and three different things could orphan it (a tab
+  reset, leaving mid-async-request, a crash). `ReadUpApp.init()` also sweeps all
+  activities of the type once at launch, to catch whatever a crash or force-quit left
+  behind before its 8-hour `staleDate`. See
+  `.claude/specs/2026-09-09-session-lifecycle-and-offline-write.md`.
 - **Localization.** English and Portuguese via `Localizable.xcstrings`, with one
   `Localization+<Area>.swift` file per feature area under `ReadUp/Localizations/`.
+  Any `Text`/`TextField`/`SecureField`/`ColorPicker` initialized with a display
+  literal — a placeholder like `"1984"`, an empty label, a formatted number built
+  with string interpolation — gets auto-extracted into the catalog as a junk key the
+  next time Xcode's editor touches it, string-catalog build warning and all. Use
+  `Text(verbatim:)` for literal display text, and `"" as String` to force the
+  non-localized `TextField`/`SecureField`/`ColorPicker` initializer over the
+  `LocalizedStringKey` one. Deleting the junk key from the catalog is not the fix —
+  the call site is; if it survives, Xcode re-extracts the key on the next edit.
 
-Data persistence moved from local SwiftData storage to the backend/database — the app
-is online-only. There is no offline local store to reconcile.
+## Local storage
+
+There is exactly one local store, and it exists for exactly one reason: reading
+sessions that failed to reach the backend (typically no network) are queued in
+`PendingSessionStore`, a small `UserDefaults`-backed JSON outbox, and replayed when
+connectivity returns (`NWPathMonitor`, checked once at `LibraryStore.init()` and again
+on every transition to `.satisfied`). It is a **send-queue**, not a mirror of server
+state — nothing reads from it except its own replay logic, and a session leaves it the
+moment its POST to the backend succeeds. Everything else the app displays is fetched
+live; there is no local cache of books, other sessions, or account data to reconcile.
+See `.claude/specs/2026-09-09-session-lifecycle-and-offline-write.md` for why
+`UserDefaults` and not SwiftData, and for two non-obvious correctness details in the
+replay ordering.
 
 ## Project structure
 

@@ -68,8 +68,9 @@ struct ResetPasswordView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                AuthPrimaryButton(
+                ReadUpButton(
                     title: Localization.Auth.resetPasswordButton.string,
+                    variant: .primary,
                     isLoading: authManager.isLoading,
                     isEnabled: isFormValid
                 ) {

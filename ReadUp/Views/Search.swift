@@ -358,12 +358,11 @@ struct Search: View {
                 } else {
                     Image(systemName: store.contains(book) ? "checkmark" : "plus")
                         .font(.iconLabel)
-                        .foregroundStyle(Palette.onBrand)
+                        .foregroundStyle(store.contains(book) ? Palette.inkDisabled : Palette.onBrand)
                 }
             }
             .frame(width: 30, height: 30)
-            .background(Circle().fill(Palette.brand))
-            .opacity(store.contains(book) ? Motion.disabledOpacity : 1)
+            .background(Circle().fill(store.contains(book) ? Palette.surfaceDisabled : Palette.brand))
         }
         .buttonStyle(.plain)
         .disabled(store.contains(book) || addingBookID != nil)

@@ -13,9 +13,9 @@ public extension Localization {
         case totalCompletion
         case finalThoughts
         case thoughtsPlaceholder
-        case saveSession
         case editSession
         case saveChanges
+        case backToHome
         case changesSaved
         case changesFailed
         case ofPages
@@ -50,9 +50,9 @@ public extension Localization {
             case .totalCompletion: "sessionSummary.totalCompletion"
             case .finalThoughts: "sessionSummary.finalThoughts"
             case .thoughtsPlaceholder: "sessionSummary.thoughtsPlaceholder"
-            case .saveSession: "sessionSummary.saveSession"
             case .editSession: "sessionSummary.editSession"
             case .saveChanges: "sessionSummary.saveChanges"
+            case .backToHome: "sessionSummary.backToHome"
             case .changesSaved: "sessionSummary.changesSaved"
             case .changesFailed: "sessionSummary.changesFailed"
             case .ofPages: "sessionSummary.ofPages"

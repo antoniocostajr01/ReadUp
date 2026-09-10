@@ -7,6 +7,9 @@ import SwiftUI
 /// área de transferência e mandava o usuário colar.
 struct ShareFlowView: View {
     let story: SessionStory
+    /// Chamado quando o usuário publica de fato no Instagram — quem abre o fluxo
+    /// decide o que fazer depois (hoje, `SessionSummary` volta pra Home).
+    var onPublished: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
     @State private var option: Option = .photo
@@ -77,13 +80,18 @@ struct ShareFlowView: View {
                         path.append(Route.editor(photo))
                     }
                 case .editor(let photo):
-                    StoryEditorView(story: story, photo: photo, card: $cardTransform)
+                    StoryEditorView(story: story, photo: photo, card: $cardTransform, onPublished: publish)
                 case .ready:
-                    StoryReadyView(story: story)
+                    StoryReadyView(story: story, onPublished: publish)
                 }
             }
-            .environment(\.dismissStoryFlow) { dismiss() }
         }
+    }
+
+    /// Publicou no Instagram: avisa quem abriu o fluxo e fecha tudo, de qualquer degrau.
+    private func publish() {
+        onPublished()
+        dismiss()
     }
 
     // MARK: - Chrome

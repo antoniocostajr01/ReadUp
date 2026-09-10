@@ -13,6 +13,9 @@ struct StoryEditorView: View {
     /// A posição do card, escolhida ainda na câmera e continuada aqui.
     @Binding var card: StickerTransform
 
+    /// Repassado ao `StoryDestinations`; ver o porquê de não ser ambiente lá.
+    var onPublished: () -> Void = {}
+
     @Environment(\.dismiss) private var dismiss
 
 
@@ -142,7 +145,7 @@ struct StoryEditorView: View {
 
             // Some no desenho: fica atrás da paleta do PencilKit de qualquer forma.
             if !isDrawing {
-                StoryDestinations(image: compose, onDark: true)
+                StoryDestinations(image: compose, onDark: true, onPublished: onPublished)
                     .padding(.horizontal, Spacing.gutterList)
                     .padding(.bottom, Spacing.xl + Spacing.sm)
             }
@@ -157,7 +160,7 @@ struct StoryEditorView: View {
                 texts.append(sticker)
                 editingID = sticker.id
             } label: {
-                Text("Aa")
+                Text(verbatim: "Aa")
                     .textStyle(.label)
                     .foregroundStyle(Palette.inkOnArt)
                     .frame(width: 38, height: 38)
@@ -216,7 +219,7 @@ struct StoryEditorView: View {
                     if let editingID {
                         // `ColorPicker` do sistema: espectro, favoritos e eyedropper
                         // prontos. Nenhuma paleta nossa para manter.
-                        ColorPicker("", selection: colorBinding(for: editingID), supportsOpacity: false)
+                        ColorPicker("" as String, selection: colorBinding(for: editingID), supportsOpacity: false)
                             .labelsHidden()
                             .padding(.leading, Spacing.md)
                             .accessibilityLabel(Text(Localization.SessionSummary.editorTextColor.string))

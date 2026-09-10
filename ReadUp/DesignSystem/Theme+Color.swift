@@ -49,6 +49,10 @@ enum Palette {
     /// `surface/sunken` — progress tracks, cover placeholders.
     static let surfaceSunken = Color(hex: 0xE4DDD0)
 
+    /// `surface/disabled` — the disabled `.primary` button fill. Same value as
+    /// `surfaceSunken`; disabled buttons read as a recessed surface, not a dimmed one.
+    static let surfaceDisabled = surfaceSunken
+
     /// `surface/desk` — the canvas behind device frames.
     static let surfaceDesk = Color(hex: 0xE7E3DB)
 
@@ -70,6 +74,11 @@ enum Palette {
 
     /// `ink/strong-muted` — intro copy on a light section.
     static let inkStrongMuted = Color(hex: 0x5F584E)
+
+    /// `ink/disabled` — the disabled label, on every button variant. Same value as
+    /// `inkStrongMuted`: legible (5.2:1 on `surfaceDisabled`, 6.3:1 on `surface`) where
+    /// a dimmed group opacity was not.
+    static let inkDisabled = inkStrongMuted
 
     /// `ink/muted` — subtitles, descriptions.
     static let inkMuted = Color(hex: 0x6D665C)
@@ -198,6 +207,7 @@ extension Color {
     static var surfaceFill: Color { Palette.surfaceFill }
     static var surfaceControl: Color { Palette.surfaceControl }
     static var surfaceSunken: Color { Palette.surfaceSunken }
+    static var surfaceDisabled: Color { Palette.surfaceDisabled }
     static var surfaceDesk: Color { Palette.surfaceDesk }
     static var surfaceNight: Color { Palette.surfaceNight }
     static var surfaceChrome: Color { Palette.surfaceChrome }
@@ -205,6 +215,7 @@ extension Color {
 
     static var ink: Color { Palette.ink }
     static var inkStrongMuted: Color { Palette.inkStrongMuted }
+    static var inkDisabled: Color { Palette.inkDisabled }
     static var inkMuted: Color { Palette.inkMuted }
     static var inkSoft: Color { Palette.inkSoft }
     static var inkMeta: Color { Palette.inkMeta }
@@ -245,6 +256,7 @@ extension ShapeStyle where Self == Color {
     static var surfaceFill: Color { Palette.surfaceFill }
     static var surfaceControl: Color { Palette.surfaceControl }
     static var surfaceSunken: Color { Palette.surfaceSunken }
+    static var surfaceDisabled: Color { Palette.surfaceDisabled }
     static var surfaceDesk: Color { Palette.surfaceDesk }
     static var surfaceNight: Color { Palette.surfaceNight }
     static var surfaceChrome: Color { Palette.surfaceChrome }
@@ -252,6 +264,7 @@ extension ShapeStyle where Self == Color {
 
     static var ink: Color { Palette.ink }
     static var inkStrongMuted: Color { Palette.inkStrongMuted }
+    static var inkDisabled: Color { Palette.inkDisabled }
     static var inkMuted: Color { Palette.inkMuted }
     static var inkSoft: Color { Palette.inkSoft }
     static var inkMeta: Color { Palette.inkMeta }

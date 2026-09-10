@@ -7,6 +7,9 @@ import SwiftUI
 struct StoryReadyView: View {
     let story: SessionStory
 
+    /// Repassado ao `StoryDestinations`; ver o porquê de não ser ambiente lá.
+    var onPublished: () -> Void = {}
+
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -23,7 +26,7 @@ struct StoryReadyView: View {
 
             Spacer(minLength: Spacing.lg)
 
-            StoryDestinations(image: render)
+            StoryDestinations(image: render, onPublished: onPublished)
                 .padding(.horizontal, Spacing.gutterList)
                 .padding(.bottom, Spacing.xl)
         }

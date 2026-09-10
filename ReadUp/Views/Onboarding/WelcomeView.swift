@@ -3,11 +3,15 @@ import SwiftUI
 /// Tela de boas-vindas — ponto de entrada único do fluxo de auth.
 ///
 /// Figma `24:82` (Editorial Cream). Estática, sem carrossel: três capas
-/// "espalhadas" no topo, headline serifada, corpo em sans e as três ações
-/// possíveis (criar conta, entrar, continuar como visitante) presas ao fundo.
+/// "espalhadas" no topo, headline serifada, corpo em sans e as duas ações presas ao
+/// fundo: entrar ou continuar como visitante.
+///
+/// "Começar" leva ao Sign in, não a um formulário de cadastro. Havia dois botões aqui
+/// — "Começar" e "Já tenho uma conta" — pedindo à pessoa que classificasse a si mesma
+/// antes de ver qualquer tela, para chegar em dois lugares que já se linkam entre si.
+/// Quem não tem conta cria pelo "Create Account" do rodapé do Sign in.
 struct WelcomeView: View {
     @Environment(AuthManager.self) private var authManager
-    @State private var navigateToCreateAccount = false
     @State private var navigateToLogin = false
     @State private var coversSettled = false
 
@@ -17,7 +21,7 @@ struct WelcomeView: View {
                 .padding(.top, Spacing.md)
 
             VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("\(Localization.Onboarding.heroLine1.string)\n\(Localization.Onboarding.heroLine2.string)\n\(Localization.Onboarding.heroLine3.string)")
+                Text(verbatim: "\(Localization.Onboarding.heroLine1.string)\n\(Localization.Onboarding.heroLine2.string)\n\(Localization.Onboarding.heroLine3.string)")
                     .textStyle(.displayHero)
                     .foregroundStyle(.ink)
 
@@ -30,9 +34,6 @@ struct WelcomeView: View {
 
             VStack(spacing: Spacing.sm) {
                 ReadUpButton(title: Localization.Onboarding.getStarted.string, variant: .primary) {
-                    navigateToCreateAccount = true
-                }
-                ReadUpButton(title: Localization.Onboarding.alreadyHaveAccount.string, variant: .tertiary) {
                     navigateToLogin = true
                 }
                 // Único ponto de entrada do modo visitante — não remover.
@@ -49,9 +50,6 @@ struct WelcomeView: View {
         // passavam por baixo da Dynamic Island.
         .background(Color.surface.ignoresSafeArea())
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $navigateToCreateAccount) {
-            CreateAccountView()
-        }
         .navigationDestination(isPresented: $navigateToLogin) {
             LoginView()
         }

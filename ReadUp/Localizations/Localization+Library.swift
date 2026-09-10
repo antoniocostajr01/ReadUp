@@ -13,6 +13,9 @@ public extension Localization {
         case searchPrompt
         case noResultsTitle
         case noResultsSubtitle
+        case notFoundTitle
+        case notFoundMessage
+        case notFoundAction
         case searchOption
         case addManually
         case scan
@@ -32,6 +35,9 @@ public extension Localization {
             case .searchPrompt: "library.searchPrompt"
             case .noResultsTitle: "library.noResults.title"
             case .noResultsSubtitle: "library.noResults.subtitle"
+            case .notFoundTitle: "library.notFoundTitle"
+            case .notFoundMessage: "library.notFoundMessage"
+            case .notFoundAction: "library.notFoundAction"
             case .searchOption: "library.addMenu.search"
             case .addManually: "library.addMenu.addManually"
             case .scan: "library.addMenu.scan"

@@ -17,6 +17,9 @@ struct CreateSessionPayload: Encodable {
     let pagesRead: Int
     let thoughts: String?
     let readingTimeSeconds: Int
+    /// ISO8601, só preenchido ao reenviar uma sessão pendente (offline). Um
+    /// save "ao vivo" deixa `nil` para o servidor carimbar a data.
+    var date: String? = nil
 }
 
 /// Payload para editar uma sessão existente (PATCH /sessions/:id).

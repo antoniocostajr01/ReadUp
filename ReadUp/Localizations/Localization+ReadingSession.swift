@@ -15,6 +15,8 @@ public extension Localization {
         case cantGoBack
         case exceedsPages
         case invalidPage
+        case saveFailed
+        case saveFailedMessage
         case leaveTitle
         case stay
         case leaveMessage
@@ -32,6 +34,8 @@ public extension Localization {
             case .cantGoBack: "readingSession.validation.cantGoBack"
             case .exceedsPages: "readingSession.validation.exceedsPages"
             case .invalidPage: "readingSession.invalidPage"
+            case .saveFailed: "readingSession.saveFailed"
+            case .saveFailedMessage: "readingSession.saveFailedMessage"
             case .leaveTitle: "readingSession.leaveTitle"
             case .stay: "readingSession.stay"
             case .leaveMessage: "readingSession.leaveMessage"

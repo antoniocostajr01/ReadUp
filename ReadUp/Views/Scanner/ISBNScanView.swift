@@ -206,7 +206,9 @@ struct ISBNScanView: View {
             }
         }
         .padding(.vertical, Spacing.md)
-        .opacity(book.isAdded ? Motion.disabledOpacity : 1)
+        // Sem opacidade de grupo: uma linha já adicionada recua pelo tom do título, e o
+        // ✓ continua legível. Desbotar a linha inteira apagava capa, título e autor
+        // junto com o sinal de que ela está pronta.
         .overlay(alignment: .top) {
             Rectangle().fill(Palette.divider).frame(height: 1)
         }
@@ -229,7 +231,7 @@ struct ISBNScanView: View {
                 case .found(let found):
                     Text(found.title)
                         .textStyle(.headingRow)
-                        .foregroundStyle(Palette.ink)
+                        .foregroundStyle(book.isAdded ? Palette.inkDisabled : Palette.ink)
                         .lineLimit(1)
                     Text(found.author)
                         .textStyle(.captionDefault)

@@ -79,9 +79,7 @@ struct ScannedBookSheet: View {
             HStack {
                 ChromeChip(systemImage: "xmark") { dismiss() }
                 Spacer()
-                ChromeChip(systemImage: "checkmark", isFilled: true) { add(book) }
-                    .opacity(isAdding ? Motion.disabledOpacity : 1)
-                    .disabled(isAdding)
+                ChromeChip(systemImage: "checkmark", isFilled: true, isEnabled: !isAdding) { add(book) }
                     .accessibilityLabel(Localization.BookDetails.addToLibrary.string)
             }
 
