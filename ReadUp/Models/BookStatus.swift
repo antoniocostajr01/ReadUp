@@ -27,3 +27,13 @@ enum BookStatus: String, Codable, CaseIterable {
 }
 
 
+
+extension BookStatus {
+    /// O status que uma sessão registrada impõe ao livro, ou `nil` para manter o atual.
+    /// Terminar o livro o marca como lido; ler um livro de "quero ler" é começá-lo.
+    /// O backend aplica a mesma regra ao criar a sessão, para clientes antigos.
+    static func afterSession(from current: BookStatus, completed: Bool) -> BookStatus? {
+        if completed { return .read }
+        return current == .iWantToRead ? .reading : nil
+    }
+}

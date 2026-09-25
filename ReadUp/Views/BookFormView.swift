@@ -14,6 +14,8 @@ struct BookFormView: View {
     @State private var viewModel: BookFormViewModel
     @State private var addedBook: Book?
     @State private var showAuth = false
+    @State private var isShowingCamera = false
+    @State private var isShowingPhotoPicker = false
     /// ISBN já lido pelo scanner: entra no formulário quando o catálogo não tem o livro.
     let prefilledISBN: String?
     let onSaved: () -> Void
@@ -88,6 +90,16 @@ struct BookFormView: View {
         }
         .onChange(of: viewModel.selectedPhoto) { _, item in
             Task { await viewModel.handlePhotoSelection(item) }
+        }
+        .photosPicker(
+            isPresented: $isShowingPhotoPicker,
+            selection: $viewModel.selectedPhoto,
+            matching: .images,
+            photoLibrary: .shared()
+        )
+        .fullScreenCover(isPresented: $isShowingCamera) {
+            CameraPicker { viewModel.setCover($0) }
+                .ignoresSafeArea()
         }
         .fullScreenCover(item: $addedBook) { book in
             BookAddedView(book: book, onAddAnother: { dismiss(); onAddAnother() }) { dismiss() }
@@ -219,42 +231,66 @@ struct BookFormView: View {
         )
     }
 
-    /// Figma `47:1766`: um retângulo tracejado enquanto não há capa.
+    /// A capa pode vir da câmera (fotografar o livro que está na mão) ou da galeria.
+    /// Sem câmera (simulador, alguns iPads) o toque vai direto para a galeria.
     private var coverPicker: some View {
-        PhotosPicker(selection: $viewModel.selectedPhoto, matching: .images, photoLibrary: .shared()) {
-            Group {
-                if let image = viewModel.coverImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 76, height: 110)
-                        .clipShape(RoundedRectangle(cornerRadius: Radius.cover, style: .continuous))
-                } else if let existingUrl = viewModel.mode.book?.coverUrl {
-                    BookCoverView(coverUrl: existingUrl, width: 76, height: 110, cornerRadius: Radius.cover)
-                } else {
-                    VStack(spacing: 5) {
-                        Text(verbatim: "+")
-                            .textStyle(.titleTertiary)
-                            .foregroundStyle(Palette.inkFainter)
-
-                        Text(Localization.AddBook.coverOptional.string)
-                            .textStyle(.overline)
-                            .foregroundStyle(Palette.inkFaint)
-                            .multilineTextAlignment(.center)
+        Group {
+            if CameraPicker.isAvailable {
+                Menu {
+                    Button(Localization.AddBook.takePhoto.string, systemImage: "camera") {
+                        isShowingCamera = true
                     }
-                    .frame(width: 76, height: 110)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radius.cover, style: .continuous)
-                            .strokeBorder(
-                                Palette.ink.opacity(0.26),
-                                style: StrokeStyle(lineWidth: 1, dash: [4, 3])
-                            )
-                    )
+                    Button(Localization.AddBook.chooseFromLibrary.string, systemImage: "photo.on.rectangle") {
+                        isShowingPhotoPicker = true
+                    }
+                } label: {
+                    coverThumbnail
                 }
+            } else {
+                Button {
+                    isShowingPhotoPicker = true
+                } label: {
+                    coverThumbnail
+                }
+                .buttonStyle(.plain)
             }
         }
         .disabled(viewModel.isSaving)
         .accessibilityLabel(Localization.AddBook.accessGallery.string)
+    }
+
+    /// Figma `47:1766`: um retângulo tracejado enquanto não há capa.
+    private var coverThumbnail: some View {
+        Group {
+            if let image = viewModel.coverImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 76, height: 110)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.cover, style: .continuous))
+            } else if let existingUrl = viewModel.mode.book?.coverUrl {
+                BookCoverView(coverUrl: existingUrl, width: 76, height: 110, cornerRadius: Radius.cover)
+            } else {
+                VStack(spacing: 5) {
+                    Text(verbatim: "+")
+                        .textStyle(.titleTertiary)
+                        .foregroundStyle(Palette.inkFainter)
+
+                    Text(Localization.AddBook.coverOptional.string)
+                        .textStyle(.overline)
+                        .foregroundStyle(Palette.inkFaint)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(width: 76, height: 110)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.cover, style: .continuous)
+                        .strokeBorder(
+                            Palette.ink.opacity(0.26),
+                            style: StrokeStyle(lineWidth: 1, dash: [4, 3])
+                        )
+                )
+            }
+        }
     }
 }
 

@@ -4,14 +4,19 @@
 <dict>
 	<key>BASEURL</key>
 	<string>$(BASEURL)</string>
-	<key>GOOGLE_BOOKS_API_KEY</key>
-	<string>$(GOOGLE_BOOKS_API_KEY)</string>
 	<key>DEV_EMAIL</key>
 	<string>$(DEV_EMAIL)</string>
 	<key>DEV_PASSWORD</key>
 	<string>$(DEV_PASSWORD)</string>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
+	<key>FACEBOOK_APP_ID</key>
+	<string>$(FACEBOOK_APP_ID)</string>
+	<key>GOOGLE_BOOKS_API_KEY</key>
+	<string>$(GOOGLE_BOOKS_API_KEY)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram</string>
+		<string>instagram-stories</string>
+	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>InstrumentSerif-Regular.ttf</string>
@@ -20,12 +25,5 @@
 		<string>InstrumentSans-Medium.ttf</string>
 		<string>InstrumentSans-SemiBold.ttf</string>
 	</array>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>instagram</string>
-		<string>instagram-stories</string>
-	</array>
-	<key>FACEBOOK_APP_ID</key>
-	<string>$(FACEBOOK_APP_ID)</string>
 </dict>
 </plist>

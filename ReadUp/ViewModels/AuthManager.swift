@@ -1,5 +1,6 @@
 import Foundation
 import AuthenticationServices
+import UIKit
 
 /// Fase atual da sessão — dirige o que o `RootView` mostra.
 enum SessionPhase {
@@ -44,12 +45,41 @@ final class AuthManager {
         KeychainHelper.read(KeychainKey.authToken)
     }
 
+    /// Observa o aviso do `TokenRefresher` de que o refresh foi recusado.
+    @ObservationIgnored private var sessionExpiredObserver: NSObjectProtocol?
+
     init() {
+        sessionExpiredObserver = NotificationCenter.default.addObserver(
+            forName: .readUpSessionExpired, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.isAuthenticated else { return }
+                self.signOut()
+            }
+        }
+
+        resolveSession()
+    }
+
+    /// Decide a fase inicial a partir do que está guardado no aparelho.
+    private func resolveSession() {
+        // Com o aparelho travado desde o boot, o UserDefaults lê vazio e o Keychain
+        // recusa a leitura. Decidir a sessão agora apagaria o token de quem está
+        // logado (o "primeiro lançamento" logo abaixo) — espera o desbloqueio.
+        // É o Keychain quem diz, e não o `UIApplication`, que ainda não existe
+        // quando o `ReadUpApp` cria este objeto.
+        if case .locked = KeychainHelper.readResult(KeychainKey.authToken) {
+            phase = .loading
+            waitForProtectedData()
+            return
+        }
+
         // Primeiro lançamento após instalar: o UserDefaults vem zerado, mas o Keychain
         // sobrevive à reinstalação — pode haver um token antigo que pularia o Welcome.
         // Limpamos tudo para garantir que o primeiro acesso sempre comece no onboarding.
         if !UserDefaults.standard.bool(forKey: hasLaunchedKey) {
             KeychainHelper.delete(KeychainKey.authToken)
+            KeychainHelper.delete(KeychainKey.refreshToken)
             UserDefaults.standard.removeObject(forKey: hasSeenWelcomeKey)
             UserDefaults.standard.set(true, forKey: hasLaunchedKey)
         }
@@ -69,16 +99,42 @@ final class AuthManager {
         }
         #endif
 
-        if token != nil {
+        switch KeychainHelper.readResult(KeychainKey.authToken) {
+        case .value(let saved):
+            // Regrava com a acessibilidade nova (legível após o primeiro desbloqueio):
+            // tokens salvos pela 2.2 ainda são "só com o aparelho destravado".
+            KeychainHelper.save(saved, for: KeychainKey.authToken)
+            if let refresh = KeychainHelper.read(KeychainKey.refreshToken) {
+                KeychainHelper.save(refresh, for: KeychainKey.refreshToken)
+            }
             // Auto-login: há token salvo → carrega o perfil.
             phase = .loading
             Task { await bootstrap() }
-        } else if UserDefaults.standard.bool(forKey: hasSeenWelcomeKey) {
+            return
+        case .locked, .notFound:
+            break
+        }
+
+        if UserDefaults.standard.bool(forKey: hasSeenWelcomeKey) {
             // Já passou pelo Welcome antes → entra direto como convidado.
             phase = .guest
         } else {
             // Primeiro uso → mostra o Welcome (onboarding).
             phase = .unauthenticated
+        }
+    }
+
+    /// Espera o primeiro desbloqueio e só então decide a sessão.
+    private func waitForProtectedData() {
+        Task { @MainActor in
+            let unlocked = NotificationCenter.default.notifications(
+                named: UIApplication.protectedDataDidBecomeAvailableNotification
+            )
+            // Pode ter destravado entre a leitura do Keychain e esta Task começar.
+            if !UIApplication.shared.isProtectedDataAvailable {
+                for await _ in unlocked { break }
+            }
+            resolveSession()
         }
     }
 
@@ -103,8 +159,9 @@ final class AuthManager {
             currentUser = user
             genres = user.genres
             phase = user.genres.isEmpty ? .onboarding : .ready
+            await ensureRefreshToken()
         } catch AuthServiceError.unauthorized {
-            // Token inválido/expirado → desloga.
+            // O `authedRequest` já tentou renovar: o refresh foi recusado → desloga.
             signOut()
         } catch AuthServiceError.notFound {
             // O usuário do token não existe mais (ex.: deletado no banco) → volta pro login.
@@ -113,6 +170,16 @@ final class AuthManager {
             // Falha de rede → permite retry (LoadingView mostra o botão).
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Quem atualizou da 2.2 tem access token e nenhum refresh. Enquanto o access vale,
+    /// troca-o por um par completo — senão o usuário cairia no dia em que ele vencesse.
+    private func ensureRefreshToken() async {
+        guard KeychainHelper.read(KeychainKey.refreshToken) == nil,
+              let token,
+              let pair = try? await service.createSession(token: token) else { return }
+        KeychainHelper.save(pair.token, for: KeychainKey.authToken)
+        KeychainHelper.save(pair.refreshToken, for: KeychainKey.refreshToken)
     }
 
     // MARK: - Email / senha
@@ -281,7 +348,12 @@ final class AuthManager {
     // MARK: - Logout
 
     func signOut() {
+        if let refreshToken = KeychainHelper.read(KeychainKey.refreshToken) {
+            let service = service
+            Task { await service.logout(refreshToken: refreshToken) }
+        }
         KeychainHelper.delete(KeychainKey.authToken)
+        KeychainHelper.delete(KeychainKey.refreshToken)
         currentUser = nil
         genres = []
         errorMessage = nil
@@ -300,6 +372,11 @@ final class AuthManager {
         do {
             let response = try await action()
             KeychainHelper.save(response.token, for: KeychainKey.authToken)
+            if let refreshToken = response.refreshToken {
+                KeychainHelper.save(refreshToken, for: KeychainKey.refreshToken)
+            } else {
+                KeychainHelper.delete(KeychainKey.refreshToken)
+            }
             currentUser = response.user
             genres = response.user.genres
             isLoading = false

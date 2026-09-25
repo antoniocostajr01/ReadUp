@@ -11,6 +11,32 @@ final class LibraryStore {
     var isLoading = false
     var errorMessage: String?
 
+    // MARK: Grade da Library (paginada)
+    //
+    // `books` continua sendo a estante inteira — só metadados, sem capa, então é leve —
+    // porque a Home, o Perfil, as sessões e a checagem de duplicados precisam dela
+    // toda. A grade é outra coisa: vem do backend de 10 em 10, já filtrada e ordenada,
+    // para que as capas carreguem aos poucos em vez de todas no boot.
+
+    /// O que a grade está mostrando: filtro de status e busca por título/autor.
+    struct GridQuery: Equatable {
+        var status: BookStatus?
+        var text = ""
+    }
+
+    static let gridPageSize = 10
+
+    private(set) var gridItems: [Book] = []
+    private(set) var gridHasMore = false
+    private(set) var isLoadingGridPage = false
+    /// `false` até a primeira página da consulta atual chegar — evita piscar "nenhum
+    /// resultado" enquanto ela ainda está a caminho.
+    private(set) var hasLoadedGrid = false
+    private(set) var counts = BookCounts()
+    private var gridQuery = GridQuery()
+    /// Muda a cada recomeço da grade: uma página antiga que chega atrasada é descartada.
+    private var gridGeneration = 0
+
     private let bookService = BookService()
     private let sessionService = ReadingSessionService()
     private let pathMonitor = NWPathMonitor()
@@ -40,6 +66,7 @@ final class LibraryStore {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+        async let grid: () = refreshGrid()
         do {
             let fetchedBooks = try await bookService.fetchBooks(token: token)
             let dtos = try await sessionService.fetchSessions(token: token)
@@ -49,19 +76,123 @@ final class LibraryStore {
         } catch {
             errorMessage = error.localizedDescription
         }
+        await grid
     }
 
-    /// Deixa as capas da biblioteca baixadas antes de a grade aparecer.
-    /// Fora do `await` de propósito: uma capa lenta não deve segurar a tela de carga.
+    /// Deixa baixadas as capas que a Home mostra logo de cara (os livros em leitura).
+    /// As da grade chegam com as páginas. Fora do `await` de propósito: uma capa lenta
+    /// não deve segurar a tela de carga.
     private func warmCovers() {
-        let urls = books.compactMap { $0.coverUrl.flatMap(URL.init(string:)) }
+        let urls = books
+            .filter { $0.status == .reading || $0.status == .rereading }
+            .compactMap { $0.coverUrl.flatMap(URL.init(string:)) }
         Task { await CoverImageCache.warm(urls) }
+    }
+
+    // MARK: - Grade paginada
+
+    /// Troca o filtro/busca da grade. Mesma consulta já carregada = nada a fazer.
+    func setGridQuery(_ query: GridQuery) async {
+        guard query != gridQuery || !hasLoadedGrid else { return }
+        gridQuery = query
+        await refreshGrid()
+    }
+
+    /// Recomeça a grade da primeira página e recarrega os contadores dos chips.
+    func refreshGrid() async {
+        async let page: () = loadGridPage(reset: true)
+        async let counts: () = loadCounts()
+        _ = await (page, counts)
+    }
+
+    /// Próxima página (ou a primeira, com `reset`).
+    func loadGridPage(reset: Bool) async {
+        guard let token else { return }
+        if reset {
+            gridGeneration += 1
+            hasLoadedGrid = false
+        } else {
+            guard gridHasMore, !isLoadingGridPage, hasLoadedGrid else { return }
+        }
+        let generation = gridGeneration
+        let query = gridQuery
+        isLoadingGridPage = true
+        defer { if generation == gridGeneration { isLoadingGridPage = false } }
+
+        do {
+            let page = try await bookService.fetchBooksPage(
+                limit: Self.gridPageSize,
+                offset: reset ? 0 : gridItems.count,
+                status: query.status,
+                query: query.text.trimmingCharacters(in: .whitespaces),
+                token: token
+            )
+            guard generation == gridGeneration else { return }
+            if reset {
+                gridItems = page.items
+            } else {
+                // Um livro criado ou apagado entre duas páginas desloca o offset:
+                // sem isto, o mesmo livro podia aparecer duas vezes na grade.
+                let known = Set(gridItems.map(\.id))
+                gridItems += page.items.filter { !known.contains($0.id) }
+            }
+            gridHasMore = page.hasMore
+            hasLoadedGrid = true
+        } catch {
+            guard generation == gridGeneration else { return }
+            errorMessage = error.localizedDescription
+            // Sem isto a grade ficaria para sempre em "carregando".
+            hasLoadedGrid = true
+        }
+    }
+
+    private func loadCounts() async {
+        guard let token else { return }
+        let text = gridQuery.text.trimmingCharacters(in: .whitespaces)
+        if let fetched = try? await bookService.fetchCounts(query: text, token: token),
+           text == gridQuery.text.trimmingCharacters(in: .whitespaces) {
+            counts = fetched
+        }
+    }
+
+    /// Reflete na grade um livro que mudou. Se ele saiu do filtro atual (ex.: mudou de
+    /// status com o chip "Lendo" ativo), sai da grade.
+    private func syncGrid(_ book: Book, statusChanged: Bool) {
+        if let index = gridItems.firstIndex(where: { $0.id == book.id }) {
+            if let status = gridQuery.status, book.status != status {
+                gridItems.remove(at: index)
+            } else {
+                gridItems[index] = book
+            }
+        }
+        if statusChanged {
+            Task { await loadCounts() }
+        }
+    }
+
+    /// Ponto único para gravar um livro atualizado: estante, snapshot nas sessões e grade.
+    /// O `PendingSessionStore` também passa por aqui ao sincronizar a fila offline.
+    func apply(updated book: Book) {
+        let previousStatus = books.first(where: { $0.id == book.id })?.status
+        if let index = books.firstIndex(where: { $0.id == book.id }) {
+            books[index] = book
+        }
+        for i in sessions.indices where sessions[i].book.id == book.id {
+            sessions[i].book = book
+        }
+        syncGrid(book, statusChanged: previousStatus != book.status)
     }
 
     /// Limpa todos os dados em memória (chamado no logout).
     func reset() {
         books = []
         sessions = []
+        gridItems = []
+        gridHasMore = false
+        hasLoadedGrid = false
+        counts = BookCounts()
+        gridQuery = GridQuery()
+        gridGeneration += 1
         CoverImageCache.clear()
         errorMessage = nil
         isLoading = false
@@ -85,6 +216,8 @@ final class LibraryStore {
         do {
             let book = try await bookService.createBook(payload, token: token)
             books.append(book)
+            // O livro novo entra na ordem alfabética, que só o backend conhece por página.
+            Task { await refreshGrid() }
             return book
         } catch {
             errorMessage = error.localizedDescription
@@ -99,6 +232,7 @@ final class LibraryStore {
         do {
             let book = try await bookService.createBook(payload, token: token)
             books.append(book)
+            Task { await refreshGrid() }
             return book
         } catch {
             errorMessage = error.localizedDescription
@@ -112,14 +246,13 @@ final class LibraryStore {
         guard let token else { return false }
         do {
             let updated = try await bookService.updateBook(id: book.id, payload, token: token)
-            if let index = books.firstIndex(where: { $0.id == updated.id }) {
-                books[index] = updated
-            }
             if let coverUrl = updated.coverUrl.flatMap(URL.init(string:)) {
                 CoverImageCache.invalidate(coverUrl)
             }
-            for i in sessions.indices where sessions[i].book.id == updated.id {
-                sessions[i].book = updated
+            apply(updated: updated)
+            // Um título editado muda a posição do livro na ordem alfabética da grade.
+            if updated.title != book.title {
+                Task { await refreshGrid() }
             }
             return true
         } catch {
@@ -138,6 +271,8 @@ final class LibraryStore {
             try await bookService.deleteBook(id: book.id, token: token)
             books.removeAll { $0.id == book.id }
             sessions.removeAll { $0.book.id == book.id }
+            gridItems.removeAll { $0.id == book.id }
+            await loadCounts()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -173,16 +308,14 @@ final class LibraryStore {
             )
             let dto = try await sessionService.createSession(sessionPayload, token: token)
 
-            // Atualiza progresso e, se concluiu, marca como lido.
+            // Atualiza progresso e o status: concluiu → lido; era "quero ler" → lendo.
             let completed = totalProgress >= book.numberOfPages
             let updatePayload = UpdateBookPayload(
-                status: completed ? BookStatus.read.rawValue : nil,
+                status: BookStatus.afterSession(from: book.status, completed: completed)?.rawValue,
                 progress: totalProgress
             )
             let updatedBook = try await bookService.updateBook(id: book.id, updatePayload, token: token)
-            if let index = books.firstIndex(where: { $0.id == updatedBook.id }) {
-                books[index] = updatedBook
-            }
+            apply(updated: updatedBook)
 
             let session = LiterarySession(
                 id: dto.id,
@@ -214,10 +347,10 @@ final class LibraryStore {
             let completed = totalProgress >= book.numberOfPages
             var localBook = book
             localBook.progress = totalProgress
-            if completed { localBook.status = .read }
-            if let index = books.firstIndex(where: { $0.id == book.id }) {
-                books[index] = localBook
+            if let status = BookStatus.afterSession(from: book.status, completed: completed) {
+                localBook.status = status
             }
+            apply(updated: localBook)
 
             let session = LiterarySession(
                 id: localID,
@@ -281,13 +414,7 @@ final class LibraryStore {
         guard let token else { return }
         do {
             let updated = try await bookService.updateBook(id: bookId, payload, token: token)
-            if let index = books.firstIndex(where: { $0.id == updated.id }) {
-                books[index] = updated
-            }
-            // Mantém o snapshot do livro nas sessões coerente.
-            for i in sessions.indices where sessions[i].book.id == updated.id {
-                sessions[i].book = updated
-            }
+            apply(updated: updated)
         } catch {
             errorMessage = error.localizedDescription
         }

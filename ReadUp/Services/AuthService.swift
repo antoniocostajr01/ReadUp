@@ -74,6 +74,8 @@ struct AuthUser: Codable, Identifiable {
 struct AuthResponse: Codable {
     let user: AuthUser
     let token: String
+    /// Opcional só por robustez: o backend sempre manda a partir da 2.3.
+    let refreshToken: String?
 }
 
 /// Resposta de registro (POST /users) — não devolve token, só os dados do usuário.
@@ -185,9 +187,43 @@ struct AuthService {
         return decoded.genres
     }
 
+    // MARK: - Sessão (refresh token)
+
+    /// Troca um access token ainda válido por um par com refresh — para quem atualizou
+    /// de uma versão que não guardava o refresh.
+    func createSession(token: String) async throws -> TokenPair {
+        let data = try await authedRequest(path: "/auth/session", method: "POST", token: token, body: nil)
+        guard let pair = try? JSONDecoder().decode(TokenPair.self, from: data) else {
+            throw AuthServiceError.invalidResponse
+        }
+        return pair
+    }
+
+    /// Revoga o refresh no servidor. Melhor esforço: o logout local não espera por isto.
+    func logout(refreshToken: String) async {
+        _ = try? await post(path: "/auth/logout", body: ["refreshToken": refreshToken])
+    }
+
     // MARK: - Helpers
 
+    /// Mesmo contrato do `BackendClient.send`: um 401 renova o token uma vez e repete.
     private func authedRequest(path: String, method: String, token: String, body: [String: Any]?) async throws -> Data {
+        do {
+            return try await performAuthed(path: path, method: method, token: token, body: body)
+        } catch AuthServiceError.unauthorized {
+            let fresh: String
+            do {
+                fresh = try await TokenRefresher.shared.refresh(rejected: token)
+            } catch BackendError.unauthorized {
+                throw AuthServiceError.unauthorized
+            } catch {
+                throw AuthServiceError.networkUnavailable
+            }
+            return try await performAuthed(path: path, method: method, token: fresh, body: body)
+        }
+    }
+
+    private func performAuthed(path: String, method: String, token: String, body: [String: Any]?) async throws -> Data {
         guard let url = URL(string: "\(baseURL)\(path)") else {
             throw AuthServiceError.invalidURL
         }

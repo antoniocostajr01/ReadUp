@@ -7,6 +7,11 @@ struct RootView: View {
     @Environment(SearchViewModel.self) private var searchViewModel
     @Environment(LibraryStore.self) private var libraryStore
     @State private var isPreloading = true
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
+    @State private var availableUpdate: AvailableUpdate?
+    /// Quando o aviso de atualização apareceu pela última vez (segundos desde 1970).
+    @AppStorage("lastUpdatePromptDate") private var lastUpdatePromptDate: Double = 0
 
     var body: some View {
         Group {
@@ -45,6 +50,24 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut, value: phaseKey)
+        // Toda vez que o app abre ou volta ao primeiro plano, no máximo uma vez por dia.
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            guard phase == .active else { return }
+            Task { await checkForUpdate() }
+        }
+        .alert(
+            Localization.Generic.updateTitle.string,
+            isPresented: Binding(
+                get: { availableUpdate != nil },
+                set: { if !$0 { availableUpdate = nil } }
+            ),
+            presenting: availableUpdate
+        ) { update in
+            Button(Localization.Generic.updateAction.string) { openURL(update.storeURL) }
+            Button(Localization.Generic.notNow.string, role: .cancel) {}
+        } message: { _ in
+            Text(Localization.Generic.updateMessage.string)
+        }
         .onChange(of: authManager.phase) { _, newPhase in
             if newPhase == .unauthenticated || newPhase == .guest || newPhase == .loading {
                 isPreloading = true
@@ -54,6 +77,15 @@ struct RootView: View {
                 libraryStore.reset()
             }
         }
+    }
+
+    /// Aviso opcional: o usuário pode ignorar, e só é lembrado de novo no dia seguinte.
+    private func checkForUpdate() async {
+        let now = Date().timeIntervalSince1970
+        guard availableUpdate == nil, now - lastUpdatePromptDate > 24 * 60 * 60 else { return }
+        guard let update = await AppUpdateService().availableUpdate() else { return }
+        lastUpdatePromptDate = now
+        availableUpdate = update
     }
 
     // Chave estável pra animar transições entre fases.

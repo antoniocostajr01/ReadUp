@@ -21,6 +21,10 @@ public extension Localization {
         case `continue`
         case tryAgain
         case error
+        case updateTitle
+        case updateMessage
+        case updateAction
+        case notNow
 
         public var key: String.LocalizationValue {
             switch self {
@@ -38,6 +42,10 @@ public extension Localization {
             case .continue: "generic.continue"
             case .tryAgain: "generic.tryAgain"
             case .error: "generic.error"
+            case .updateTitle: "generic.updateTitle"
+            case .updateMessage: "generic.updateMessage"
+            case .updateAction: "generic.updateAction"
+            case .notNow: "generic.notNow"
             }
         }
     }

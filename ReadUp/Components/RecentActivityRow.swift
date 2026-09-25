@@ -29,10 +29,14 @@ struct RecentActivityRow: View {
             )
 
             VStack(alignment: .leading, spacing: 2) {
+                // Duas linhas: títulos longos cortados em uma viravam só o começo
+                // do nome, e o livro deixava de ser reconhecível na lista.
                 Text(session.book.title)
                     .textStyle(titleStyle)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(formattedDate)
                     .textStyle(.captionDefault)
@@ -53,6 +57,8 @@ struct RecentActivityRow: View {
                         .foregroundStyle(Palette.inkFaint)
                 }
             }
+            // O contador nunca encolhe: quem quebra linha é o título.
+            .fixedSize()
         }
         .padding(.vertical, 10)
     }

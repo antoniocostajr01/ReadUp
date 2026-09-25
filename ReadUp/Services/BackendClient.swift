@@ -54,7 +54,18 @@ struct BackendClient {
         return decoder
     }()
 
+    /// Um 401 renova o token uma vez (`TokenRefresher`) e repete a chamada. Só um refresh
+    /// recusado chega aqui como `.unauthorized` — e aí o app já foi avisado para deslogar.
     func send(path: String, method: String, token: String, body: Data? = nil) async throws -> Data {
+        do {
+            return try await perform(path: path, method: method, token: token, body: body)
+        } catch BackendError.unauthorized {
+            let fresh = try await TokenRefresher.shared.refresh(rejected: token)
+            return try await perform(path: path, method: method, token: fresh, body: body)
+        }
+    }
+
+    private func perform(path: String, method: String, token: String, body: Data?) async throws -> Data {
         guard let url = URL(string: "\(baseURL)\(path)") else {
             throw BackendError.invalidURL
         }

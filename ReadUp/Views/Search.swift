@@ -28,6 +28,7 @@ struct Search: View {
     @State private var flyingBook: SearchBook?
     @State private var heroPlacement = HeroPlacement()
     @State private var isFlying = false
+    @State private var hasAppeared = false
 
     private var chosenGenres: [Genre] {
         GenreCatalog.genres(for: authManager.genres)
@@ -71,6 +72,16 @@ struct Search: View {
             BookAddedView(book: book) { dismiss() }
         }
         .sheet(isPresented: $showAuth) { AuthSheet() }
+        // Com o detalhe aberto, puxar o scroll dele para baixo fechava a sheet inteira.
+        .interactiveDismissDisabled(selectedBook != nil)
+        // O `SearchViewModel` é do app todo: sem isto, reabrir a busca mostrava os
+        // resultados da vez anterior em vez das sugestões. Só na primeira aparição:
+        // um fullScreenCover por cima (livro adicionado, sessão) redispara o onAppear.
+        .onAppear {
+            guard !hasAppeared else { return }
+            hasAppeared = true
+            viewModel.clearSearch()
+        }
         .task { await reloadRecommendations() }
         .onChange(of: authManager.genres) {
             Task { await reloadRecommendations() }
@@ -105,6 +116,9 @@ struct Search: View {
     }
 
     private func place(_ placement: HeroPlacement) {
+        // Fechado o detalhe, ele ainda relata a posição enquanto some; obedecer
+        // puxaria a capa de volta para o herói. Mesmo bug da Library.
+        guard selectedBook != nil else { return }
         guard isFlying else {
             heroPlacement = placement
             return
@@ -151,7 +165,16 @@ struct Search: View {
         @Bindable var bindableViewModel = viewModel
 
         return HStack(spacing: Spacing.md) {
-            ChromeChip(systemImage: "chevron.left") { dismiss() }
+            // Um nível por toque: resultados → sugestões → fecha. Antes o chip sempre
+            // fechava a sheet, e quem entrou por um gênero perdia as sugestões.
+            ChromeChip(systemImage: "chevron.left") {
+                if isShowingResults {
+                    isSearchFocused = false
+                    viewModel.clearSearch()
+                } else {
+                    dismiss()
+                }
+            }
 
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")

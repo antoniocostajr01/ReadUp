@@ -22,6 +22,8 @@ public extension Localization {
         case isbnLabel
         case descriptionLabel
         case pageCountNote
+        case takePhoto
+        case chooseFromLibrary
 
         public var key: String.LocalizationValue {
             switch self {
@@ -40,6 +42,8 @@ public extension Localization {
             case .isbnLabel: "addBook.isbnLabel"
             case .descriptionLabel: "addBook.descriptionLabel"
             case .pageCountNote: "addBook.pageCountNote"
+            case .takePhoto: "addBook.takePhoto"
+            case .chooseFromLibrary: "addBook.chooseFromLibrary"
             }
         }
     }

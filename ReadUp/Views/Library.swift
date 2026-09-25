@@ -48,21 +48,12 @@ struct Library: View {
     /// Ordem do Figma, não a do enum: Lendo primeiro, abandonados por último.
     private let shelfOrder: [BookStatus] = [.reading, .iWantToRead, .read, .rereading, .abandoned]
 
-    /// Livros filtrados pela busca (título ou autor). Sem texto, retorna todos.
-    private var filteredBooks: [Book] {
-        let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return books }
-        return books.filter {
-            $0.title.localizedCaseInsensitiveContains(query) ||
-            $0.author.localizedCaseInsensitiveContains(query)
-        }
-    }
+    /// O que a grade mostra: as páginas já carregadas, filtradas e ordenadas pelo
+    /// backend (busca, depois status, por título). A próxima página chega no fim do scroll.
+    private var visibleBooks: [Book] { store.gridItems }
 
-    /// O que a grade mostra: a busca, depois o filtro de status.
-    private var visibleBooks: [Book] {
-        let source = statusFilter.map { status in filteredBooks.filter { $0.status == status } }
-            ?? filteredBooks
-        return source.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    private var gridQuery: LibraryStore.GridQuery {
+        LibraryStore.GridQuery(status: statusFilter, text: searchText.trimmingCharacters(in: .whitespaces))
     }
 
     private var columnWidth: CGFloat {
@@ -83,12 +74,14 @@ struct Library: View {
                 .transition(.opacity)
             }
 
+            // Nada de toque durante o voo, nem de volta: abrir outra capa com a anterior
+            // ainda recuando disputava a camada da frente.
             grid
-                .allowsHitTesting(selectedBook == nil)
+                .allowsHitTesting(selectedBook == nil && !isFlying)
 
             topChrome
                 .opacity(selectedBook == nil ? 1 : 0)
-                .allowsHitTesting(selectedBook == nil)
+                .allowsHitTesting(selectedBook == nil && !isFlying)
 
             // Camada da frente: a capa, que fica.
             if let flyingBook, heroPlacement.isPlaced {
@@ -108,6 +101,15 @@ struct Library: View {
         .simultaneousGesture(TapGesture().onEnded { hideKeyboard() })
         .scrollDismissesKeyboard(.interactively)
         .toolbar(.hidden, for: .navigationBar)
+        // Filtro e busca pedem a grade ao backend. A busca espera o usuário parar de
+        // digitar (300ms); o `task(id:)` cancela a espera a cada tecla.
+        .task(id: gridQuery) {
+            if !gridQuery.text.isEmpty {
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
+            }
+            await store.setGridQuery(gridQuery)
+        }
         // A tela escolhida abre no onDismiss, não no toque: apresentar uma sheet enquanto
         // outra ainda está saindo faz o SwiftUI engolir a segunda.
         .sheet(isPresented: $isShowingAddOptions, onDismiss: openPendingOption) {
@@ -171,18 +173,34 @@ struct Library: View {
     /// usuário abrisse outro livro (que reatribui `isFlying` na marra). Corre em paralelo
     /// com a `completion` de verdade; o `flightID` garante que só uma das duas mexe em
     /// algo, e se a `completion` já tiver rodado isto é apenas um no-op.
+    ///
+    /// No fecho, a capa sai **sempre**, mesmo com `isFlying` já em `false`: um `place()`
+    /// tardio podia zerar o `isFlying` antes desta rede rodar, e o `guard` antigo a
+    /// deixava ir embora sem apagar o `flyingBook` — a capa ficava parada por cima da
+    /// grade.
     private func endFlightIfStuck(_ flight: Int, clearsFlyingBook: Bool) {
         Task {
             try? await Task.sleep(for: .seconds(Motion.heroFlightSettleTime))
-            guard flight == flightID, isFlying else { return }
+            guard flight == flightID else { return }
+            if clearsFlyingBook, selectedBook == nil {
+                flyingBook = nil
+                isFlying = false
+                return
+            }
+            guard isFlying else { return }
             isFlying = false
-            if clearsFlyingBook { flyingBook = nil }
         }
     }
 
     /// O detalhe diz onde reservou o lugar da capa. Durante o voo isso vale uma mola;
     /// depois dele são só os pixels do scroll, e animar aí deixaria a capa a arrastar-se.
+    ///
+    /// Com o detalhe já fechado, ele continua montado durante o fade e segue relatando
+    /// onde está o herói — ainda mais se o scroll dele estava em movimento quando o
+    /// usuário voltou. Obedecer a esses relatos puxava a capa de volta para um herói
+    /// que está sumindo e ainda desligava o `isFlying` no meio do voo de volta.
     private func place(_ placement: HeroPlacement) {
+        guard selectedBook != nil else { return }
         guard isFlying else {
             heroPlacement = placement
             return
@@ -204,17 +222,25 @@ struct Library: View {
             Group {
                 if books.isEmpty {
                     emptyState
+                } else if visibleBooks.isEmpty && !store.hasLoadedGrid {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.xxl)
                 } else if visibleBooks.isEmpty {
                     // Busca sem resultado nenhum (mesmo sem o filtro de status): oferece
                     // adicionar o livro. Se o filtro de status é que esconde tudo (o livro
                     // está na estante, só não nesta), o "nenhum resultado" genérico basta.
-                    if !searchText.trimmingCharacters(in: .whitespaces).isEmpty && filteredBooks.isEmpty {
+                    if !gridQuery.text.isEmpty && store.counts.all == 0 {
                         notFoundState
                     } else {
                         noResultsState
                     }
                 } else {
-                    gridContent
+                    // Um bloco só: o `Group` aplicaria o padding do topo a cada filho.
+                    VStack(spacing: 0) {
+                        gridContent
+                        nextPageTrigger
+                    }
                 }
             }
             .padding(.horizontal, Spacing.gutterList)
@@ -261,6 +287,27 @@ struct Library: View {
             gridWidth = width
         }
     }
+
+    /// Fim da grade: pede a próxima página ao aparecer. `task(id:)` e não `onAppear`:
+    /// se a página nova não empurrar o indicador para fora da tela, o `onAppear` não
+    /// dispara de novo e a grade parava ali.
+    @ViewBuilder
+    private var nextPageTrigger: some View {
+        if store.gridHasMore {
+            ProgressView()
+                .frame(maxWidth: .infinity)
+                .padding(.top, Spacing.lg)
+                // Com um livro aberto (ou a capa voando) a grade está explodida; uma página
+                // nova mudaria os índices a meio caminho. Por isso a espera entra no id:
+                // quando a grade volta ao repouso, a tarefa roda de novo.
+                .task(id: "\(visibleBooks.count)-\(canLoadNextPage)") {
+                    guard canLoadNextPage else { return }
+                    await store.loadGridPage(reset: false)
+                }
+        }
+    }
+
+    private var canLoadNextPage: Bool { selectedBook == nil && !isFlying }
 
     private func explodes(_ book: Book) -> Bool {
         selectedBook != nil && selectedBook != book
@@ -385,9 +432,9 @@ struct Library: View {
     private var statusRail: some View {
         ScrollView(.horizontal) {
             HStack(spacing: Spacing.sm) {
-                chip(nil, Localization.Library.filterAll.string, filteredBooks.count)
+                chip(nil, Localization.Library.filterAll.string, store.counts.count(for: nil))
                 ForEach(shelfOrder, id: \.self) { status in
-                    chip(status, status.displayName, filteredBooks.count { $0.status == status })
+                    chip(status, status.displayName, store.counts.count(for: status))
                 }
             }
             .padding(.horizontal, Spacing.gutterList)

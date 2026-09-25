@@ -99,16 +99,11 @@ final class PendingSessionStore {
                 }
                 let completed = pending.totalProgress >= book.numberOfPages
                 let updatePayload = UpdateBookPayload(
-                    status: completed ? BookStatus.read.rawValue : nil,
+                    status: BookStatus.afterSession(from: book.status, completed: completed)?.rawValue,
                     progress: pending.totalProgress
                 )
                 let updatedBook = try await bookService.updateBook(id: pending.bookID, updatePayload, token: token)
-                if let index = store.books.firstIndex(where: { $0.id == updatedBook.id }) {
-                    store.books[index] = updatedBook
-                }
-                if let index = store.sessions.firstIndex(where: { $0.id == dto.id }) {
-                    store.sessions[index].book = updatedBook
-                }
+                store.apply(updated: updatedBook)
             } catch {
                 // Ainda sem rede (ou outra falha) — mantém na fila e tenta a próxima.
                 continue

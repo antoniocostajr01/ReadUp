@@ -59,6 +59,11 @@ final class BookFormViewModel {
     func handlePhotoSelection(_ item: PhotosPickerItem?) async {
         guard let item, let data = try? await item.loadTransferable(type: Data.self),
               let image = UIImage(data: data) else { return }
+        setCover(image)
+    }
+
+    /// Nova capa, venha da galeria ou da câmera. Só sobe para o backend ao salvar.
+    func setCover(_ image: UIImage) {
         coverImage = image
         newCoverBase64 = image.compressedBase64()
     }
